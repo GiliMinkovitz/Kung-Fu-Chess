@@ -5,11 +5,18 @@
 int main() {
     std::ios_base::sync_with_stdio(false);
 
-    kfc::Board board;
-    kfc::read_board(std::cin, board);
+    const kfc::VplInput input = kfc::read_vpl_input(std::cin);
 
-    if (kfc::is_valid_board(board)) {
-        kfc::write_board(std::cout, board);
+    if (input.error != kfc::BoardError::Ok) {
+        std::cout << kfc::board_error_message(input.error) << '\n';
+        return 0;
+    }
+
+    for (const std::string& command : input.commands) {
+        if (command == "print board") {
+            kfc::write_board(std::cout, input.board);
+            std::cout << '\n';
+        }
     }
 
     return 0;
