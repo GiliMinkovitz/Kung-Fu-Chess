@@ -301,6 +301,54 @@ void test_black_pawn_cannot_move_backward_or_forward_capture() {
     assert(!kfc::is_legal_move(board, 'P', 2, 1, 1, 2));
 }
 
+void test_pawn_double_move_from_start_row() {
+    const kfc::Board white_board = {{".", ".", "."},
+                                    {".", ".", "."},
+                                    {".", ".", "."},
+                                    {".", "wP", "."}};
+    assert(kfc::is_legal_move(white_board, 'P', 3, 1, 1, 1));
+    assert(!kfc::is_legal_move(white_board, 'P', 2, 1, 0, 1));
+
+    const kfc::Board black_board = {{".", "bP", "."},
+                                    {".", ".", "."},
+                                    {".", ".", "."},
+                                    {".", ".", "."}};
+    assert(kfc::is_legal_move(black_board, 'P', 0, 1, 2, 1));
+    assert(!kfc::is_legal_move(black_board, 'P', 1, 1, 3, 1));
+}
+
+void test_pawn_double_move_blocked_by_intermediate_piece() {
+    const kfc::Board blocked_intermediate = {{".", "bP", "."},
+                                             {".", "wN", "."},
+                                             {".", ".", "."},
+                                             {".", ".", "."}};
+    assert(!kfc::is_legal_move(blocked_intermediate, 'P', 0, 1, 2, 1));
+
+    const kfc::Board blocked_dest = {{".", "bP", "."},
+                                     {".", ".", "."},
+                                     {".", "wR", "."},
+                                     {".", ".", "."}};
+    assert(!kfc::is_legal_move(blocked_dest, 'P', 0, 1, 2, 1));
+}
+
+void test_pawn_promotion_to_queen() {
+    kfc::Board white_board = {{".", ".", "."}, {".", "wP", "."}};
+    kfc::GameState white_state(white_board);
+    white_state.select(1, 1);
+    white_state.move_selected_to(0, 1);
+    white_state.add_clock(1000);
+    assert(white_state.board()[0][1] == "wQ");
+    assert(white_state.board()[1][1] == ".");
+
+    kfc::Board black_board = {{".", "bP", "."}, {".", ".", "."}};
+    kfc::GameState black_state(black_board);
+    black_state.select(0, 1);
+    black_state.move_selected_to(1, 1);
+    black_state.add_clock(1000);
+    assert(black_state.board()[1][1] == "bQ");
+    assert(black_state.board()[0][1] == ".");
+}
+
 void test_command_processor_rejects_illegal_move() {
     kfc::Board board = {{"wK", ".", ".", "."}, {".", ".", ".", "."}};
     kfc::GameState state(board);
@@ -600,6 +648,81 @@ void test_print_board_after_king_capture() {
     assert(output.str() == ". . wR");
 }
 
+void test_jump_capture_intercepts_arriving_enemy() {
+    kfc::Board board = {{".", ".", "."}, {"wR", ".", "."}, {"bR", ".", "."}};
+    kfc::GameState state(board);
+
+    state.select(2, 0);
+    state.move_selected_to(1, 0);
+    state.add_clock(500);
+
+    state.select(1, 0);
+    state.jump_selected();
+    assert(state.is_piece_jumping(1, 0));
+
+    state.add_clock(500);
+
+    assert(state.board()[2][0] == ".");
+    assert(state.board()[1][0] == "wR");
+}
+
+void test_moving_piece_cannot_jump() {
+    kfc::GameState state({{"wR", ".", "."}});
+    state.select(0, 0);
+    state.move_selected_to(0, 2);
+    assert(state.is_piece_moving(0, 0));
+
+    state.select(0, 0);
+    state.jump_selected();
+    assert(state.is_piece_jumping(0, 0) == false);
+
+    state.add_clock(2000);
+    assert(state.board()[0][2] == "wR");
+}
+
+void test_jump_status_cleared_after_duration() {
+    kfc::GameState state({{"wR", ".", "."}});
+    state.select(0, 0);
+    state.jump_selected();
+    assert(state.is_piece_jumping(0, 0));
+
+    state.add_clock(1000);
+    assert(!state.is_piece_jumping(0, 0));
+    assert(state.board()[0][0] == "wR");
+}
+
+void test_jump_command_airborne_piece_captures_arriving_enemy() {
+    kfc::Board board = {{".", ".", "."}, {"wK", ".", "bR"}, {".", ".", "."}};
+    kfc::GameState state(board);
+    kfc::CommandProcessor processor(state);
+    std::ostringstream sink;
+
+    processor.execute("jump 50 150", sink);
+    processor.execute("click 250 150", sink);
+    processor.execute("click 50 150", sink);
+    processor.execute("wait 1000", sink);
+
+    std::ostringstream output;
+    processor.execute("print board", output);
+    assert(output.str() == ". . .\nwK . .\n. . .");
+}
+
+void test_jump_command_too_late_does_not_save_piece() {
+    kfc::Board board = {{".", ".", "."}, {"wK", ".", "bR"}, {".", ".", "."}};
+    kfc::GameState state(board);
+    kfc::CommandProcessor processor(state);
+    std::ostringstream sink;
+
+    processor.execute("click 250 150", sink);
+    processor.execute("click 50 150", sink);
+    processor.execute("wait 1000", sink);
+    processor.execute("jump 50 150", sink);
+
+    std::ostringstream output;
+    processor.execute("print board", output);
+    assert(output.str() == ". . .\nbR . .\n. . .");
+}
+
 }  // namespace
 
 int main() {
@@ -634,6 +757,9 @@ int main() {
     test_black_pawn_blocked_forward();
     test_black_pawn_diagonal_capture();
     test_black_pawn_cannot_move_backward_or_forward_capture();
+    test_pawn_double_move_from_start_row();
+    test_pawn_double_move_blocked_by_intermediate_piece();
+    test_pawn_promotion_to_queen();
     test_command_processor_capture();
     test_command_processor_rejects_illegal_move();
     test_pending_move_print_before_arrival();
@@ -652,5 +778,10 @@ int main() {
     test_king_capture_sets_game_over();
     test_commands_ignored_after_game_over();
     test_print_board_after_king_capture();
+    test_jump_capture_intercepts_arriving_enemy();
+    test_moving_piece_cannot_jump();
+    test_jump_status_cleared_after_duration();
+    test_jump_command_airborne_piece_captures_arriving_enemy();
+    test_jump_command_too_late_does_not_save_piece();
     return 0;
 }

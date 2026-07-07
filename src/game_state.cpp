@@ -134,6 +134,23 @@ namespace {
                          static_cast<int>(end_col));
 }
 
+[[nodiscard]] std::string promote_if_pawn(std::string piece, std::size_t end_row,
+                                          std::size_t board_rows) {
+    if (piece[1] != 'P') {
+        return piece;
+    }
+
+    const char color = piece[0];
+    const std::size_t last_row = board_rows - 1;
+    if (color == 'w' && end_row == 0) {
+        return "wQ";
+    }
+    if (color == 'b' && end_row == last_row) {
+        return "bQ";
+    }
+    return piece;
+}
+
 }  // namespace
 
 GameState::GameState(Board board) : board_(std::move(board)) {}
@@ -171,8 +188,18 @@ bool GameState::is_piece_moving(std::size_t row, std::size_t col) const {
     return false;
 }
 
+bool GameState::is_piece_jumping(std::size_t row, std::size_t col) const {
+    for (const JumpState& jump : active_jumps_) {
+        if (clock_ms_ < jump.arrival_time && jump.cell.first == row &&
+            jump.cell.second == col) {
+            return true;
+        }
+    }
+    return false;
+}
+
 bool GameState::is_selectable_piece(std::size_t row, std::size_t col) const {
-    return is_piece(row, col) && !is_piece_moving(row, col);
+    return is_piece(row, col) && !is_piece_moving(row, col) && !is_piece_jumping(row, col);
 }
 
 bool GameState::is_friendly_to_selection(std::size_t row, std::size_t col) const {
@@ -194,6 +221,47 @@ void GameState::add_clock(std::int64_t ms) {
     settle_pending_moves();
 }
 
+void GameState::expire_jumps() {
+    std::vector<JumpState> still_jumping;
+    still_jumping.reserve(active_jumps_.size());
+
+    for (JumpState& jump : active_jumps_) {
+        if (clock_ms_ < jump.arrival_time) {
+            still_jumping.push_back(std::move(jump));
+        }
+    }
+
+    active_jumps_ = std::move(still_jumping);
+}
+
+bool GameState::check_for_jump_capture(
+    const std::pair<std::size_t, std::size_t>& target_cell,
+    const ArrivingPieceInfo& arriving_piece_info) {
+    const auto [end_row, end_col] = target_cell;
+
+    for (const JumpState& jump : active_jumps_) {
+        if (clock_ms_ <= jump.arrival_time && jump.cell == target_cell &&
+            arriving_piece_info.piece[0] != jump.piece[0]) {
+            if (arriving_piece_info.piece[1] == 'K') {
+                game_over_ = true;
+            }
+            return true;
+        }
+    }
+
+    std::string& destination = board_[end_row][end_col];
+    if (destination != "." && destination[0] != arriving_piece_info.piece[0]) {
+        if (destination[1] == 'K') {
+            game_over_ = true;
+        }
+        destination =
+            promote_if_pawn(arriving_piece_info.piece, end_row, board_.size());
+        return true;
+    }
+
+    return false;
+}
+
 void GameState::settle_pending_moves() {
     std::vector<PendingMove> still_pending;
     still_pending.reserve(pending_moves_.size());
@@ -211,16 +279,21 @@ void GameState::settle_pending_moves() {
         const auto [start_row, start_col] = move.start_pos;
         const auto [end_row, end_col] = move.end_pos;
 
-        const std::string& captured = board_[end_row][end_col];
-        if (captured != "." && captured[1] == 'K') {
-            game_over_ = true;
-        }
-
         board_[start_row][start_col] = ".";
-        board_[end_row][end_col] = move.piece;
+
+        const ArrivingPieceInfo arriving_piece_info{
+            move.piece,
+            move.start_pos,
+            move.end_pos,
+        };
+
+        if (!check_for_jump_capture(move.end_pos, arriving_piece_info)) {
+            board_[end_row][end_col] = promote_if_pawn(move.piece, end_row, board_.size());
+        }
     }
 
     pending_moves_ = std::move(still_pending);
+    expire_jumps();
 }
 
 void GameState::select(std::size_t row, std::size_t col) {
@@ -240,7 +313,7 @@ void GameState::move_selected_to(std::size_t to_row, std::size_t to_col) {
     }
 
     const auto [from_row, from_col] = *selected_;
-    if (is_piece_moving(from_row, from_col)) {
+    if (is_piece_moving(from_row, from_col) || is_piece_jumping(from_row, from_col)) {
         return;
     }
 
@@ -248,11 +321,16 @@ void GameState::move_selected_to(std::size_t to_row, std::size_t to_col) {
         from_row > to_row ? from_row - to_row : to_row - from_row;
     const std::size_t col_delta =
         from_col > to_col ? from_col - to_col : to_col - from_col;
-    const std::int64_t move_duration =
-        static_cast<std::int64_t>(std::max(row_delta, col_delta)) * kMoveDurationMs;
 
     const char moving_color = board_[from_row][from_col][0];
     const char piece_type = board_[from_row][from_col][1];
+    const std::string& destination = board_[to_row][to_col];
+    const bool is_capture =
+        destination != "." && destination[0] != moving_color;
+    const std::int64_t move_duration =
+        is_capture ? kMoveDurationMs
+                   : static_cast<std::int64_t>(std::max(row_delta, col_delta)) *
+                         kMoveDurationMs;
 
     if (!is_legal_move(board_, piece_type, static_cast<int>(from_row), static_cast<int>(from_col),
                        static_cast<int>(to_row), static_cast<int>(to_col))) {
@@ -276,6 +354,32 @@ void GameState::move_selected_to(std::size_t to_row, std::size_t to_col) {
 
     pending_moves_.push_back(proposed);
     clear_selection();
+}
+
+void GameState::jump_selected() {
+    if (!selected_) {
+        return;
+    }
+
+    const auto [row, col] = *selected_;
+    jump_at(row, col);
+    clear_selection();
+}
+
+void GameState::jump_at(std::size_t row, std::size_t col) {
+    if (!is_in_bounds(row, col) || board_[row][col] == ".") {
+        return;
+    }
+
+    if (is_piece_moving(row, col) || is_piece_jumping(row, col)) {
+        return;
+    }
+
+    active_jumps_.push_back(JumpState{
+        board_[row][col],
+        {row, col},
+        clock_ms_ + kJumpDurationMs,
+    });
 }
 
 }  // namespace kfc

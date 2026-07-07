@@ -24,6 +24,15 @@ void CommandProcessor::execute(const std::string& command, std::ostream& out) {
         return;
     }
 
+    if (verb == "jump") {
+        int x = 0;
+        int y = 0;
+        if (stream >> x >> y) {
+            handle_jump(x, y);
+        }
+        return;
+    }
+
     if (verb == "wait") {
         std::int64_t ms = 0;
         if (stream >> ms) {
@@ -56,6 +65,17 @@ void CommandProcessor::handle_click(int x, int y) {
     }
 
     if (state_.is_friendly_to_selection(row, col)) {
+        std::size_t from_row = 0;
+        std::size_t from_col = 0;
+        if (state_.selection(from_row, from_col) && from_row == row && from_col == col) {
+            if (state_.is_piece_moving(from_row, from_col) ||
+                state_.is_piece_jumping(from_row, from_col)) {
+                return;
+            }
+            state_.jump_selected();
+            return;
+        }
+
         state_.select(row, col);
         return;
     }
@@ -66,7 +86,7 @@ void CommandProcessor::handle_click(int x, int y) {
         return;
     }
 
-    if (state_.is_piece_moving(from_row, from_col)) {
+    if (state_.is_piece_moving(from_row, from_col) || state_.is_piece_jumping(from_row, from_col)) {
         return;
     }
 
@@ -83,6 +103,25 @@ void CommandProcessor::handle_click(int x, int y) {
     }
 
     state_.move_selected_to(row, col);
+}
+
+void CommandProcessor::handle_jump(int x, int y) {
+    if (state_.is_game_over()) {
+        return;
+    }
+
+    std::size_t row = 0;
+    std::size_t col = 0;
+    if (!pixel_to_cell(x, y, row, col) || !state_.is_in_bounds(row, col)) {
+        return;
+    }
+
+    if (state_.is_piece_moving(row, col) || state_.is_piece_jumping(row, col)) {
+        return;
+    }
+
+    state_.jump_at(row, col);
+    state_.clear_selection();
 }
 
 void CommandProcessor::handle_wait(std::int64_t ms) {

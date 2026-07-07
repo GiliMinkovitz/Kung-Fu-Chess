@@ -19,6 +19,7 @@ private:
     GameState& state_;
 
     void handle_click(int x, int y);
+    void handle_jump(int x, int y);
     void handle_wait(std::int64_t ms);
     void handle_print_board(std::ostream& out);
 

@@ -76,10 +76,21 @@ namespace {
     return (adr == 2 && adc == 1) || (adr == 1 && adc == 2);
 }
 
+[[nodiscard]] bool is_pawn_start_row(const Board& board, char pawn_color,
+                                     int start_row) noexcept {
+    if (board.empty()) {
+        return false;
+    }
+    if (pawn_color == 'w') {
+        return start_row == static_cast<int>(board.size()) - 1;
+    }
+    return start_row == 0;
+}
+
 // Validates pawn movement and capture rules for the piece at (start_row, start_col).
 // White pawns advance toward lower row indices (dr = -1); black pawns advance toward
-// higher row indices (dr = +1). Only single-step forward moves and diagonal captures are
-// allowed—no double moves, backward movement, or forward captures.
+// higher row indices (dr = +1). From its starting row a pawn may advance two cells if
+// both the intermediate and destination squares are empty.
 [[nodiscard]] bool is_pawn_move(const Board& board, int start_row, int start_col, int end_row,
                                 int end_col) {
     const int dr = end_row - start_row;
@@ -90,14 +101,31 @@ namespace {
     const std::string& dest =
         board[static_cast<std::size_t>(end_row)][static_cast<std::size_t>(end_col)];
 
-    // Straight forward: one row in the pawn's advance direction, same column, empty square.
+    // Straight forward: same column, empty destination.
     if (dc == 0) {
+        if (dest != ".") {
+            return false;
+        }
+
         if (pawn_color == 'w' && dr == -1) {
-            return dest == ".";
+            return true;
         }
         if (pawn_color == 'b' && dr == 1) {
-            return dest == ".";
+            return true;
         }
+
+        // Double move from starting row: destination and intermediate square must be empty.
+        if (pawn_color == 'w' && dr == -2 && is_pawn_start_row(board, pawn_color, start_row)) {
+            const int mid_row = start_row - 1;
+            return board[static_cast<std::size_t>(mid_row)][static_cast<std::size_t>(start_col)] ==
+                   ".";
+        }
+        if (pawn_color == 'b' && dr == 2 && is_pawn_start_row(board, pawn_color, start_row)) {
+            const int mid_row = start_row + 1;
+            return board[static_cast<std::size_t>(mid_row)][static_cast<std::size_t>(start_col)] ==
+                   ".";
+        }
+
         return false;
     }
 
