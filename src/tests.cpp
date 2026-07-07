@@ -1,6 +1,7 @@
 #include "board.h"
 #include "command_processor.h"
 #include "game_state.h"
+#include "move_validator.h"
 
 #include <cassert>
 #include <sstream>
@@ -151,6 +152,62 @@ void test_command_processor_print_board() {
     assert(output.str() == "wK . bK");
 }
 
+void test_knight_legal_l_move() {
+    const kfc::Board board = {{".", ".", ".", ".", "."},
+                              {".", ".", ".", ".", "."},
+                              {".", ".", "wN", ".", "."},
+                              {".", ".", ".", ".", "."},
+                              {".", ".", ".", ".", "."}};
+    assert(kfc::is_legal_move(board, 'N', 2, 2, 4, 3));
+    assert(kfc::is_legal_move(board, 'N', 2, 2, 0, 3));
+    assert(!kfc::is_legal_move(board, 'N', 2, 2, 2, 4));
+}
+
+void test_rook_cannot_move_diagonally() {
+    const kfc::Board board = {{".", ".", "."}, {".", "wR", "."}, {".", ".", "."}};
+    assert(!kfc::is_legal_move(board, 'R', 1, 1, 2, 2));
+    assert(!kfc::is_legal_move(board, 'R', 1, 1, 0, 0));
+    assert(kfc::is_legal_move(board, 'R', 1, 1, 1, 0));
+    assert(kfc::is_legal_move(board, 'R', 1, 1, 2, 1));
+}
+
+void test_king_cannot_move_more_than_one_square() {
+    const kfc::Board board = {{".", ".", ".", "."}, {".", "wK", ".", "."}, {".", ".", ".", "."}};
+    assert(!kfc::is_legal_move(board, 'K', 1, 1, 1, 3));
+    assert(!kfc::is_legal_move(board, 'K', 1, 1, 3, 1));
+    assert(!kfc::is_legal_move(board, 'K', 1, 1, 3, 3));
+    assert(kfc::is_legal_move(board, 'K', 1, 1, 1, 2));
+    assert(kfc::is_legal_move(board, 'K', 1, 1, 2, 2));
+}
+
+void test_move_respects_board_boundaries() {
+    const kfc::Board board = {{"wN", ".", "wR"}, {".", "wK", "."}};
+    assert(!kfc::is_legal_move(board, 'N', 0, 0, -1, 1));
+    assert(!kfc::is_legal_move(board, 'R', 0, 2, 0, 5));
+    assert(!kfc::is_legal_move(board, 'K', 1, 1, 2, 3));
+}
+
+void test_rook_blocked_by_piece() {
+    const kfc::Board board = {{".", ".", ".", "."}, {".", "wR", "wP", "."}};
+    assert(!kfc::is_legal_move(board, 'R', 1, 1, 1, 3));
+    assert(kfc::is_legal_move(board, 'R', 1, 1, 1, 0));
+}
+
+void test_command_processor_rejects_illegal_move() {
+    kfc::Board board = {{"wK", ".", ".", "."}, {".", ".", ".", "."}};
+    kfc::GameState state(board);
+    kfc::CommandProcessor processor(state);
+    std::ostringstream sink;
+
+    processor.execute("click 50 50", sink);
+    assert(state.has_selection());
+
+    processor.execute("click 350 50", sink);
+    assert(state.has_selection());
+    assert(state.board()[0][0] == "wK");
+    assert(state.board()[0][3] == ".");
+}
+
 }  // namespace
 
 int main() {
@@ -168,5 +225,11 @@ int main() {
     test_command_processor_click_outside_grid_ignored();
     test_command_processor_friendly_click_replaces_selection();
     test_command_processor_print_board();
+    test_knight_legal_l_move();
+    test_rook_cannot_move_diagonally();
+    test_king_cannot_move_more_than_one_square();
+    test_move_respects_board_boundaries();
+    test_rook_blocked_by_piece();
+    test_command_processor_rejects_illegal_move();
     return 0;
 }

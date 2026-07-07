@@ -10,6 +10,7 @@ add_executable(${PROJECT_NAME}
     src/board.cpp
     src/game_state.cpp
     src/command_processor.cpp
+    src/move_validator.cpp
 )
 
 add_executable(KungFuChessTests
@@ -17,6 +18,7 @@ add_executable(KungFuChessTests
     src/board.cpp
     src/game_state.cpp
     src/command_processor.cpp
+    src/move_validator.cpp
 )
 
 if(MSVC)

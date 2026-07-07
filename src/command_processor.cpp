@@ -1,6 +1,7 @@
 #include "command_processor.h"
 
 #include "board.h"
+#include "move_validator.h"
 
 #include <sstream>
 #include <string>
@@ -52,9 +53,22 @@ void CommandProcessor::handle_click(int x, int y) {
 
     if (state_.is_friendly_to_selection(row, col)) {
         state_.select(row, col);
-    } else {
-        state_.move_selected_to(row, col);
+        return;
     }
+
+    std::size_t from_row = 0;
+    std::size_t from_col = 0;
+    if (!state_.selection(from_row, from_col)) {
+        return;
+    }
+
+    const char piece = state_.board()[from_row][from_col][1];
+    if (!is_legal_move(state_.board(), piece, static_cast<int>(from_row),
+                       static_cast<int>(from_col), static_cast<int>(row), static_cast<int>(col))) {
+        return;
+    }
+
+    state_.move_selected_to(row, col);
 }
 
 void CommandProcessor::handle_wait(std::int64_t ms) {
