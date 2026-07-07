@@ -210,6 +210,12 @@ void GameState::settle_pending_moves() {
 
         const auto [start_row, start_col] = move.start_pos;
         const auto [end_row, end_col] = move.end_pos;
+
+        const std::string& captured = board_[end_row][end_col];
+        if (captured != "." && captured[1] == 'K') {
+            game_over_ = true;
+        }
+
         board_[start_row][start_col] = ".";
         board_[end_row][end_col] = move.piece;
     }

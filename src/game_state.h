@@ -25,6 +25,7 @@ public:
     [[nodiscard]] const Board& board() const noexcept { return board_; }
     [[nodiscard]] std::int64_t clock_ms() const noexcept { return clock_ms_; }
     [[nodiscard]] bool has_selection() const noexcept { return selected_.has_value(); }
+    [[nodiscard]] bool is_game_over() const noexcept { return game_over_; }
 
     [[nodiscard]] bool selection(std::size_t& row, std::size_t& col) const;
     [[nodiscard]] bool is_in_bounds(std::size_t row, std::size_t col) const noexcept;
@@ -47,6 +48,7 @@ private:
     std::optional<std::pair<std::size_t, std::size_t>> selected_;
     std::vector<PendingMove> pending_moves_;
     std::int64_t clock_ms_ = 0;
+    bool game_over_ = false;
 
 };
 

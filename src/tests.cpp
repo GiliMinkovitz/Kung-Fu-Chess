@@ -540,6 +540,66 @@ void test_rejects_two_same_color_moves_to_same_square() {
     assert(output.str() == ". . wR .\n. . . .\n. . . wN");
 }
 
+void test_king_capture_sets_game_over() {
+    kfc::Board board = {{"wR", ".", "bK"}};
+    kfc::GameState state(board);
+    kfc::CommandProcessor processor(state);
+    std::ostringstream sink;
+
+    assert(!state.is_game_over());
+
+    processor.execute("click 50 50", sink);
+    processor.execute("click 250 50", sink);
+    assert(!state.is_game_over());
+
+    processor.execute("wait 2000", sink);
+    assert(state.is_game_over());
+    assert(state.board()[0][0] == ".");
+    assert(state.board()[0][2] == "wR");
+}
+
+void test_commands_ignored_after_game_over() {
+    kfc::Board board = {{"wR", ".", "bK"}, {".", "wN", "."}};
+    kfc::GameState state(board);
+    kfc::CommandProcessor processor(state);
+    std::ostringstream sink;
+
+    processor.execute("click 50 50", sink);
+    processor.execute("click 250 50", sink);
+    processor.execute("wait 2000", sink);
+    assert(state.is_game_over());
+
+    const kfc::Board board_snapshot = state.board();
+    const std::int64_t clock_snapshot = state.clock_ms();
+
+    processor.execute("click 150 150", sink);
+    assert(!state.has_selection());
+
+    processor.execute("click 50 50", sink);
+    processor.execute("click 250 50", sink);
+    assert(!state.has_selection());
+    assert(state.board() == board_snapshot);
+
+    processor.execute("wait 5000", sink);
+    assert(state.clock_ms() == clock_snapshot);
+    assert(state.board() == board_snapshot);
+}
+
+void test_print_board_after_king_capture() {
+    kfc::Board board = {{"wR", ".", "bK"}};
+    kfc::GameState state(board);
+    kfc::CommandProcessor processor(state);
+    std::ostringstream sink;
+
+    processor.execute("click 50 50", sink);
+    processor.execute("click 250 50", sink);
+    processor.execute("wait 2000", sink);
+
+    std::ostringstream output;
+    processor.execute("print board", output);
+    assert(output.str() == ". . wR");
+}
+
 }  // namespace
 
 int main() {
@@ -589,5 +649,8 @@ int main() {
     test_move_aborted_if_friendly_occupies_target_before_arrival();
     test_rejects_move_for_piece_already_in_pending_move();
     test_rejects_two_same_color_moves_to_same_square();
+    test_king_capture_sets_game_over();
+    test_commands_ignored_after_game_over();
+    test_print_board_after_king_capture();
     return 0;
 }

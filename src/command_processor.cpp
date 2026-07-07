@@ -38,6 +38,10 @@ void CommandProcessor::execute(const std::string& command, std::ostream& out) {
 }
 
 void CommandProcessor::handle_click(int x, int y) {
+    if (state_.is_game_over()) {
+        return;
+    }
+
     std::size_t row = 0;
     std::size_t col = 0;
     if (!pixel_to_cell(x, y, row, col) || !state_.is_in_bounds(row, col)) {
@@ -82,6 +86,10 @@ void CommandProcessor::handle_click(int x, int y) {
 }
 
 void CommandProcessor::handle_wait(std::int64_t ms) {
+    if (state_.is_game_over()) {
+        return;
+    }
+
     state_.add_clock(ms);
 }
 
