@@ -4,6 +4,106 @@
 
 namespace kfc {
 
+namespace {
+
+[[nodiscard]] bool ranges_overlap(std::size_t a_min, std::size_t a_max, std::size_t b_min,
+                                  std::size_t b_max) {
+    return a_min <= b_max && b_min <= a_max;
+}
+
+[[nodiscard]] bool path_cells_intersect(const std::pair<std::size_t, std::size_t>& a_start,
+                                        const std::pair<std::size_t, std::size_t>& a_end,
+                                        const std::pair<std::size_t, std::size_t>& b_start,
+                                        const std::pair<std::size_t, std::size_t>& b_end) {
+    const int a_dr = static_cast<int>(a_end.first) - static_cast<int>(a_start.first);
+    const int a_dc = static_cast<int>(a_end.second) - static_cast<int>(a_start.second);
+    const int b_dr = static_cast<int>(b_end.first) - static_cast<int>(b_start.first);
+    const int b_dc = static_cast<int>(b_end.second) - static_cast<int>(b_start.second);
+
+    if ((a_dr != 0 && a_dc != 0 && std::abs(a_dr) != std::abs(a_dc)) ||
+        (b_dr != 0 && b_dc != 0 && std::abs(b_dr) != std::abs(b_dc))) {
+        return a_start == b_start || a_start == b_end || a_end == b_start || a_end == b_end;
+    }
+
+    const int a_step_r = (a_dr == 0) ? 0 : (a_dr > 0 ? 1 : -1);
+    const int a_step_c = (a_dc == 0) ? 0 : (a_dc > 0 ? 1 : -1);
+    const int b_step_r = (b_dr == 0) ? 0 : (b_dr > 0 ? 1 : -1);
+    const int b_step_c = (b_dc == 0) ? 0 : (b_dc > 0 ? 1 : -1);
+
+    int a_row = static_cast<int>(a_start.first);
+    int a_col = static_cast<int>(a_start.second);
+    while (true) {
+        int b_row = static_cast<int>(b_start.first);
+        int b_col = static_cast<int>(b_start.second);
+        while (true) {
+            if (a_row == b_row && a_col == b_col) {
+                return true;
+            }
+            if (b_row == static_cast<int>(b_end.first) &&
+                b_col == static_cast<int>(b_end.second)) {
+                break;
+            }
+            b_row += b_step_r;
+            b_col += b_step_c;
+        }
+
+        if (a_row == static_cast<int>(a_end.first) && a_col == static_cast<int>(a_end.second)) {
+            break;
+        }
+        a_row += a_step_r;
+        a_col += a_step_c;
+    }
+
+    return false;
+}
+
+[[nodiscard]] bool has_common_route(const PendingMove& a, const PendingMove& b) {
+    if (path_cells_intersect(a.start_pos, a.end_pos, b.start_pos, b.end_pos)) {
+        return true;
+    }
+
+    const bool a_horizontal = a.start_pos.first == a.end_pos.first;
+    const bool b_horizontal = b.start_pos.first == b.end_pos.first;
+    if (a_horizontal && b_horizontal) {
+        const std::size_t a_min_col = std::min(a.start_pos.second, a.end_pos.second);
+        const std::size_t a_max_col = std::max(a.start_pos.second, a.end_pos.second);
+        const std::size_t b_min_col = std::min(b.start_pos.second, b.end_pos.second);
+        const std::size_t b_max_col = std::max(b.start_pos.second, b.end_pos.second);
+        return ranges_overlap(a_min_col, a_max_col, b_min_col, b_max_col);
+    }
+
+    const bool a_vertical = a.start_pos.second == a.end_pos.second;
+    const bool b_vertical = b.start_pos.second == b.end_pos.second;
+    if (a_vertical && b_vertical) {
+        const std::size_t a_min_row = std::min(a.start_pos.first, a.end_pos.first);
+        const std::size_t a_max_row = std::max(a.start_pos.first, a.end_pos.first);
+        const std::size_t b_min_row = std::min(b.start_pos.first, b.end_pos.first);
+        const std::size_t b_max_row = std::max(b.start_pos.first, b.end_pos.first);
+        return ranges_overlap(a_min_row, a_max_row, b_min_row, b_max_row);
+    }
+
+    return false;
+}
+
+[[nodiscard]] bool conflicts_with_opposite_color_move(
+    const std::vector<PendingMove>& pending_moves, std::int64_t clock_ms, char moving_color,
+    const PendingMove& proposed) {
+    for (const PendingMove& existing : pending_moves) {
+        if (clock_ms >= existing.arrival_time) {
+            continue;
+        }
+        if (existing.piece[0] == moving_color) {
+            continue;
+        }
+        if (has_common_route(existing, proposed)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+}  // namespace
+
 GameState::GameState(Board board) : board_(std::move(board)) {}
 
 bool GameState::selection(std::size_t& row, std::size_t& col) const {
@@ -29,7 +129,7 @@ bool GameState::is_piece(std::size_t row, std::size_t col) const {
     return board_[row][col] != ".";
 }
 
-bool GameState::has_pending_move_from(std::size_t row, std::size_t col) const {
+bool GameState::is_piece_moving(std::size_t row, std::size_t col) const {
     for (const PendingMove& move : pending_moves_) {
         if (clock_ms_ < move.arrival_time && move.start_pos.first == row &&
             move.start_pos.second == col) {
@@ -40,7 +140,7 @@ bool GameState::has_pending_move_from(std::size_t row, std::size_t col) const {
 }
 
 bool GameState::is_selectable_piece(std::size_t row, std::size_t col) const {
-    return is_piece(row, col) && !has_pending_move_from(row, col);
+    return is_piece(row, col) && !is_piece_moving(row, col);
 }
 
 bool GameState::is_friendly_to_selection(std::size_t row, std::size_t col) const {
@@ -93,7 +193,7 @@ void GameState::move_selected_to(std::size_t to_row, std::size_t to_col) {
     }
 
     const auto [from_row, from_col] = *selected_;
-    if (has_pending_move_from(from_row, from_col)) {
+    if (is_piece_moving(from_row, from_col)) {
         return;
     }
 
@@ -104,12 +204,18 @@ void GameState::move_selected_to(std::size_t to_row, std::size_t to_col) {
     const std::int64_t move_duration =
         static_cast<std::int64_t>(std::max(row_delta, col_delta)) * kMoveDurationMs;
 
-    pending_moves_.push_back(PendingMove{
+    const PendingMove proposed{
         board_[from_row][from_col],
         {from_row, from_col},
         {to_row, to_col},
         clock_ms_ + move_duration,
-    });
+    };
+    if (conflicts_with_opposite_color_move(pending_moves_, clock_ms_, board_[from_row][from_col][0],
+                                           proposed)) {
+        return;
+    }
+
+    pending_moves_.push_back(proposed);
     clear_selection();
 }
 

@@ -62,6 +62,10 @@ void CommandProcessor::handle_click(int x, int y) {
         return;
     }
 
+    if (state_.is_piece_moving(from_row, from_col)) {
+        return;
+    }
+
     const char piece = state_.board()[from_row][from_col][1];
     if (!is_legal_move(state_.board(), piece, static_cast<int>(from_row),
                        static_cast<int>(from_col), static_cast<int>(row), static_cast<int>(col))) {

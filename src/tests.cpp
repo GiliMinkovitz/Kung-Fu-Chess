@@ -366,6 +366,104 @@ void test_two_cell_move_before_and_after_arrival() {
     assert(second_print.str() == ". . wR");
 }
 
+void test_is_piece_moving_while_in_transit() {
+    kfc::GameState state({{"wR", ".", "."}});
+    state.select(0, 0);
+    state.move_selected_to(0, 2);
+    assert(state.is_piece_moving(0, 0));
+    assert(!state.is_piece_moving(0, 1));
+    assert(!state.is_piece_moving(0, 2));
+}
+
+void test_is_piece_moving_false_after_settle_no_cooldown() {
+    kfc::GameState state({{"wR", ".", "."}});
+    state.select(0, 0);
+    state.move_selected_to(0, 2);
+    assert(state.is_piece_moving(0, 0));
+
+    state.add_clock(2000);
+    assert(!state.is_piece_moving(0, 0));
+    assert(!state.is_piece_moving(0, 2));
+    assert(state.is_selectable_piece(0, 2));
+}
+
+void test_click_on_moving_piece_does_not_select_or_redirect() {
+    kfc::Board board = {{"wR", ".", "."}};
+    kfc::GameState state(board);
+    kfc::CommandProcessor processor(state);
+    std::ostringstream sink;
+
+    processor.execute("click 50 50", sink);
+    processor.execute("click 250 50", sink);
+    processor.execute("wait 1000", sink);
+
+    processor.execute("click 50 50", sink);
+    assert(!state.has_selection());
+
+    processor.execute("click 150 50", sink);
+    processor.execute("wait 1000", sink);
+
+    std::ostringstream output;
+    processor.execute("print board", output);
+    assert(output.str() == ". . wR");
+}
+
+void test_piece_can_move_immediately_after_settle() {
+    kfc::Board board = {{"wR", ".", ".", "."}};
+    kfc::GameState state(board);
+    kfc::CommandProcessor processor(state);
+    std::ostringstream sink;
+
+    processor.execute("click 50 50", sink);
+    processor.execute("click 150 50", sink);
+    processor.execute("wait 1000", sink);
+    assert(!state.is_piece_moving(0, 1));
+
+    processor.execute("click 150 50", sink);
+    assert(state.has_selection());
+
+    processor.execute("click 250 50", sink);
+    processor.execute("wait 1000", sink);
+
+    std::ostringstream output;
+    processor.execute("print board", output);
+    assert(output.str() == ". . wR .");
+}
+
+void test_opposite_colors_do_not_move_concurrently_in_common_route() {
+    kfc::Board board = {{"wR", ".", "."}, {".", ".", "."}, {"bR", ".", "."}};
+    kfc::GameState state(board);
+    kfc::CommandProcessor processor(state);
+    std::ostringstream sink;
+
+    processor.execute("click 50 50", sink);
+    processor.execute("click 250 50", sink);
+    processor.execute("click 50 250", sink);
+    processor.execute("click 250 250", sink);
+    processor.execute("wait 2000", sink);
+
+    std::ostringstream output;
+    processor.execute("print board", output);
+    assert(output.str() == ". . wR\n. . .\nbR . .");
+}
+
+void test_opposite_colors_can_move_on_disjoint_routes() {
+    kfc::Board board = {{"wR", ".", ".", "."}, {".", ".", ".", "."}, {".", ".", "bR", "."}};
+    kfc::GameState state(board);
+    kfc::CommandProcessor processor(state);
+    std::ostringstream sink;
+
+    processor.execute("click 50 50", sink);
+    processor.execute("click 150 50", sink);
+    processor.execute("click 250 250", sink);
+    processor.execute("click 350 250", sink);
+    processor.execute("wait 1000", sink);
+
+    std::ostringstream output;
+    processor.execute("print board", output);
+    assert(output.str() == ". wR . .\n. . . .\n. . . bR");
+}
+
 void test_moving_piece_ignores_redirect() {
     kfc::Board board = {{"wR", ".", "."}};
     kfc::GameState state(board);
@@ -423,6 +521,12 @@ int main() {
     test_pending_move_print_before_arrival();
     test_pending_move_print_after_wait();
     test_two_cell_move_before_and_after_arrival();
+    test_is_piece_moving_while_in_transit();
+    test_is_piece_moving_false_after_settle_no_cooldown();
+    test_click_on_moving_piece_does_not_select_or_redirect();
+    test_piece_can_move_immediately_after_settle();
+    test_opposite_colors_do_not_move_concurrently_in_common_route();
+    test_opposite_colors_can_move_on_disjoint_routes();
     test_moving_piece_ignores_redirect();
     return 0;
 }

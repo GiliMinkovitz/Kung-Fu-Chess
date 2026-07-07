@@ -29,6 +29,7 @@ public:
     [[nodiscard]] bool selection(std::size_t& row, std::size_t& col) const;
     [[nodiscard]] bool is_in_bounds(std::size_t row, std::size_t col) const noexcept;
     [[nodiscard]] bool is_piece(std::size_t row, std::size_t col) const;
+    [[nodiscard]] bool is_piece_moving(std::size_t row, std::size_t col) const;
     [[nodiscard]] bool is_selectable_piece(std::size_t row, std::size_t col) const;
     [[nodiscard]] bool is_friendly_to_selection(std::size_t row, std::size_t col) const;
 
@@ -44,7 +45,6 @@ private:
     std::vector<PendingMove> pending_moves_;
     std::int64_t clock_ms_ = 0;
 
-    [[nodiscard]] bool has_pending_move_from(std::size_t row, std::size_t col) const;
 };
 
 }  // namespace kfc
