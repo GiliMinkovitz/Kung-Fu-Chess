@@ -111,6 +111,10 @@ void test_command_processor_click_select_and_move() {
 
     processor.execute("click 150 150", sink);
     assert(!state.has_selection());
+    assert(state.board()[0][0] == "wK");
+    assert(state.board()[1][1] == ".");
+
+    processor.execute("wait 1000", sink);
     assert(state.board()[0][0] == ".");
     assert(state.board()[1][1] == "wK");
 }
@@ -225,6 +229,10 @@ void test_command_processor_capture() {
 
     processor.execute("click 250 50", sink);
     assert(!state.has_selection());
+    assert(state.board()[0][0] == "wR");
+    assert(state.board()[0][2] == "bK");
+
+    processor.execute("wait 2000", sink);
     assert(state.board()[0][0] == ".");
     assert(state.board()[0][2] == "wR");
 }
@@ -308,6 +316,74 @@ void test_command_processor_rejects_illegal_move() {
     assert(state.board()[0][3] == ".");
 }
 
+void test_pending_move_print_before_arrival() {
+    kfc::Board board = {{"wK", ".", "bK"}, {".", ".", "."}};
+    kfc::GameState state(board);
+    kfc::CommandProcessor processor(state);
+    std::ostringstream sink;
+
+    processor.execute("click 50 50", sink);
+    processor.execute("click 150 150", sink);
+
+    std::ostringstream output;
+    processor.execute("print board", output);
+    assert(output.str() == "wK . bK\n. . .");
+}
+
+void test_pending_move_print_after_wait() {
+    kfc::Board board = {{"wK", ".", "bK"}, {".", ".", "."}};
+    kfc::GameState state(board);
+    kfc::CommandProcessor processor(state);
+    std::ostringstream sink;
+
+    processor.execute("click 50 50", sink);
+    processor.execute("click 150 150", sink);
+    processor.execute("wait 1000", sink);
+
+    std::ostringstream output;
+    processor.execute("print board", output);
+    assert(output.str() == ". . bK\n. wK .");
+}
+
+void test_two_cell_move_before_and_after_arrival() {
+    kfc::Board board = {{"wR", ".", "."}};
+    kfc::GameState state(board);
+    kfc::CommandProcessor processor(state);
+    std::ostringstream sink;
+
+    processor.execute("click 50 50", sink);
+    processor.execute("click 250 50", sink);
+    processor.execute("wait 1000", sink);
+
+    std::ostringstream first_print;
+    processor.execute("print board", first_print);
+    assert(first_print.str() == "wR . .");
+
+    processor.execute("wait 1000", sink);
+
+    std::ostringstream second_print;
+    processor.execute("print board", second_print);
+    assert(second_print.str() == ". . wR");
+}
+
+void test_moving_piece_ignores_redirect() {
+    kfc::Board board = {{"wR", ".", "."}};
+    kfc::GameState state(board);
+    kfc::CommandProcessor processor(state);
+    std::ostringstream sink;
+
+    processor.execute("click 50 50", sink);
+    processor.execute("click 250 50", sink);
+    processor.execute("wait 1000", sink);
+    processor.execute("click 50 50", sink);
+    processor.execute("click 150 50", sink);
+    processor.execute("wait 1000", sink);
+
+    std::ostringstream output;
+    processor.execute("print board", output);
+    assert(output.str() == ". . wR");
+}
+
 }  // namespace
 
 int main() {
@@ -344,5 +420,9 @@ int main() {
     test_black_pawn_cannot_move_backward_or_forward_capture();
     test_command_processor_capture();
     test_command_processor_rejects_illegal_move();
+    test_pending_move_print_before_arrival();
+    test_pending_move_print_after_wait();
+    test_two_cell_move_before_and_after_arrival();
+    test_moving_piece_ignores_redirect();
     return 0;
 }

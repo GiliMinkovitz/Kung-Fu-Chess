@@ -45,7 +45,7 @@ void CommandProcessor::handle_click(int x, int y) {
     }
 
     if (!state_.has_selection()) {
-        if (state_.is_piece(row, col)) {
+        if (state_.is_selectable_piece(row, col)) {
             state_.select(row, col);
         }
         return;
@@ -75,7 +75,8 @@ void CommandProcessor::handle_wait(std::int64_t ms) {
     state_.add_clock(ms);
 }
 
-void CommandProcessor::handle_print_board(std::ostream& out) const {
+void CommandProcessor::handle_print_board(std::ostream& out) {
+    state_.settle_pending_moves();
     write_board(out, state_.board());
 }
 

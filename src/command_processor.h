@@ -20,7 +20,7 @@ private:
 
     void handle_click(int x, int y);
     void handle_wait(std::int64_t ms);
-    void handle_print_board(std::ostream& out) const;
+    void handle_print_board(std::ostream& out);
 
     [[nodiscard]] bool pixel_to_cell(int x, int y, std::size_t& row, std::size_t& col) const;
 };

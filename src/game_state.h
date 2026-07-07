@@ -5,11 +5,21 @@
 #include <cstdint>
 #include <optional>
 #include <utility>
+#include <vector>
 
 namespace kfc {
 
+struct PendingMove {
+    std::string piece;
+    std::pair<std::size_t, std::size_t> start_pos;
+    std::pair<std::size_t, std::size_t> end_pos;
+    std::int64_t arrival_time = 0;
+};
+
 class GameState {
 public:
+    static constexpr std::int64_t kMoveDurationMs = 1000;
+
     explicit GameState(Board board);
 
     [[nodiscard]] const Board& board() const noexcept { return board_; }
@@ -19,9 +29,11 @@ public:
     [[nodiscard]] bool selection(std::size_t& row, std::size_t& col) const;
     [[nodiscard]] bool is_in_bounds(std::size_t row, std::size_t col) const noexcept;
     [[nodiscard]] bool is_piece(std::size_t row, std::size_t col) const;
+    [[nodiscard]] bool is_selectable_piece(std::size_t row, std::size_t col) const;
     [[nodiscard]] bool is_friendly_to_selection(std::size_t row, std::size_t col) const;
 
     void add_clock(std::int64_t ms);
+    void settle_pending_moves();
     void select(std::size_t row, std::size_t col);
     void clear_selection();
     void move_selected_to(std::size_t to_row, std::size_t to_col);
@@ -29,7 +41,10 @@ public:
 private:
     Board board_;
     std::optional<std::pair<std::size_t, std::size_t>> selected_;
+    std::vector<PendingMove> pending_moves_;
     std::int64_t clock_ms_ = 0;
+
+    [[nodiscard]] bool has_pending_move_from(std::size_t row, std::size_t col) const;
 };
 
 }  // namespace kfc
