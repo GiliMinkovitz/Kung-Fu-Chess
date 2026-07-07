@@ -1,5 +1,7 @@
 #include "game_state.h"
 
+#include "move_validator.h"
+
 #include <algorithm>
 
 namespace kfc {
@@ -102,6 +104,36 @@ namespace {
     return false;
 }
 
+[[nodiscard]] bool is_same_color_destination_claimed(
+    const std::vector<PendingMove>& pending_moves, std::int64_t clock_ms, char moving_color,
+    const std::pair<std::size_t, std::size_t>& end_pos) {
+    for (const PendingMove& existing : pending_moves) {
+        if (clock_ms >= existing.arrival_time) {
+            continue;
+        }
+        if (existing.piece[0] != moving_color) {
+            continue;
+        }
+        if (existing.end_pos == end_pos) {
+            return true;
+        }
+    }
+    return false;
+}
+
+[[nodiscard]] bool can_settle_move(const Board& board, const PendingMove& move) {
+    const auto [start_row, start_col] = move.start_pos;
+    const auto [end_row, end_col] = move.end_pos;
+
+    if (board[start_row][start_col] != move.piece) {
+        return false;
+    }
+
+    return is_legal_move(board, move.piece[1], static_cast<int>(start_row),
+                         static_cast<int>(start_col), static_cast<int>(end_row),
+                         static_cast<int>(end_col));
+}
+
 }  // namespace
 
 GameState::GameState(Board board) : board_(std::move(board)) {}
@@ -152,6 +184,11 @@ bool GameState::is_friendly_to_selection(std::size_t row, std::size_t col) const
     return board_[row][col][0] == selected_token[0];
 }
 
+bool GameState::is_square_claimed_by_same_color_pending_move(std::size_t row, std::size_t col,
+                                                             char color) const {
+    return is_same_color_destination_claimed(pending_moves_, clock_ms_, color, {row, col});
+}
+
 void GameState::add_clock(std::int64_t ms) {
     clock_ms_ += ms;
     settle_pending_moves();
@@ -164,6 +201,10 @@ void GameState::settle_pending_moves() {
     for (PendingMove& move : pending_moves_) {
         if (clock_ms_ < move.arrival_time) {
             still_pending.push_back(std::move(move));
+            continue;
+        }
+
+        if (!can_settle_move(board_, move)) {
             continue;
         }
 
@@ -204,14 +245,26 @@ void GameState::move_selected_to(std::size_t to_row, std::size_t to_col) {
     const std::int64_t move_duration =
         static_cast<std::int64_t>(std::max(row_delta, col_delta)) * kMoveDurationMs;
 
+    const char moving_color = board_[from_row][from_col][0];
+    const char piece_type = board_[from_row][from_col][1];
+
+    if (!is_legal_move(board_, piece_type, static_cast<int>(from_row), static_cast<int>(from_col),
+                       static_cast<int>(to_row), static_cast<int>(to_col))) {
+        return;
+    }
+
+    if (is_same_color_destination_claimed(pending_moves_, clock_ms_, moving_color,
+                                          {to_row, to_col})) {
+        return;
+    }
+
     const PendingMove proposed{
         board_[from_row][from_col],
         {from_row, from_col},
         {to_row, to_col},
         clock_ms_ + move_duration,
     };
-    if (conflicts_with_opposite_color_move(pending_moves_, clock_ms_, board_[from_row][from_col][0],
-                                           proposed)) {
+    if (conflicts_with_opposite_color_move(pending_moves_, clock_ms_, moving_color, proposed)) {
         return;
     }
 

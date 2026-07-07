@@ -66,9 +66,15 @@ void CommandProcessor::handle_click(int x, int y) {
         return;
     }
 
-    const char piece = state_.board()[from_row][from_col][1];
+    const std::string& moving_token = state_.board()[from_row][from_col];
+    const char piece = moving_token[1];
+    const char color = moving_token[0];
     if (!is_legal_move(state_.board(), piece, static_cast<int>(from_row),
                        static_cast<int>(from_col), static_cast<int>(row), static_cast<int>(col))) {
+        return;
+    }
+
+    if (state_.is_square_claimed_by_same_color_pending_move(row, col, color)) {
         return;
     }
 

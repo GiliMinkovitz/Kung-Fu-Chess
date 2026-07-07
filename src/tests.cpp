@@ -482,6 +482,64 @@ void test_moving_piece_ignores_redirect() {
     assert(output.str() == ". . wR");
 }
 
+void test_move_aborted_if_friendly_occupies_target_before_arrival() {
+    kfc::Board board = {{"wR", ".", ".", "."}, {".", ".", ".", "."}};
+    kfc::GameState state(board);
+    state.select(0, 0);
+    state.move_selected_to(0, 2);
+
+    auto& mutable_board = const_cast<kfc::Board&>(state.board());
+    mutable_board[0][2] = "wK";
+
+    state.add_clock(2000);
+
+    assert(state.board()[0][0] == "wR");
+    assert(state.board()[0][2] == "wK");
+}
+
+void test_rejects_move_for_piece_already_in_pending_move() {
+    kfc::Board board = {{"wR", ".", "."}};
+    kfc::GameState state(board);
+    kfc::CommandProcessor processor(state);
+    std::ostringstream sink;
+
+    processor.execute("click 50 50", sink);
+    processor.execute("click 250 50", sink);
+    assert(state.is_piece_moving(0, 0));
+
+    processor.execute("click 50 50", sink);
+    assert(!state.has_selection());
+
+    processor.execute("click 150 50", sink);
+    assert(!state.has_selection());
+
+    processor.execute("wait 1000", sink);
+    assert(state.is_piece_moving(0, 0));
+
+    processor.execute("wait 1000", sink);
+
+    std::ostringstream output;
+    processor.execute("print board", output);
+    assert(output.str() == ". . wR");
+}
+
+void test_rejects_two_same_color_moves_to_same_square() {
+    kfc::Board board = {{"wR", ".", ".", "."}, {".", ".", ".", "."}, {".", ".", ".", "wN"}};
+    kfc::GameState state(board);
+    kfc::CommandProcessor processor(state);
+    std::ostringstream sink;
+
+    processor.execute("click 50 50", sink);
+    processor.execute("click 250 50", sink);
+    processor.execute("click 350 250", sink);
+    processor.execute("click 250 50", sink);
+    processor.execute("wait 2000", sink);
+
+    std::ostringstream output;
+    processor.execute("print board", output);
+    assert(output.str() == ". . wR .\n. . . .\n. . . wN");
+}
+
 }  // namespace
 
 int main() {
@@ -528,5 +586,8 @@ int main() {
     test_opposite_colors_do_not_move_concurrently_in_common_route();
     test_opposite_colors_can_move_on_disjoint_routes();
     test_moving_piece_ignores_redirect();
+    test_move_aborted_if_friendly_occupies_target_before_arrival();
+    test_rejects_move_for_piece_already_in_pending_move();
+    test_rejects_two_same_color_moves_to_same_square();
     return 0;
 }
