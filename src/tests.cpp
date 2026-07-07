@@ -229,6 +229,70 @@ void test_command_processor_capture() {
     assert(state.board()[0][2] == "wR");
 }
 
+void test_white_pawn_forward_move() {
+    const kfc::Board board = {{".", ".", "."}, {".", "wP", "."}, {".", ".", "."}};
+    assert(kfc::is_legal_move(board, 'P', 1, 1, 0, 1));
+    assert(!kfc::is_legal_move(board, 'P', 1, 1, 0, 0));
+    assert(!kfc::is_legal_move(board, 'P', 1, 1, 0, 2));
+}
+
+void test_white_pawn_blocked_forward() {
+    const kfc::Board board = {{".", "bK", "."}, {".", "wP", "."}};
+    assert(!kfc::is_legal_move(board, 'P', 1, 1, 0, 1));
+}
+
+void test_white_pawn_diagonal_capture() {
+    const kfc::Board board = {{"bN", ".", "bR"}, {".", "wP", "."}, {".", ".", "."}};
+    assert(kfc::is_legal_move(board, 'P', 1, 1, 0, 0));
+    assert(kfc::is_legal_move(board, 'P', 1, 1, 0, 2));
+
+    const kfc::Board empty_diagonal = {{".", ".", "."}, {".", "wP", "."}};
+    assert(!kfc::is_legal_move(empty_diagonal, 'P', 1, 1, 0, 0));
+    assert(!kfc::is_legal_move(empty_diagonal, 'P', 1, 1, 0, 2));
+}
+
+void test_white_pawn_cannot_move_backward_or_forward_capture() {
+    const kfc::Board board = {{".", "wP", "."}, {".", "bK", "."}, {".", ".", "."}};
+    assert(!kfc::is_legal_move(board, 'P', 0, 1, 1, 1));
+    assert(!kfc::is_legal_move(board, 'P', 0, 1, 1, 0));
+    assert(!kfc::is_legal_move(board, 'P', 0, 1, 1, 2));
+}
+
+void test_white_pawn_cannot_capture_own_piece() {
+    const kfc::Board board = {{"wN", ".", "wR"}, {".", "wP", "."}};
+    assert(!kfc::is_legal_move(board, 'P', 1, 1, 0, 0));
+    assert(!kfc::is_legal_move(board, 'P', 1, 1, 0, 2));
+}
+
+void test_black_pawn_forward_move() {
+    const kfc::Board board = {{".", ".", "."}, {".", "bP", "."}, {".", ".", "."}};
+    assert(kfc::is_legal_move(board, 'P', 1, 1, 2, 1));
+    assert(!kfc::is_legal_move(board, 'P', 1, 1, 2, 0));
+    assert(!kfc::is_legal_move(board, 'P', 1, 1, 2, 2));
+}
+
+void test_black_pawn_blocked_forward() {
+    const kfc::Board board = {{".", "bP", "."}, {".", "wK", "."}};
+    assert(!kfc::is_legal_move(board, 'P', 0, 1, 1, 1));
+}
+
+void test_black_pawn_diagonal_capture() {
+    const kfc::Board board = {{".", ".", "."}, {".", "bP", "."}, {"wR", ".", "wN"}};
+    assert(kfc::is_legal_move(board, 'P', 1, 1, 2, 0));
+    assert(kfc::is_legal_move(board, 'P', 1, 1, 2, 2));
+
+    const kfc::Board empty_diagonal = {{".", "bP", "."}, {".", ".", "."}};
+    assert(!kfc::is_legal_move(empty_diagonal, 'P', 0, 1, 1, 0));
+    assert(!kfc::is_legal_move(empty_diagonal, 'P', 0, 1, 1, 2));
+}
+
+void test_black_pawn_cannot_move_backward_or_forward_capture() {
+    const kfc::Board board = {{".", ".", "."}, {".", "wK", "."}, {".", "bP", "."}};
+    assert(!kfc::is_legal_move(board, 'P', 2, 1, 1, 1));
+    assert(!kfc::is_legal_move(board, 'P', 2, 1, 1, 0));
+    assert(!kfc::is_legal_move(board, 'P', 2, 1, 1, 2));
+}
+
 void test_command_processor_rejects_illegal_move() {
     kfc::Board board = {{"wK", ".", ".", "."}, {".", ".", ".", "."}};
     kfc::GameState state(board);
@@ -269,6 +333,15 @@ int main() {
     test_rook_captures_enemy_piece();
     test_knight_jumps_over_pieces();
     test_cannot_capture_own_piece();
+    test_white_pawn_forward_move();
+    test_white_pawn_blocked_forward();
+    test_white_pawn_diagonal_capture();
+    test_white_pawn_cannot_move_backward_or_forward_capture();
+    test_white_pawn_cannot_capture_own_piece();
+    test_black_pawn_forward_move();
+    test_black_pawn_blocked_forward();
+    test_black_pawn_diagonal_capture();
+    test_black_pawn_cannot_move_backward_or_forward_capture();
     test_command_processor_capture();
     test_command_processor_rejects_illegal_move();
     return 0;

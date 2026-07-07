@@ -76,6 +76,47 @@ namespace {
     return (adr == 2 && adc == 1) || (adr == 1 && adc == 2);
 }
 
+// Validates pawn movement and capture rules for the piece at (start_row, start_col).
+// White pawns advance toward lower row indices (dr = -1); black pawns advance toward
+// higher row indices (dr = +1). Only single-step forward moves and diagonal captures are
+// allowed—no double moves, backward movement, or forward captures.
+[[nodiscard]] bool is_pawn_move(const Board& board, int start_row, int start_col, int end_row,
+                                int end_col) {
+    const int dr = end_row - start_row;
+    const int dc = end_col - start_col;
+
+    const char pawn_color =
+        board[static_cast<std::size_t>(start_row)][static_cast<std::size_t>(start_col)][0];
+    const std::string& dest =
+        board[static_cast<std::size_t>(end_row)][static_cast<std::size_t>(end_col)];
+
+    // Straight forward: one row in the pawn's advance direction, same column, empty square.
+    if (dc == 0) {
+        if (pawn_color == 'w' && dr == -1) {
+            return dest == ".";
+        }
+        if (pawn_color == 'b' && dr == 1) {
+            return dest == ".";
+        }
+        return false;
+    }
+
+    // Diagonal capture: one row forward and one column sideways, enemy piece required.
+    if (std::abs(dc) == 1) {
+        if (dest == ".") {
+            return false;
+        }
+        if (pawn_color == 'w' && dr == -1) {
+            return dest[0] != 'w';
+        }
+        if (pawn_color == 'b' && dr == 1) {
+            return dest[0] != 'b';
+        }
+    }
+
+    return false;
+}
+
 [[nodiscard]] bool is_destination_legal(const Board& board, int start_row, int start_col,
                                         int end_row, int end_col) {
     const std::string& dest =
@@ -105,30 +146,39 @@ bool is_legal_move(const Board& board, char piece, int start_row, int start_col,
     const int dr = end_row - start_row;
     const int dc = end_col - start_col;
 
-    bool piece_move_legal = false;
+    // Route to the piece-specific helper; pawns handle destination rules internally.
     switch (piece) {
+        case 'P':
+            return is_pawn_move(board, start_row, start_col, end_row, end_col);
         case 'K':
-            piece_move_legal = is_king_move(dr, dc);
+            if (!is_king_move(dr, dc)) {
+                return false;
+            }
             break;
         case 'R':
-            piece_move_legal = is_rook_move(board, start_row, start_col, end_row, end_col);
+            if (!is_rook_move(board, start_row, start_col, end_row, end_col)) {
+                return false;
+            }
             break;
         case 'B':
-            piece_move_legal = is_bishop_move(board, start_row, start_col, end_row, end_col);
+            if (!is_bishop_move(board, start_row, start_col, end_row, end_col)) {
+                return false;
+            }
             break;
         case 'Q':
-            piece_move_legal = is_queen_move(board, start_row, start_col, end_row, end_col);
+            if (!is_queen_move(board, start_row, start_col, end_row, end_col)) {
+                return false;
+            }
             break;
         case 'N':
-            piece_move_legal = is_knight_move(dr, dc);
+            if (!is_knight_move(dr, dc)) {
+                return false;
+            }
             break;
         default:
             return false;
     }
 
-    if (!piece_move_legal) {
-        return false;
-    }
     return is_destination_legal(board, start_row, start_col, end_row, end_col);
 }
 
