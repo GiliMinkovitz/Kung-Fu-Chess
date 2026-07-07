@@ -76,6 +76,18 @@ namespace {
     return (adr == 2 && adc == 1) || (adr == 1 && adc == 2);
 }
 
+[[nodiscard]] bool is_destination_legal(const Board& board, int start_row, int start_col,
+                                        int end_row, int end_col) {
+    const std::string& dest =
+        board[static_cast<std::size_t>(end_row)][static_cast<std::size_t>(end_col)];
+    if (dest == ".") {
+        return true;
+    }
+    const char moving_color =
+        board[static_cast<std::size_t>(start_row)][static_cast<std::size_t>(start_col)][0];
+    return dest[0] != moving_color;
+}
+
 }  // namespace
 
 bool is_legal_move(const Board& board, char piece, int start_row, int start_col, int end_row,
@@ -93,20 +105,31 @@ bool is_legal_move(const Board& board, char piece, int start_row, int start_col,
     const int dr = end_row - start_row;
     const int dc = end_col - start_col;
 
+    bool piece_move_legal = false;
     switch (piece) {
         case 'K':
-            return is_king_move(dr, dc);
+            piece_move_legal = is_king_move(dr, dc);
+            break;
         case 'R':
-            return is_rook_move(board, start_row, start_col, end_row, end_col);
+            piece_move_legal = is_rook_move(board, start_row, start_col, end_row, end_col);
+            break;
         case 'B':
-            return is_bishop_move(board, start_row, start_col, end_row, end_col);
+            piece_move_legal = is_bishop_move(board, start_row, start_col, end_row, end_col);
+            break;
         case 'Q':
-            return is_queen_move(board, start_row, start_col, end_row, end_col);
+            piece_move_legal = is_queen_move(board, start_row, start_col, end_row, end_col);
+            break;
         case 'N':
-            return is_knight_move(dr, dc);
+            piece_move_legal = is_knight_move(dr, dc);
+            break;
         default:
             return false;
     }
+
+    if (!piece_move_legal) {
+        return false;
+    }
+    return is_destination_legal(board, start_row, start_col, end_row, end_col);
 }
 
 }  // namespace kfc

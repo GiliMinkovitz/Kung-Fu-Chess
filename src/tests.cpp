@@ -187,10 +187,46 @@ void test_move_respects_board_boundaries() {
     assert(!kfc::is_legal_move(board, 'K', 1, 1, 2, 3));
 }
 
-void test_rook_blocked_by_piece() {
+void test_rook_blocked_by_friendly_piece() {
     const kfc::Board board = {{".", ".", ".", "."}, {".", "wR", "wP", "."}};
     assert(!kfc::is_legal_move(board, 'R', 1, 1, 1, 3));
     assert(kfc::is_legal_move(board, 'R', 1, 1, 1, 0));
+}
+
+void test_rook_captures_enemy_piece() {
+    const kfc::Board board = {{".", ".", ".", "."}, {".", "wR", ".", "bP"}};
+    assert(kfc::is_legal_move(board, 'R', 1, 1, 1, 3));
+}
+
+void test_knight_jumps_over_pieces() {
+    const kfc::Board board = {{".", ".", ".", ".", "."},
+                              {".", "wP", "bN", ".", "."},
+                              {".", ".", "wN", ".", "."},
+                              {".", ".", ".", ".", "."},
+                              {".", ".", ".", ".", "."}};
+    assert(kfc::is_legal_move(board, 'N', 2, 2, 0, 3));
+    assert(kfc::is_legal_move(board, 'N', 2, 2, 4, 1));
+}
+
+void test_cannot_capture_own_piece() {
+    const kfc::Board board = {{".", "wP", "wR"}};
+    assert(!kfc::is_legal_move(board, 'R', 0, 2, 0, 1));
+    assert(!kfc::is_legal_move(board, 'N', 0, 2, 0, 1));
+}
+
+void test_command_processor_capture() {
+    kfc::Board board = {{"wR", ".", "bK"}};
+    kfc::GameState state(board);
+    kfc::CommandProcessor processor(state);
+    std::ostringstream sink;
+
+    processor.execute("click 50 50", sink);
+    assert(state.has_selection());
+
+    processor.execute("click 250 50", sink);
+    assert(!state.has_selection());
+    assert(state.board()[0][0] == ".");
+    assert(state.board()[0][2] == "wR");
 }
 
 void test_command_processor_rejects_illegal_move() {
@@ -229,7 +265,11 @@ int main() {
     test_rook_cannot_move_diagonally();
     test_king_cannot_move_more_than_one_square();
     test_move_respects_board_boundaries();
-    test_rook_blocked_by_piece();
+    test_rook_blocked_by_friendly_piece();
+    test_rook_captures_enemy_piece();
+    test_knight_jumps_over_pieces();
+    test_cannot_capture_own_piece();
+    test_command_processor_capture();
     test_command_processor_rejects_illegal_move();
     return 0;
 }
