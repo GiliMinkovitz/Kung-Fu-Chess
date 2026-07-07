@@ -1,13 +1,16 @@
+#include "board.h"
+
 #include <iostream>
-#include <string>
 
 int main() {
-    std::cout << "Kung Fu Chess\n";
-    std::cout << "Enter something: ";
+    std::ios_base::sync_with_stdio(false);
 
-    std::string input;
-    std::getline(std::cin, input);
+    kfc::Board board;
+    kfc::read_board(std::cin, board);
 
-    std::cout << "You entered: " << input << "\n";
+    if (kfc::is_valid_board(board)) {
+        kfc::write_board(std::cout, board);
+    }
+
     return 0;
 }
