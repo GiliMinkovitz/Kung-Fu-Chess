@@ -3,13 +3,13 @@
     "configurations": [
         {
             "name": "Debug KungFuChess",
-            "type": "cppvsdbg",
+            "type": "lldb",
             "request": "launch",
             "program": "${workspaceFolder}/build/Debug/KungFuChess.exe",
             "args": [],
             "cwd": "${workspaceFolder}",
             "preLaunchTask": "CMake: Build",
-            "console": "integratedTerminal"
+            "terminal": "integrated"
         }
     ]
 }
