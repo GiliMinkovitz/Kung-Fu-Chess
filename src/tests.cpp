@@ -1,4 +1,6 @@
 #include "board.h"
+#include "command_processor.h"
+#include "game_state.h"
 
 #include <cassert>
 #include <sstream>
@@ -84,6 +86,71 @@ void test_invalid_board_produces_error() {
     assert(std::string(kfc::board_error_message(parsed.error)) == "ERROR UNKNOWN_TOKEN");
 }
 
+void test_game_state_wait_increments_clock() {
+    kfc::GameState state({{"wK", ".", "bK"}});
+    assert(state.clock_ms() == 0);
+    state.add_clock(250);
+    state.add_clock(50);
+    assert(state.clock_ms() == 300);
+}
+
+void test_command_processor_click_select_and_move() {
+    kfc::Board board = {{"wK", ".", "bK"}, {".", ".", "."}};
+    kfc::GameState state(board);
+    kfc::CommandProcessor processor(state);
+    std::ostringstream sink;
+
+    processor.execute("click 50 50", sink);
+    assert(state.has_selection());
+    std::size_t row = 0;
+    std::size_t col = 0;
+    assert(state.selection(row, col));
+    assert(row == 0);
+    assert(col == 0);
+
+    processor.execute("click 150 150", sink);
+    assert(!state.has_selection());
+    assert(state.board()[0][0] == ".");
+    assert(state.board()[1][1] == "wK");
+}
+
+void test_command_processor_click_outside_grid_ignored() {
+    kfc::GameState state({{"wK", ".", "bK"}});
+    kfc::CommandProcessor processor(state);
+    std::ostringstream sink;
+
+    processor.execute("click 350 50", sink);
+    processor.execute("click -10 50", sink);
+    assert(!state.has_selection());
+}
+
+void test_command_processor_friendly_click_replaces_selection() {
+    kfc::Board board = {{"wK", "wN", "bK"}};
+    kfc::GameState state(board);
+    kfc::CommandProcessor processor(state);
+    std::ostringstream sink;
+
+    processor.execute("click 50 50", sink);
+    processor.execute("click 150 50", sink);
+    assert(state.has_selection());
+    std::size_t row = 0;
+    std::size_t col = 0;
+    assert(state.selection(row, col));
+    assert(row == 0);
+    assert(col == 1);
+    assert(state.board()[0][0] == "wK");
+    assert(state.board()[0][1] == "wN");
+}
+
+void test_command_processor_print_board() {
+    kfc::GameState state({{"wK", ".", "bK"}});
+    kfc::CommandProcessor processor(state);
+
+    std::ostringstream output;
+    processor.execute("print board", output);
+    assert(output.str() == "wK . bK");
+}
+
 }  // namespace
 
 int main() {
@@ -96,5 +163,10 @@ int main() {
     test_parse_board_row_width_mismatch();
     test_read_and_write_roundtrip();
     test_invalid_board_produces_error();
+    test_game_state_wait_increments_clock();
+    test_command_processor_click_select_and_move();
+    test_command_processor_click_outside_grid_ignored();
+    test_command_processor_friendly_click_replaces_selection();
+    test_command_processor_print_board();
     return 0;
 }

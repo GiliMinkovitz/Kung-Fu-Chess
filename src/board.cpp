@@ -9,6 +9,15 @@ namespace kfc {
 
 namespace {
 
+std::string trim_line(const std::string& line) {
+    const std::size_t start = line.find_first_not_of(" \t\r\n");
+    if (start == std::string::npos) {
+        return "";
+    }
+    const std::size_t end = line.find_last_not_of(" \t\r\n");
+    return line.substr(start, end - start + 1);
+}
+
 Row split_row(const std::string& line) {
     Row tokens;
     std::istringstream stream(line);
@@ -123,11 +132,12 @@ VplInput read_vpl_input(std::istream& in) {
 
     std::string line;
     while (std::getline(in, line)) {
-        if (line == "Board:") {
+        const std::string trimmed = trim_line(line);
+        if (trimmed == "Board:") {
             section = Section::Board;
             continue;
         }
-        if (line == "Commands:") {
+        if (trimmed == "Commands:") {
             section = Section::Commands;
             continue;
         }

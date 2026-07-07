@@ -5,9 +5,19 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-add_executable(${PROJECT_NAME} src/main.cpp src/board.cpp)
+add_executable(${PROJECT_NAME}
+    src/main.cpp
+    src/board.cpp
+    src/game_state.cpp
+    src/command_processor.cpp
+)
 
-add_executable(KungFuChessTests src/tests.cpp src/board.cpp)
+add_executable(KungFuChessTests
+    src/tests.cpp
+    src/board.cpp
+    src/game_state.cpp
+    src/command_processor.cpp
+)
 
 if(MSVC)
     target_compile_options(${PROJECT_NAME} PRIVATE /W4 /permissive-)

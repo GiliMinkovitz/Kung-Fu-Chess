@@ -1,4 +1,6 @@
 #include "board.h"
+#include "command_processor.h"
+#include "game_state.h"
 
 #include <iostream>
 
@@ -12,9 +14,12 @@ int main() {
         return 0;
     }
 
+    kfc::GameState state(input.board);
+    kfc::CommandProcessor processor(state);
+
     for (const std::string& command : input.commands) {
+        processor.execute(command, std::cout);
         if (command == "print board") {
-            kfc::write_board(std::cout, input.board);
             std::cout << '\n';
         }
     }
