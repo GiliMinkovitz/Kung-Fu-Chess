@@ -53,6 +53,9 @@ public:
 private:
     [[nodiscard]] bool can_move_selected_to(std::size_t from_row, std::size_t from_col,
                                             std::size_t to_row, std::size_t to_col) const;
+    [[nodiscard]] std::int64_t compute_move_duration(std::size_t from_row, std::size_t from_col,
+                                                     std::size_t to_row, std::size_t to_col,
+                                                     bool is_capture) const noexcept;
 
     BoardModel board_;
     GameRules rules_;

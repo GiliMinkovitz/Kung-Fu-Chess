@@ -149,6 +149,18 @@ void GameState::clear_selection() {
     selected_.reset();
 }
 
+std::int64_t GameState::compute_move_duration(std::size_t from_row, std::size_t from_col,
+                                              std::size_t to_row, std::size_t to_col,
+                                              bool is_capture) const noexcept {
+    if (is_capture) {
+        return rules_.move_duration_ms;
+    }
+
+    const std::size_t row_delta = from_row > to_row ? from_row - to_row : to_row - from_row;
+    const std::size_t col_delta = from_col > to_col ? from_col - to_col : to_col - from_col;
+    return static_cast<std::int64_t>(std::max(row_delta, col_delta)) * rules_.move_duration_ms;
+}
+
 bool GameState::can_move_selected_to(std::size_t from_row, std::size_t from_col,
                                      std::size_t to_row, std::size_t to_col) const {
     if (!is_in_bounds(to_row, to_col)) {
@@ -167,14 +179,10 @@ bool GameState::can_move_selected_to(std::size_t from_row, std::size_t from_col,
         return false;
     }
 
-    const std::size_t row_delta = from_row > to_row ? from_row - to_row : to_row - from_row;
-    const std::size_t col_delta = from_col > to_col ? from_col - to_col : to_col - from_col;
     const Piece destination = board_.piece_at(to_row, to_col);
     const bool is_capture = !destination.is_empty() && destination.is_opponent_of(moving);
     const std::int64_t move_duration =
-        is_capture ? rules_.move_duration_ms
-                   : static_cast<std::int64_t>(std::max(row_delta, col_delta)) *
-                         rules_.move_duration_ms;
+        compute_move_duration(from_row, from_col, to_row, to_col, is_capture);
 
     const PendingMove proposed{
         moving,
@@ -198,12 +206,8 @@ void GameState::move_selected_to(std::size_t to_row, std::size_t to_col) {
     const Piece moving = board_.piece_at(from_row, from_col);
     const Piece destination = board_.piece_at(to_row, to_col);
     const bool is_capture = !destination.is_empty() && destination.is_opponent_of(moving);
-    const std::size_t row_delta = from_row > to_row ? from_row - to_row : to_row - from_row;
-    const std::size_t col_delta = from_col > to_col ? from_col - to_col : to_col - from_col;
     const std::int64_t move_duration =
-        is_capture ? rules_.move_duration_ms
-                   : static_cast<std::int64_t>(std::max(row_delta, col_delta)) *
-                         rules_.move_duration_ms;
+        compute_move_duration(from_row, from_col, to_row, to_col, is_capture);
 
     scheduler_.schedule_move(PendingMove{
         moving,
