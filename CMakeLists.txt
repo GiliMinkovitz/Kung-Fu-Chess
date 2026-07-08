@@ -31,9 +31,28 @@ add_executable(${PROJECT_NAME}
     ${KFC_SOURCES}
 )
 
+set(KFC_TEST_SOURCES
+    tests/board_model_tests.cpp
+    tests/board_validator_tests.cpp
+    tests/board_writer_tests.cpp
+    tests/piece_tests.cpp
+    tests/path_utils_tests.cpp
+    tests/move_validator_tests.cpp
+    tests/collision_resolver_tests.cpp
+    tests/game_state_tests.cpp
+    tests/game_rules_tests.cpp
+    tests/command_processor_tests.cpp
+    tests/vpl_io_tests.cpp
+)
+
 add_executable(KungFuChessTests
-    src/tests.cpp
+    ${KFC_TEST_SOURCES}
     ${KFC_SOURCES}
+)
+
+target_include_directories(KungFuChessTests PRIVATE
+    ${CMAKE_SOURCE_DIR}/src
+    ${CMAKE_SOURCE_DIR}/tests
 )
 
 if(MSVC)
