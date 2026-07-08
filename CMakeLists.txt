@@ -45,42 +45,33 @@ else()
 endif()
 
 # ---------------------------------------------------------------------------
-# GoogleTest (FetchContent)
+# doctest (FetchContent)
 # ---------------------------------------------------------------------------
 
-# FetchContent lets CMake download and build third-party code at configure time,
-# so contributors do not need to install GoogleTest separately.
+# FetchContent lets CMake download third-party code at configure time,
+# so contributors do not need to install doctest separately.
 include(FetchContent)
 
-# Pin a specific release tag so every configure gets the same GoogleTest version.
+# Pin a specific release tag so every configure gets the same doctest version.
 FetchContent_Declare(
-    googletest
-    GIT_REPOSITORY https://github.com/google/googletest.git
-    GIT_TAG        v1.15.2
+    doctest
+    GIT_REPOSITORY https://github.com/doctest/doctest.git
+    GIT_TAG        v2.4.11
 )
 
-# On MSVC, GoogleTest defaults to a static CRT (/MT). This forces the shared
-# CRT (/MD) so it matches typical Visual Studio project settings and avoids
-# linker/runtime mismatches when linking KungFuChessTests.
-set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+# Download (if needed), add doctest as a subproject, and expose imported
+# targets such as doctest::doctest and doctest::doctest_with_main.
+FetchContent_MakeAvailable(doctest)
 
-# Download (if needed), add googletest as a subproject, and expose imported
-# targets such as GTest::gtest and GTest::gtest_main.
-FetchContent_MakeAvailable(googletest)
-
-# GoogleTest ships a CMake module that provides gtest_discover_tests().
-include(GoogleTest)
-
-# Link GoogleTest only to the test executable. KungFuChess stays a plain app
-# with no test-framework dependency. gtest_main supplies main() that runs all
-# registered TEST()/TEST_F() cases (tests.cpp will be migrated to use those).
-target_link_libraries(KungFuChessTests PRIVATE GTest::gtest_main)
+# doctest_with_main supplies main() that runs all registered TEST_CASE() blocks.
+target_link_libraries(KungFuChessTests PRIVATE doctest::doctest_with_main)
 
 enable_testing()
 
-# Register each GoogleTest case with CTest at build time (replaces a single
-# monolithic add_test that ran the whole executable as one test).
-gtest_discover_tests(KungFuChessTests)
+include(${doctest_SOURCE_DIR}/scripts/cmake/doctest.cmake)
+
+# Register each doctest case with CTest at build time.
+doctest_discover_tests(KungFuChessTests)
 
 option(KFC_ENABLE_COVERAGE "Generate HTML coverage report with OpenCppCoverage (MSVC only)" OFF)
 
