@@ -1,13 +1,12 @@
 #pragma once
 
+#include "board_model.h"
+
 #include <iosfwd>
 #include <string>
 #include <vector>
 
 namespace kfc {
-
-using Row = std::vector<std::string>;
-using Board = std::vector<Row>;
 
 enum class BoardError {
     Ok,
@@ -16,17 +15,15 @@ enum class BoardError {
 };
 
 struct VplInput {
-    Board board;
+    BoardModel board;
     BoardError error = BoardError::Ok;
     std::vector<std::string> commands;
 };
 
-[[nodiscard]] bool is_valid_token(const std::string& token) noexcept;
-[[nodiscard]] bool is_valid_board(const Board& board) noexcept;
-[[nodiscard]] BoardError parse_board_rows(const std::vector<std::string>& lines, Board& board);
+[[nodiscard]] BoardError parse_board_rows(const std::vector<std::string>& lines, BoardModel& board);
 [[nodiscard]] const char* board_error_message(BoardError error) noexcept;
 
 VplInput read_vpl_input(std::istream& in);
-void write_board(std::ostream& out, const Board& board);
+void write_board(std::ostream& out, const BoardModel& board);
 
 }  // namespace kfc

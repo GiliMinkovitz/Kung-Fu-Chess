@@ -1,4 +1,4 @@
-#include "board.h"
+#include "vpl_io.h"
 #include "command_processor.h"
 #include "game_state.h"
 

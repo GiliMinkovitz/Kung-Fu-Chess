@@ -1,9 +1,12 @@
-#include "board.h"
+#include "vpl_io.h"
+
+#include "piece.h"
 
 #include <istream>
-#include <sstream>
 #include <ostream>
+#include <sstream>
 #include <string>
+#include <vector>
 
 namespace kfc {
 
@@ -18,8 +21,8 @@ std::string trim_line(const std::string& line) {
     return line.substr(start, end - start + 1);
 }
 
-Row split_row(const std::string& line) {
-    Row tokens;
+std::vector<std::string> split_row(const std::string& line) {
+    std::vector<std::string> tokens;
     std::istringstream stream(line);
     std::string token;
     while (stream >> token) {
@@ -30,85 +33,40 @@ Row split_row(const std::string& line) {
 
 }  // namespace
 
-bool is_valid_token(const std::string& token) noexcept {
-    if (token == ".") {
-        return true;
-    }
-    if (token.size() != 2) {
-        return false;
-    }
-
-    const char color = token[0];
-    const char piece = token[1];
-    if (color != 'w' && color != 'b') {
-        return false;
-    }
-
-    switch (piece) {
-        case 'K':
-        case 'Q':
-        case 'R':
-        case 'B':
-        case 'N':
-        case 'P':
-            return true;
-        default:
-            return false;
-    }
-}
-
-bool is_valid_board(const Board& board) noexcept {
-    if (board.empty()) {
-        return false;
-    }
-
-    const std::size_t width = board.front().size();
-    if (width == 0) {
-        return false;
-    }
-
-    for (const Row& row : board) {
-        if (row.size() != width) {
-            return false;
-        }
-        for (const std::string& token : row) {
-            if (!is_valid_token(token)) {
-                return false;
-            }
-        }
-    }
-
-    return true;
-}
-
-BoardError parse_board_rows(const std::vector<std::string>& lines, Board& board) {
-    board.clear();
+BoardError parse_board_rows(const std::vector<std::string>& lines, BoardModel& board) {
+    BoardModel parsed;
 
     if (lines.empty()) {
+        board = std::move(parsed);
         return BoardError::Ok;
     }
 
     std::size_t expected_width = 0;
     for (const std::string& line : lines) {
-        const Row row = split_row(line);
+        const std::vector<std::string> tokens = split_row(line);
         if (expected_width == 0) {
-            expected_width = row.size();
+            expected_width = tokens.size();
             if (expected_width == 0) {
                 return BoardError::RowWidthMismatch;
             }
-        } else if (row.size() != expected_width) {
+        } else if (tokens.size() != expected_width) {
             return BoardError::RowWidthMismatch;
         }
 
-        for (const std::string& token : row) {
-            if (!is_valid_token(token)) {
+        std::vector<Piece> row;
+        row.reserve(tokens.size());
+        for (const std::string& token : tokens) {
+            const std::optional<Piece> piece = Piece::from_token(token);
+            if (!piece.has_value()) {
                 return BoardError::UnknownToken;
             }
+            row.push_back(*piece);
         }
 
-        board.push_back(row);
+        parsed.append_row(std::move(row));
     }
 
+    board = std::move(parsed);
     return BoardError::Ok;
 }
 
@@ -155,15 +113,15 @@ VplInput read_vpl_input(std::istream& in) {
     return result;
 }
 
-void write_board(std::ostream& out, const Board& board) {
-    for (std::size_t row = 0; row < board.size(); ++row) {
-        for (std::size_t col = 0; col < board[row].size(); ++col) {
+void write_board(std::ostream& out, const BoardModel& board) {
+    for (std::size_t row = 0; row < board.rows(); ++row) {
+        for (std::size_t col = 0; col < board.cols(); ++col) {
             if (col > 0) {
                 out << ' ';
             }
-            out << board[row][col];
+            out << board.token_at(row, col);
         }
-        if (row + 1 < board.size()) {
+        if (row + 1 < board.rows()) {
             out << '\n';
         }
     }

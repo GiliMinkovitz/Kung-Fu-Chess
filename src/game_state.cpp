@@ -94,7 +94,7 @@ namespace {
         if (clock_ms >= existing.arrival_time) {
             continue;
         }
-        if (existing.piece[0] == moving_color) {
+        if (existing.piece.color == moving_color) {
             continue;
         }
         if (has_common_route(existing, proposed)) {
@@ -111,7 +111,7 @@ namespace {
         if (clock_ms >= existing.arrival_time) {
             continue;
         }
-        if (existing.piece[0] != moving_color) {
+        if (existing.piece.color != moving_color) {
             continue;
         }
         if (existing.end_pos == end_pos) {
@@ -121,39 +121,50 @@ namespace {
     return false;
 }
 
-[[nodiscard]] bool can_settle_move(const Board& board, const PendingMove& move) {
+[[nodiscard]] bool can_settle_move(const BoardModel& board, const PendingMove& move) {
     const auto [start_row, start_col] = move.start_pos;
     const auto [end_row, end_col] = move.end_pos;
 
-    if (board[start_row][start_col] != move.piece) {
+    if (board.piece_at(start_row, start_col) != move.piece) {
         return false;
     }
 
-    return is_legal_move(board, move.piece[1], static_cast<int>(start_row),
+    return is_legal_move(board, move.piece.type, static_cast<int>(start_row),
                          static_cast<int>(start_col), static_cast<int>(end_row),
                          static_cast<int>(end_col));
 }
 
-[[nodiscard]] std::string promote_if_pawn(std::string piece, std::size_t end_row,
-                                          std::size_t board_rows) {
-    if (piece[1] != 'P') {
+[[nodiscard]] Piece promote_if_pawn(Piece piece, std::size_t end_row, std::size_t board_rows) {
+    if (piece.type != 'P') {
         return piece;
     }
 
-    const char color = piece[0];
+    const char color = piece.color;
     const std::size_t last_row = board_rows - 1;
     if (color == 'w' && end_row == 0) {
-        return "wQ";
+        return Piece{color, 'Q'};
     }
     if (color == 'b' && end_row == last_row) {
-        return "bQ";
+        return Piece{color, 'Q'};
     }
     return piece;
 }
 
 }  // namespace
 
-GameState::GameState(Board board) : board_(std::move(board)) {}
+GameState::GameState(BoardModel board) : board_(std::move(board)) {}
+
+Piece GameState::piece_at(std::size_t row, std::size_t col) const {
+    return board_.piece_at(row, col);
+}
+
+bool GameState::is_empty(std::size_t row, std::size_t col) const {
+    return board_.is_empty(row, col);
+}
+
+void GameState::set_piece(std::size_t row, std::size_t col, Piece piece) {
+    board_.set_piece(row, col, piece);
+}
 
 bool GameState::selection(std::size_t& row, std::size_t& col) const {
     if (!selected_) {
@@ -165,17 +176,14 @@ bool GameState::selection(std::size_t& row, std::size_t& col) const {
 }
 
 bool GameState::is_in_bounds(std::size_t row, std::size_t col) const noexcept {
-    if (board_.empty()) {
-        return false;
-    }
-    return row < board_.size() && col < board_.front().size();
+    return board_.is_in_bounds(row, col);
 }
 
 bool GameState::is_piece(std::size_t row, std::size_t col) const {
     if (!is_in_bounds(row, col)) {
         return false;
     }
-    return board_[row][col] != ".";
+    return !board_.is_empty(row, col);
 }
 
 bool GameState::is_piece_moving(std::size_t row, std::size_t col) const {
@@ -207,8 +215,8 @@ bool GameState::is_friendly_to_selection(std::size_t row, std::size_t col) const
         return false;
     }
 
-    const std::string& selected_token = board_[selected_->first][selected_->second];
-    return board_[row][col][0] == selected_token[0];
+    const Piece selected_piece = board_.piece_at(selected_->first, selected_->second);
+    return board_.piece_at(row, col).color == selected_piece.color;
 }
 
 bool GameState::is_square_claimed_by_same_color_pending_move(std::size_t row, std::size_t col,
@@ -241,21 +249,21 @@ bool GameState::check_for_jump_capture(
 
     for (const JumpState& jump : active_jumps_) {
         if (clock_ms_ <= jump.arrival_time && jump.cell == target_cell &&
-            arriving_piece_info.piece[0] != jump.piece[0]) {
-            if (arriving_piece_info.piece[1] == 'K') {
+            arriving_piece_info.piece.color != jump.piece.color) {
+            if (arriving_piece_info.piece.type == 'K') {
                 game_over_ = true;
             }
             return true;
         }
     }
 
-    std::string& destination = board_[end_row][end_col];
-    if (destination != "." && destination[0] != arriving_piece_info.piece[0]) {
-        if (destination[1] == 'K') {
+    const Piece destination = board_.piece_at(end_row, end_col);
+    if (!destination.is_empty() && destination.color != arriving_piece_info.piece.color) {
+        if (destination.type == 'K') {
             game_over_ = true;
         }
-        destination =
-            promote_if_pawn(arriving_piece_info.piece, end_row, board_.size());
+        board_.set_piece(end_row, end_col,
+                         promote_if_pawn(arriving_piece_info.piece, end_row, board_.rows()));
         return true;
     }
 
@@ -279,7 +287,7 @@ void GameState::settle_pending_moves() {
         const auto [start_row, start_col] = move.start_pos;
         const auto [end_row, end_col] = move.end_pos;
 
-        board_[start_row][start_col] = ".";
+        board_.set_piece(start_row, start_col, Piece::empty());
 
         const ArrivingPieceInfo arriving_piece_info{
             move.piece,
@@ -288,7 +296,7 @@ void GameState::settle_pending_moves() {
         };
 
         if (!check_for_jump_capture(move.end_pos, arriving_piece_info)) {
-            board_[end_row][end_col] = promote_if_pawn(move.piece, end_row, board_.size());
+            board_.set_piece(end_row, end_col, promote_if_pawn(move.piece, end_row, board_.rows()));
         }
     }
 
@@ -322,33 +330,32 @@ void GameState::move_selected_to(std::size_t to_row, std::size_t to_col) {
     const std::size_t col_delta =
         from_col > to_col ? from_col - to_col : to_col - from_col;
 
-    const char moving_color = board_[from_row][from_col][0];
-    const char piece_type = board_[from_row][from_col][1];
-    const std::string& destination = board_[to_row][to_col];
+    const Piece moving = board_.piece_at(from_row, from_col);
+    const Piece destination = board_.piece_at(to_row, to_col);
     const bool is_capture =
-        destination != "." && destination[0] != moving_color;
+        !destination.is_empty() && destination.color != moving.color;
     const std::int64_t move_duration =
         is_capture ? kMoveDurationMs
                    : static_cast<std::int64_t>(std::max(row_delta, col_delta)) *
                          kMoveDurationMs;
 
-    if (!is_legal_move(board_, piece_type, static_cast<int>(from_row), static_cast<int>(from_col),
+    if (!is_legal_move(board_, moving.type, static_cast<int>(from_row), static_cast<int>(from_col),
                        static_cast<int>(to_row), static_cast<int>(to_col))) {
         return;
     }
 
-    if (is_same_color_destination_claimed(pending_moves_, clock_ms_, moving_color,
+    if (is_same_color_destination_claimed(pending_moves_, clock_ms_, moving.color,
                                           {to_row, to_col})) {
         return;
     }
 
     const PendingMove proposed{
-        board_[from_row][from_col],
+        moving,
         {from_row, from_col},
         {to_row, to_col},
         clock_ms_ + move_duration,
     };
-    if (conflicts_with_opposite_color_move(pending_moves_, clock_ms_, moving_color, proposed)) {
+    if (conflicts_with_opposite_color_move(pending_moves_, clock_ms_, moving.color, proposed)) {
         return;
     }
 
@@ -367,7 +374,7 @@ void GameState::jump_selected() {
 }
 
 void GameState::jump_at(std::size_t row, std::size_t col) {
-    if (!is_in_bounds(row, col) || board_[row][col] == ".") {
+    if (!is_in_bounds(row, col) || board_.is_empty(row, col)) {
         return;
     }
 
@@ -376,7 +383,7 @@ void GameState::jump_at(std::size_t row, std::size_t col) {
     }
 
     active_jumps_.push_back(JumpState{
-        board_[row][col],
+        board_.piece_at(row, col),
         {row, col},
         clock_ms_ + kJumpDurationMs,
     });

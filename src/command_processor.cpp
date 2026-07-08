@@ -1,7 +1,7 @@
 #include "command_processor.h"
 
-#include "board.h"
 #include "move_validator.h"
+#include "vpl_io.h"
 
 #include <sstream>
 #include <string>
@@ -90,15 +90,13 @@ void CommandProcessor::handle_click(int x, int y) {
         return;
     }
 
-    const std::string& moving_token = state_.board()[from_row][from_col];
-    const char piece = moving_token[1];
-    const char color = moving_token[0];
-    if (!is_legal_move(state_.board(), piece, static_cast<int>(from_row),
+    const Piece moving = state_.piece_at(from_row, from_col);
+    if (!is_legal_move(state_.board(), moving.type, static_cast<int>(from_row),
                        static_cast<int>(from_col), static_cast<int>(row), static_cast<int>(col))) {
         return;
     }
 
-    if (state_.is_square_claimed_by_same_color_pending_move(row, col, color)) {
+    if (state_.is_square_claimed_by_same_color_pending_move(row, col, moving.color)) {
         return;
     }
 
@@ -142,14 +140,14 @@ bool CommandProcessor::pixel_to_cell(int x, int y, std::size_t& row, std::size_t
         return false;
     }
 
-    const Board& board = state_.board();
-    if (board.empty() || board.front().empty()) {
+    const BoardModel& board = state_.board();
+    if (board.rows() == 0 || board.cols() == 0) {
         return false;
     }
 
     col = static_cast<std::size_t>(x) / static_cast<std::size_t>(kCellPixelSize);
     row = static_cast<std::size_t>(y) / static_cast<std::size_t>(kCellPixelSize);
-    return col < board.front().size() && row < board.size();
+    return col < board.cols() && row < board.rows();
 }
 
 }  // namespace kfc

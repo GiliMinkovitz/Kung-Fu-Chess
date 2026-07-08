@@ -6,17 +6,17 @@ namespace kfc {
 
 namespace {
 
-[[nodiscard]] bool is_in_bounds(const Board& board, int row, int col) noexcept {
+[[nodiscard]] bool is_in_bounds(const BoardModel& board, int row, int col) noexcept {
     if (row < 0 || col < 0) {
         return false;
     }
     const auto urow = static_cast<std::size_t>(row);
     const auto ucol = static_cast<std::size_t>(col);
-    return urow < board.size() && ucol < board[urow].size();
+    return board.is_in_bounds(urow, ucol);
 }
 
-[[nodiscard]] bool is_path_clear(const Board& board, int start_row, int start_col, int end_row,
-                                 int end_col) {
+[[nodiscard]] bool is_path_clear(const BoardModel& board, int start_row, int start_col,
+                                 int end_row, int end_col) {
     const int dr = end_row - start_row;
     const int dc = end_col - start_col;
     const int step_r = (dr == 0) ? 0 : (dr > 0 ? 1 : -1);
@@ -25,7 +25,7 @@ namespace {
     int row = start_row + step_r;
     int col = start_col + step_c;
     while (row != end_row || col != end_col) {
-        if (board[static_cast<std::size_t>(row)][static_cast<std::size_t>(col)] != ".") {
+        if (!board.is_empty(static_cast<std::size_t>(row), static_cast<std::size_t>(col))) {
             return false;
         }
         row += step_r;
@@ -40,16 +40,16 @@ namespace {
     return adr <= 1 && adc <= 1 && (adr != 0 || adc != 0);
 }
 
-[[nodiscard]] bool is_rook_move(const Board& board, int start_row, int start_col, int end_row,
-                                int end_col) {
+[[nodiscard]] bool is_rook_move(const BoardModel& board, int start_row, int start_col,
+                                int end_row, int end_col) {
     if (start_row != end_row && start_col != end_col) {
         return false;
     }
     return is_path_clear(board, start_row, start_col, end_row, end_col);
 }
 
-[[nodiscard]] bool is_bishop_move(const Board& board, int start_row, int start_col, int end_row,
-                                  int end_col) {
+[[nodiscard]] bool is_bishop_move(const BoardModel& board, int start_row, int start_col,
+                                  int end_row, int end_col) {
     const int dr = end_row - start_row;
     const int dc = end_col - start_col;
     if (std::abs(dr) != std::abs(dc)) {
@@ -58,8 +58,8 @@ namespace {
     return is_path_clear(board, start_row, start_col, end_row, end_col);
 }
 
-[[nodiscard]] bool is_queen_move(const Board& board, int start_row, int start_col, int end_row,
-                                 int end_col) {
+[[nodiscard]] bool is_queen_move(const BoardModel& board, int start_row, int start_col,
+                                 int end_row, int end_col) {
     const int dr = end_row - start_row;
     const int dc = end_col - start_col;
     const bool straight = start_row == end_row || start_col == end_col;
@@ -76,34 +76,30 @@ namespace {
     return (adr == 2 && adc == 1) || (adr == 1 && adc == 2);
 }
 
-[[nodiscard]] bool is_pawn_start_row(const Board& board, char pawn_color,
+[[nodiscard]] bool is_pawn_start_row(const BoardModel& board, char pawn_color,
                                      int start_row) noexcept {
-    if (board.empty()) {
+    if (board.rows() == 0) {
         return false;
     }
     if (pawn_color == 'w') {
-        return start_row == static_cast<int>(board.size()) - 1;
+        return start_row == static_cast<int>(board.rows()) - 1;
     }
     return start_row == 0;
 }
 
-// Validates pawn movement and capture rules for the piece at (start_row, start_col).
-// White pawns advance toward lower row indices (dr = -1); black pawns advance toward
-// higher row indices (dr = +1). From its starting row a pawn may advance two cells if
-// both the intermediate and destination squares are empty.
-[[nodiscard]] bool is_pawn_move(const Board& board, int start_row, int start_col, int end_row,
+[[nodiscard]] bool is_pawn_move(const BoardModel& board, int start_row, int start_col, int end_row,
                                 int end_col) {
     const int dr = end_row - start_row;
     const int dc = end_col - start_col;
 
     const char pawn_color =
-        board[static_cast<std::size_t>(start_row)][static_cast<std::size_t>(start_col)][0];
-    const std::string& dest =
-        board[static_cast<std::size_t>(end_row)][static_cast<std::size_t>(end_col)];
+        board.piece_at(static_cast<std::size_t>(start_row), static_cast<std::size_t>(start_col))
+            .color;
+    const Piece dest =
+        board.piece_at(static_cast<std::size_t>(end_row), static_cast<std::size_t>(end_col));
 
-    // Straight forward: same column, empty destination.
     if (dc == 0) {
-        if (dest != ".") {
+        if (!dest.is_empty()) {
             return false;
         }
 
@@ -114,54 +110,53 @@ namespace {
             return true;
         }
 
-        // Double move from starting row: destination and intermediate square must be empty.
         if (pawn_color == 'w' && dr == -2 && is_pawn_start_row(board, pawn_color, start_row)) {
             const int mid_row = start_row - 1;
-            return board[static_cast<std::size_t>(mid_row)][static_cast<std::size_t>(start_col)] ==
-                   ".";
+            return board.is_empty(static_cast<std::size_t>(mid_row),
+                                  static_cast<std::size_t>(start_col));
         }
         if (pawn_color == 'b' && dr == 2 && is_pawn_start_row(board, pawn_color, start_row)) {
             const int mid_row = start_row + 1;
-            return board[static_cast<std::size_t>(mid_row)][static_cast<std::size_t>(start_col)] ==
-                   ".";
+            return board.is_empty(static_cast<std::size_t>(mid_row),
+                                  static_cast<std::size_t>(start_col));
         }
 
         return false;
     }
 
-    // Diagonal capture: one row forward and one column sideways, enemy piece required.
     if (std::abs(dc) == 1) {
-        if (dest == ".") {
+        if (dest.is_empty()) {
             return false;
         }
         if (pawn_color == 'w' && dr == -1) {
-            return dest[0] != 'w';
+            return dest.color != 'w';
         }
         if (pawn_color == 'b' && dr == 1) {
-            return dest[0] != 'b';
+            return dest.color != 'b';
         }
     }
 
     return false;
 }
 
-[[nodiscard]] bool is_destination_legal(const Board& board, int start_row, int start_col,
+[[nodiscard]] bool is_destination_legal(const BoardModel& board, int start_row, int start_col,
                                         int end_row, int end_col) {
-    const std::string& dest =
-        board[static_cast<std::size_t>(end_row)][static_cast<std::size_t>(end_col)];
-    if (dest == ".") {
+    const Piece dest =
+        board.piece_at(static_cast<std::size_t>(end_row), static_cast<std::size_t>(end_col));
+    if (dest.is_empty()) {
         return true;
     }
     const char moving_color =
-        board[static_cast<std::size_t>(start_row)][static_cast<std::size_t>(start_col)][0];
-    return dest[0] != moving_color;
+        board.piece_at(static_cast<std::size_t>(start_row), static_cast<std::size_t>(start_col))
+            .color;
+    return dest.color != moving_color;
 }
 
 }  // namespace
 
-bool is_legal_move(const Board& board, char piece, int start_row, int start_col, int end_row,
+bool is_legal_move(const BoardModel& board, char piece, int start_row, int start_col, int end_row,
                    int end_col) {
-    if (board.empty() || board.front().empty()) {
+    if (board.rows() == 0 || board.cols() == 0) {
         return false;
     }
     if (!is_in_bounds(board, start_row, start_col) || !is_in_bounds(board, end_row, end_col)) {
@@ -174,7 +169,6 @@ bool is_legal_move(const Board& board, char piece, int start_row, int start_col,
     const int dr = end_row - start_row;
     const int dc = end_col - start_col;
 
-    // Route to the piece-specific helper; pawns handle destination rules internally.
     switch (piece) {
         case 'P':
             return is_pawn_move(board, start_row, start_col, end_row, end_col);

@@ -5,20 +5,23 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-add_executable(${PROJECT_NAME}
-    src/main.cpp
-    src/board.cpp
+set(KFC_SOURCES
+    src/piece.cpp
+    src/board_model.cpp
+    src/vpl_io.cpp
     src/game_state.cpp
     src/command_processor.cpp
     src/move_validator.cpp
 )
 
+add_executable(${PROJECT_NAME}
+    src/main.cpp
+    ${KFC_SOURCES}
+)
+
 add_executable(KungFuChessTests
     src/tests.cpp
-    src/board.cpp
-    src/game_state.cpp
-    src/command_processor.cpp
-    src/move_validator.cpp
+    ${KFC_SOURCES}
 )
 
 if(MSVC)

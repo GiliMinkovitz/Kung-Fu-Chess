@@ -1,6 +1,6 @@
 #pragma once
 
-#include "board.h"
+#include "board_model.h"
 
 #include <cstdint>
 #include <optional>
@@ -10,20 +10,20 @@
 namespace kfc {
 
 struct PendingMove {
-    std::string piece;
+    Piece piece;
     std::pair<std::size_t, std::size_t> start_pos;
     std::pair<std::size_t, std::size_t> end_pos;
     std::int64_t arrival_time = 0;
 };
 
 struct JumpState {
-    std::string piece;
+    Piece piece;
     std::pair<std::size_t, std::size_t> cell;
     std::int64_t arrival_time = 0;
 };
 
 struct ArrivingPieceInfo {
-    std::string piece;
+    Piece piece;
     std::pair<std::size_t, std::size_t> start_pos;
     std::pair<std::size_t, std::size_t> end_pos;
 };
@@ -33,9 +33,13 @@ public:
     static constexpr std::int64_t kMoveDurationMs = 1000;
     static constexpr std::int64_t kJumpDurationMs = 1000;
 
-    explicit GameState(Board board);
+    explicit GameState(BoardModel board);
 
-    [[nodiscard]] const Board& board() const noexcept { return board_; }
+    [[nodiscard]] const BoardModel& board() const noexcept { return board_; }
+    [[nodiscard]] Piece piece_at(std::size_t row, std::size_t col) const;
+    [[nodiscard]] bool is_empty(std::size_t row, std::size_t col) const;
+    void set_piece(std::size_t row, std::size_t col, Piece piece);
+
     [[nodiscard]] std::int64_t clock_ms() const noexcept { return clock_ms_; }
     [[nodiscard]] bool has_selection() const noexcept { return selected_.has_value(); }
     [[nodiscard]] bool is_game_over() const noexcept { return game_over_; }
@@ -65,13 +69,12 @@ private:
         const std::pair<std::size_t, std::size_t>& target_cell,
         const ArrivingPieceInfo& arriving_piece_info);
 
-    Board board_;
+    BoardModel board_;
     std::optional<std::pair<std::size_t, std::size_t>> selected_;
     std::vector<PendingMove> pending_moves_;
     std::vector<JumpState> active_jumps_;
     std::int64_t clock_ms_ = 0;
     bool game_over_ = false;
-
 };
 
 }  // namespace kfc
