@@ -11,7 +11,7 @@
 #include "piece.h"
 #include "vpl_io.h"
 
-#include <cassert>
+#include <gtest/gtest.h>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -20,16 +20,6 @@ namespace {
 
 kfc::BoardModel make_board(std::initializer_list<std::initializer_list<const char*>> rows) {
     return kfc::BoardModel::from_token_grid(rows);
-}
-
-void assert_token(const kfc::BoardModel& board, std::size_t row, std::size_t col,
-                  const char* token) {
-    assert(board.token_at(row, col) == token);
-}
-
-void assert_token(const kfc::GameState& state, std::size_t row, std::size_t col,
-                  const char* token) {
-    assert(state.token_at(row, col) == token);
 }
 
 using BoardLayout = std::vector<std::vector<std::string>>;
@@ -61,52 +51,46 @@ bool layout_matches(const kfc::GameState& state, const BoardLayout& layout) {
     return true;
 }
 
-void test_valid_rectangular_board() {
-    const kfc::BoardModel board =
-        make_board({{"wK", ".", "bK"}, {".", "wN", "."}, {"bP", ".", "wR"}});
-    assert(board.is_valid());
-}
-
-void test_invalid_empty_board() {
+TEST(BoardModelTest, InvalidEmptyBoard) {
     const kfc::BoardModel board;
-    assert(!board.is_valid());
+    EXPECT_FALSE(board.is_valid());
 }
 
-void test_invalid_non_rectangular_board() {
+TEST(BoardModelTest, InvalidNonRectangularBoard) {
     const kfc::BoardModel board = make_board({{"wK", "."}, {"bK"}});
-    assert(!board.is_valid());
+    EXPECT_FALSE(board.is_valid());
 }
 
-void test_invalid_unknown_token() {
-    assert(!kfc::is_valid_token("xZ"));
-    assert(kfc::is_valid_token("."));
-    assert(kfc::is_valid_token("wK"));
-    assert(kfc::is_valid_token("bQ"));
+TEST(BoardValidatorTest, InvalidUnknownToken) {
+    EXPECT_FALSE(kfc::is_valid_token("xZ"));
+    EXPECT_TRUE(kfc::is_valid_token("."));
+    EXPECT_TRUE(kfc::is_valid_token("wK"));
+    EXPECT_TRUE(kfc::is_valid_token("bQ"));
 }
 
-void test_parse_board_rows_success() {
+TEST(BoardValidatorTest, ParseBoardRowsSuccess) {
     const std::vector<std::string> lines = {"wK . . bK", ". . . .", "wR . . bR"};
     kfc::BoardModel board;
-    assert(kfc::parse_board_rows(lines, board) == kfc::BoardError::Ok);
-    assert(board.rows() == 3);
-    assert(board.cols() == 4);
-    assert_token(board, 0, 0, "wK");
-    assert_token(board, 2, 3, "bR");
+    EXPECT_EQ(kfc::parse_board_rows(lines, board), kfc::BoardError::Ok);
+    EXPECT_EQ(board.rows(), 3);
+    EXPECT_EQ(board.cols(), 4);
+    EXPECT_EQ(board.token_at(0, 0), "wK");
+    EXPECT_EQ(board.token_at(2, 3), "bR");
 }
 
-void test_parse_board_unknown_token() {
+TEST(BoardValidatorTest, ParseBoardUnknownToken) {
     const std::vector<std::string> lines = {"wK xZ", ". ."};
     kfc::BoardModel board;
-    assert(kfc::parse_board_rows(lines, board) == kfc::BoardError::UnknownToken);
+    EXPECT_EQ(kfc::parse_board_rows(lines, board), kfc::BoardError::UnknownToken);
 }
 
-void test_parse_board_row_width_mismatch() {
+TEST(BoardValidatorTest, ParseBoardRowWidthMismatch) {
     const std::vector<std::string> lines = {"wK . .", ". bK"};
     kfc::BoardModel board;
-    assert(kfc::parse_board_rows(lines, board) == kfc::BoardError::RowWidthMismatch);
+    EXPECT_EQ(kfc::parse_board_rows(lines, board), kfc::BoardError::RowWidthMismatch);
 }
 
-void test_read_and_write_roundtrip() {
+TEST(VplIoTest, ReadAndWriteRoundtrip) {
     const std::string input =
         "Board:\n"
         "wK . bQ\n"
@@ -117,17 +101,17 @@ void test_read_and_write_roundtrip() {
 
     std::istringstream in(input);
     const kfc::VplInput parsed = kfc::read_vpl_input(in);
-    assert(parsed.error == kfc::BoardError::Ok);
-    assert(parsed.board.is_valid());
-    assert(parsed.commands.size() == 1);
-    assert(parsed.commands[0] == "print board");
+    EXPECT_EQ(parsed.error, kfc::BoardError::Ok);
+    EXPECT_TRUE(parsed.board.is_valid());
+    EXPECT_EQ(parsed.commands.size(), 1);
+    EXPECT_EQ(parsed.commands[0], "print board");
 
     std::ostringstream output;
     kfc::write_board(output, parsed.board);
-    assert(output.str() == "wK . bQ\n. wN .\nbP . wR");
+    EXPECT_EQ(output.str(), "wK . bQ\n. wN .\nbP . wR");
 }
 
-void test_invalid_board_produces_error() {
+TEST(VplIoTest, InvalidBoardProducesError) {
     const std::string input =
         "Board:\n"
         "wK xZ\n"
@@ -136,53 +120,53 @@ void test_invalid_board_produces_error() {
 
     std::istringstream in(input);
     const kfc::VplInput parsed = kfc::read_vpl_input(in);
-    assert(parsed.error == kfc::BoardError::UnknownToken);
-    assert(std::string(kfc::board_error_message(parsed.error)) == kfc::kErrorUnknownToken);
+    EXPECT_EQ(parsed.error, kfc::BoardError::UnknownToken);
+    EXPECT_EQ(std::string(kfc::board_error_message(parsed.error)), kfc::kErrorUnknownToken);
 }
 
-void test_game_state_wait_increments_clock() {
+TEST(GameStateTest, GameStateWaitIncrementsClock) {
     kfc::GameState state(make_board({{"wK", ".", "bK"}}));
-    assert(state.clock_ms() == 0);
+    EXPECT_EQ(state.clock_ms(), 0);
     state.add_clock(250);
     state.add_clock(50);
-    assert(state.clock_ms() == 300);
+    EXPECT_EQ(state.clock_ms(), 300);
 }
 
-void test_command_processor_click_select_and_move() {
+TEST(CommandProcessorTest, CommandProcessorClickSelectAndMove) {
     kfc::BoardModel board = make_board({{"wK", ".", "bK"}, {".", ".", "."}});
     kfc::GameState state(board);
     kfc::CommandProcessor processor(state);
     std::ostringstream sink;
 
     processor.execute("click 50 50", sink);
-    assert(state.has_selection());
+    EXPECT_TRUE(state.has_selection());
     std::size_t row = 0;
     std::size_t col = 0;
-    assert(state.selection(row, col));
-    assert(row == 0);
-    assert(col == 0);
+    ASSERT_TRUE(state.selection(row, col));
+    EXPECT_EQ(row, 0u);
+    EXPECT_EQ(col, 0u);
 
     processor.execute("click 150 150", sink);
-    assert(!state.has_selection());
-    assert_token(state, 0, 0, "wK");
-    assert_token(state, 1, 1, ".");
+    EXPECT_FALSE(state.has_selection());
+    EXPECT_EQ(state.token_at(0, 0), "wK");
+    EXPECT_EQ(state.token_at(1, 1), ".");
 
     processor.execute("wait 1000", sink);
-    assert_token(state, 0, 0, ".");
-    assert_token(state, 1, 1, "wK");
+    EXPECT_EQ(state.token_at(0, 0), ".");
+    EXPECT_EQ(state.token_at(1, 1), "wK");
 }
 
-void test_command_processor_click_outside_grid_ignored() {
+TEST(CommandProcessorTest, CommandProcessorClickOutsideGridIgnored) {
     kfc::GameState state(make_board({{"wK", ".", "bK"}}));
     kfc::CommandProcessor processor(state);
     std::ostringstream sink;
 
     processor.execute("click 350 50", sink);
     processor.execute("click -10 50", sink);
-    assert(!state.has_selection());
+    EXPECT_FALSE(state.has_selection());
 }
 
-void test_command_processor_friendly_click_replaces_selection() {
+TEST(CommandProcessorTest, CommandProcessorFriendlyClickReplacesSelection) {
     kfc::BoardModel board = make_board({{"wK", "wN", "bK"}});
     kfc::GameState state(board);
     kfc::CommandProcessor processor(state);
@@ -190,234 +174,234 @@ void test_command_processor_friendly_click_replaces_selection() {
 
     processor.execute("click 50 50", sink);
     processor.execute("click 150 50", sink);
-    assert(state.has_selection());
+    EXPECT_TRUE(state.has_selection());
     std::size_t row = 0;
     std::size_t col = 0;
-    assert(state.selection(row, col));
-    assert(row == 0);
-    assert(col == 1);
-    assert_token(state, 0, 0, "wK");
-    assert_token(state, 0, 1, "wN");
+    ASSERT_TRUE(state.selection(row, col));
+    EXPECT_EQ(row, 0u);
+    EXPECT_EQ(col, 1u);
+    EXPECT_EQ(state.token_at(0, 0), "wK");
+    EXPECT_EQ(state.token_at(0, 1), "wN");
 }
 
-void test_command_processor_print_board() {
+TEST(CommandProcessorTest, CommandProcessorPrintBoard) {
     kfc::GameState state(make_board({{"wK", ".", "bK"}}));
     kfc::CommandProcessor processor(state);
 
     std::ostringstream output;
     processor.execute("print board", output);
-    assert(output.str() == "wK . bK");
+    EXPECT_EQ(output.str(), "wK . bK");
 }
 
-void test_knight_legal_l_move() {
+TEST(MoveValidatorTest, KnightLegalLMove) {
     const kfc::BoardModel board = make_board({{".", ".", ".", ".", "."},
                               {".", ".", ".", ".", "."},
                               {".", ".", "wN", ".", "."},
                               {".", ".", ".", ".", "."},
                               {".", ".", ".", ".", "."}});
-    assert(kfc::is_legal_move(board, 'N', 2, 2, 4, 3));
-    assert(kfc::is_legal_move(board, 'N', 2, 2, 0, 3));
-    assert(!kfc::is_legal_move(board, 'N', 2, 2, 2, 4));
+    EXPECT_TRUE(kfc::is_legal_move(board, 'N', 2, 2, 4, 3));
+    EXPECT_TRUE(kfc::is_legal_move(board, 'N', 2, 2, 0, 3));
+    EXPECT_FALSE(kfc::is_legal_move(board, 'N', 2, 2, 2, 4));
 }
 
-void test_rook_cannot_move_diagonally() {
+TEST(MoveValidatorTest, RookCannotMoveDiagonally) {
     const kfc::BoardModel board = make_board({{".", ".", "."}, {".", "wR", "."}, {".", ".", "."}});
-    assert(!kfc::is_legal_move(board, 'R', 1, 1, 2, 2));
-    assert(!kfc::is_legal_move(board, 'R', 1, 1, 0, 0));
-    assert(kfc::is_legal_move(board, 'R', 1, 1, 1, 0));
-    assert(kfc::is_legal_move(board, 'R', 1, 1, 2, 1));
+    EXPECT_FALSE(kfc::is_legal_move(board, 'R', 1, 1, 2, 2));
+    EXPECT_FALSE(kfc::is_legal_move(board, 'R', 1, 1, 0, 0));
+    EXPECT_TRUE(kfc::is_legal_move(board, 'R', 1, 1, 1, 0));
+    EXPECT_TRUE(kfc::is_legal_move(board, 'R', 1, 1, 2, 1));
 }
 
-void test_king_cannot_move_more_than_one_square() {
+TEST(MoveValidatorTest, KingCannotMoveMoreThanOneSquare) {
     const kfc::BoardModel board = make_board({{".", ".", ".", "."}, {".", "wK", ".", "."}, {".", ".", ".", "."}});
-    assert(!kfc::is_legal_move(board, 'K', 1, 1, 1, 3));
-    assert(!kfc::is_legal_move(board, 'K', 1, 1, 3, 1));
-    assert(!kfc::is_legal_move(board, 'K', 1, 1, 3, 3));
-    assert(kfc::is_legal_move(board, 'K', 1, 1, 1, 2));
-    assert(kfc::is_legal_move(board, 'K', 1, 1, 2, 2));
+    EXPECT_FALSE(kfc::is_legal_move(board, 'K', 1, 1, 1, 3));
+    EXPECT_FALSE(kfc::is_legal_move(board, 'K', 1, 1, 3, 1));
+    EXPECT_FALSE(kfc::is_legal_move(board, 'K', 1, 1, 3, 3));
+    EXPECT_TRUE(kfc::is_legal_move(board, 'K', 1, 1, 1, 2));
+    EXPECT_TRUE(kfc::is_legal_move(board, 'K', 1, 1, 2, 2));
 }
 
-void test_move_respects_board_boundaries() {
+TEST(MoveValidatorTest, MoveRespectsBoardBoundaries) {
     const kfc::BoardModel board = make_board({{"wN", ".", "wR"}, {".", "wK", "."}});
-    assert(!kfc::is_legal_move(board, 'N', 0, 0, -1, 1));
-    assert(!kfc::is_legal_move(board, 'R', 0, 2, 0, 5));
-    assert(!kfc::is_legal_move(board, 'K', 1, 1, 2, 3));
+    EXPECT_FALSE(kfc::is_legal_move(board, 'N', 0, 0, -1, 1));
+    EXPECT_FALSE(kfc::is_legal_move(board, 'R', 0, 2, 0, 5));
+    EXPECT_FALSE(kfc::is_legal_move(board, 'K', 1, 1, 2, 3));
 }
 
-void test_rook_blocked_by_friendly_piece() {
+TEST(MoveValidatorTest, RookBlockedByFriendlyPiece) {
     const kfc::BoardModel board = make_board({{".", ".", ".", "."}, {".", "wR", "wP", "."}});
-    assert(!kfc::is_legal_move(board, 'R', 1, 1, 1, 3));
-    assert(kfc::is_legal_move(board, 'R', 1, 1, 1, 0));
+    EXPECT_FALSE(kfc::is_legal_move(board, 'R', 1, 1, 1, 3));
+    EXPECT_TRUE(kfc::is_legal_move(board, 'R', 1, 1, 1, 0));
 }
 
-void test_rook_captures_enemy_piece() {
+TEST(MoveValidatorTest, RookCapturesEnemyPiece) {
     const kfc::BoardModel board = make_board({{".", ".", ".", "."}, {".", "wR", ".", "bP"}});
-    assert(kfc::is_legal_move(board, 'R', 1, 1, 1, 3));
+    EXPECT_TRUE(kfc::is_legal_move(board, 'R', 1, 1, 1, 3));
 }
 
-void test_knight_jumps_over_pieces() {
+TEST(MoveValidatorTest, KnightJumpsOverPieces) {
     const kfc::BoardModel board = make_board({{".", ".", ".", ".", "."},
                               {".", "wP", "bN", ".", "."},
                               {".", ".", "wN", ".", "."},
                               {".", ".", ".", ".", "."},
                               {".", ".", ".", ".", "."}});
-    assert(kfc::is_legal_move(board, 'N', 2, 2, 0, 3));
-    assert(kfc::is_legal_move(board, 'N', 2, 2, 4, 1));
+    EXPECT_TRUE(kfc::is_legal_move(board, 'N', 2, 2, 0, 3));
+    EXPECT_TRUE(kfc::is_legal_move(board, 'N', 2, 2, 4, 1));
 }
 
-void test_cannot_capture_own_piece() {
+TEST(MoveValidatorTest, CannotCaptureOwnPiece) {
     const kfc::BoardModel board = make_board({{".", "wP", "wR"}});
-    assert(!kfc::is_legal_move(board, 'R', 0, 2, 0, 1));
-    assert(!kfc::is_legal_move(board, 'N', 0, 2, 0, 1));
+    EXPECT_FALSE(kfc::is_legal_move(board, 'R', 0, 2, 0, 1));
+    EXPECT_FALSE(kfc::is_legal_move(board, 'N', 0, 2, 0, 1));
 }
 
-void test_command_processor_capture() {
+TEST(CommandProcessorTest, CommandProcessorCapture) {
     kfc::BoardModel board = make_board({{"wR", ".", "bK"}});
     kfc::GameState state(board);
     kfc::CommandProcessor processor(state);
     std::ostringstream sink;
 
     processor.execute("click 50 50", sink);
-    assert(state.has_selection());
+    EXPECT_TRUE(state.has_selection());
 
     processor.execute("click 250 50", sink);
-    assert(!state.has_selection());
-    assert_token(state, 0, 0, "wR");
-    assert_token(state, 0, 2, "bK");
+    EXPECT_FALSE(state.has_selection());
+    EXPECT_EQ(state.token_at(0, 0), "wR");
+    EXPECT_EQ(state.token_at(0, 2), "bK");
 
     processor.execute("wait 2000", sink);
-    assert_token(state, 0, 0, ".");
-    assert_token(state, 0, 2, "wR");
+    EXPECT_EQ(state.token_at(0, 0), ".");
+    EXPECT_EQ(state.token_at(0, 2), "wR");
 }
 
-void test_white_pawn_forward_move() {
+TEST(MoveValidatorTest, WhitePawnForwardMove) {
     const kfc::BoardModel board = make_board({{".", ".", "."}, {".", "wP", "."}, {".", ".", "."}});
-    assert(kfc::is_legal_move(board, 'P', 1, 1, 0, 1));
-    assert(!kfc::is_legal_move(board, 'P', 1, 1, 0, 0));
-    assert(!kfc::is_legal_move(board, 'P', 1, 1, 0, 2));
+    EXPECT_TRUE(kfc::is_legal_move(board, 'P', 1, 1, 0, 1));
+    EXPECT_FALSE(kfc::is_legal_move(board, 'P', 1, 1, 0, 0));
+    EXPECT_FALSE(kfc::is_legal_move(board, 'P', 1, 1, 0, 2));
 }
 
-void test_white_pawn_blocked_forward() {
+TEST(MoveValidatorTest, WhitePawnBlockedForward) {
     const kfc::BoardModel board = make_board({{".", "bK", "."}, {".", "wP", "."}});
-    assert(!kfc::is_legal_move(board, 'P', 1, 1, 0, 1));
+    EXPECT_FALSE(kfc::is_legal_move(board, 'P', 1, 1, 0, 1));
 }
 
-void test_white_pawn_diagonal_capture() {
+TEST(MoveValidatorTest, WhitePawnDiagonalCapture) {
     const kfc::BoardModel board = make_board({{"bN", ".", "bR"}, {".", "wP", "."}, {".", ".", "."}});
-    assert(kfc::is_legal_move(board, 'P', 1, 1, 0, 0));
-    assert(kfc::is_legal_move(board, 'P', 1, 1, 0, 2));
+    EXPECT_TRUE(kfc::is_legal_move(board, 'P', 1, 1, 0, 0));
+    EXPECT_TRUE(kfc::is_legal_move(board, 'P', 1, 1, 0, 2));
 
     const kfc::BoardModel empty_diagonal = make_board({{".", ".", "."}, {".", "wP", "."}});
-    assert(!kfc::is_legal_move(empty_diagonal, 'P', 1, 1, 0, 0));
-    assert(!kfc::is_legal_move(empty_diagonal, 'P', 1, 1, 0, 2));
+    EXPECT_FALSE(kfc::is_legal_move(empty_diagonal, 'P', 1, 1, 0, 0));
+    EXPECT_FALSE(kfc::is_legal_move(empty_diagonal, 'P', 1, 1, 0, 2));
 }
 
-void test_white_pawn_cannot_move_backward_or_forward_capture() {
+TEST(MoveValidatorTest, WhitePawnCannotMoveBackwardOrForwardCapture) {
     const kfc::BoardModel board = make_board({{".", "wP", "."}, {".", "bK", "."}, {".", ".", "."}});
-    assert(!kfc::is_legal_move(board, 'P', 0, 1, 1, 1));
-    assert(!kfc::is_legal_move(board, 'P', 0, 1, 1, 0));
-    assert(!kfc::is_legal_move(board, 'P', 0, 1, 1, 2));
+    EXPECT_FALSE(kfc::is_legal_move(board, 'P', 0, 1, 1, 1));
+    EXPECT_FALSE(kfc::is_legal_move(board, 'P', 0, 1, 1, 0));
+    EXPECT_FALSE(kfc::is_legal_move(board, 'P', 0, 1, 1, 2));
 }
 
-void test_white_pawn_cannot_capture_own_piece() {
+TEST(MoveValidatorTest, WhitePawnCannotCaptureOwnPiece) {
     const kfc::BoardModel board = make_board({{"wN", ".", "wR"}, {".", "wP", "."}});
-    assert(!kfc::is_legal_move(board, 'P', 1, 1, 0, 0));
-    assert(!kfc::is_legal_move(board, 'P', 1, 1, 0, 2));
+    EXPECT_FALSE(kfc::is_legal_move(board, 'P', 1, 1, 0, 0));
+    EXPECT_FALSE(kfc::is_legal_move(board, 'P', 1, 1, 0, 2));
 }
 
-void test_black_pawn_forward_move() {
+TEST(MoveValidatorTest, BlackPawnForwardMove) {
     const kfc::BoardModel board = make_board({{".", ".", "."}, {".", "bP", "."}, {".", ".", "."}});
-    assert(kfc::is_legal_move(board, 'P', 1, 1, 2, 1));
-    assert(!kfc::is_legal_move(board, 'P', 1, 1, 2, 0));
-    assert(!kfc::is_legal_move(board, 'P', 1, 1, 2, 2));
+    EXPECT_TRUE(kfc::is_legal_move(board, 'P', 1, 1, 2, 1));
+    EXPECT_FALSE(kfc::is_legal_move(board, 'P', 1, 1, 2, 0));
+    EXPECT_FALSE(kfc::is_legal_move(board, 'P', 1, 1, 2, 2));
 }
 
-void test_black_pawn_blocked_forward() {
+TEST(MoveValidatorTest, BlackPawnBlockedForward) {
     const kfc::BoardModel board = make_board({{".", "bP", "."}, {".", "wK", "."}});
-    assert(!kfc::is_legal_move(board, 'P', 0, 1, 1, 1));
+    EXPECT_FALSE(kfc::is_legal_move(board, 'P', 0, 1, 1, 1));
 }
 
-void test_black_pawn_diagonal_capture() {
+TEST(MoveValidatorTest, BlackPawnDiagonalCapture) {
     const kfc::BoardModel board = make_board({{".", ".", "."}, {".", "bP", "."}, {"wR", ".", "wN"}});
-    assert(kfc::is_legal_move(board, 'P', 1, 1, 2, 0));
-    assert(kfc::is_legal_move(board, 'P', 1, 1, 2, 2));
+    EXPECT_TRUE(kfc::is_legal_move(board, 'P', 1, 1, 2, 0));
+    EXPECT_TRUE(kfc::is_legal_move(board, 'P', 1, 1, 2, 2));
 
     const kfc::BoardModel empty_diagonal = make_board({{".", "bP", "."}, {".", ".", "."}});
-    assert(!kfc::is_legal_move(empty_diagonal, 'P', 0, 1, 1, 0));
-    assert(!kfc::is_legal_move(empty_diagonal, 'P', 0, 1, 1, 2));
+    EXPECT_FALSE(kfc::is_legal_move(empty_diagonal, 'P', 0, 1, 1, 0));
+    EXPECT_FALSE(kfc::is_legal_move(empty_diagonal, 'P', 0, 1, 1, 2));
 }
 
-void test_black_pawn_cannot_move_backward_or_forward_capture() {
+TEST(MoveValidatorTest, BlackPawnCannotMoveBackwardOrForwardCapture) {
     const kfc::BoardModel board = make_board({{".", ".", "."}, {".", "wK", "."}, {".", "bP", "."}});
-    assert(!kfc::is_legal_move(board, 'P', 2, 1, 1, 1));
-    assert(!kfc::is_legal_move(board, 'P', 2, 1, 1, 0));
-    assert(!kfc::is_legal_move(board, 'P', 2, 1, 1, 2));
+    EXPECT_FALSE(kfc::is_legal_move(board, 'P', 2, 1, 1, 1));
+    EXPECT_FALSE(kfc::is_legal_move(board, 'P', 2, 1, 1, 0));
+    EXPECT_FALSE(kfc::is_legal_move(board, 'P', 2, 1, 1, 2));
 }
 
-void test_pawn_double_move_from_start_row() {
+TEST(MoveValidatorTest, PawnDoubleMoveFromStartRow) {
     const kfc::BoardModel white_board = make_board({{".", ".", "."},
                                     {".", ".", "."},
                                     {".", ".", "."},
                                     {".", "wP", "."}});
-    assert(kfc::is_legal_move(white_board, 'P', 3, 1, 1, 1));
-    assert(!kfc::is_legal_move(white_board, 'P', 2, 1, 0, 1));
+    EXPECT_TRUE(kfc::is_legal_move(white_board, 'P', 3, 1, 1, 1));
+    EXPECT_FALSE(kfc::is_legal_move(white_board, 'P', 2, 1, 0, 1));
 
     const kfc::BoardModel black_board = make_board({{".", "bP", "."},
                                     {".", ".", "."},
                                     {".", ".", "."},
                                     {".", ".", "."}});
-    assert(kfc::is_legal_move(black_board, 'P', 0, 1, 2, 1));
-    assert(!kfc::is_legal_move(black_board, 'P', 1, 1, 3, 1));
+    EXPECT_TRUE(kfc::is_legal_move(black_board, 'P', 0, 1, 2, 1));
+    EXPECT_FALSE(kfc::is_legal_move(black_board, 'P', 1, 1, 3, 1));
 }
 
-void test_pawn_double_move_blocked_by_intermediate_piece() {
+TEST(MoveValidatorTest, PawnDoubleMoveBlockedByIntermediatePiece) {
     const kfc::BoardModel blocked_intermediate = make_board({{".", "bP", "."},
                                              {".", "wN", "."},
                                              {".", ".", "."},
                                              {".", ".", "."}});
-    assert(!kfc::is_legal_move(blocked_intermediate, 'P', 0, 1, 2, 1));
+    EXPECT_FALSE(kfc::is_legal_move(blocked_intermediate, 'P', 0, 1, 2, 1));
 
     const kfc::BoardModel blocked_dest = make_board({{".", "bP", "."},
                                      {".", ".", "."},
                                      {".", "wR", "."},
                                      {".", ".", "."}});
-    assert(!kfc::is_legal_move(blocked_dest, 'P', 0, 1, 2, 1));
+    EXPECT_FALSE(kfc::is_legal_move(blocked_dest, 'P', 0, 1, 2, 1));
 }
 
-void test_pawn_promotion_to_queen() {
+TEST(GameStateTest, PawnPromotionToQueen) {
     kfc::BoardModel white_board = make_board({{".", ".", "."}, {".", "wP", "."}});
     kfc::GameState white_state(white_board);
     white_state.select(1, 1);
     white_state.move_selected_to(0, 1);
     white_state.add_clock(1000);
-    assert_token(white_state, 0, 1, "wQ");
-    assert_token(white_state, 1, 1, ".");
+    EXPECT_EQ(white_state.token_at(0, 1), "wQ");
+    EXPECT_EQ(white_state.token_at(1, 1), ".");
 
     kfc::BoardModel black_board = make_board({{".", "bP", "."}, {".", ".", "."}});
     kfc::GameState black_state(black_board);
     black_state.select(0, 1);
     black_state.move_selected_to(1, 1);
     black_state.add_clock(1000);
-    assert_token(black_state, 1, 1, "bQ");
-    assert_token(black_state, 0, 1, ".");
+    EXPECT_EQ(black_state.token_at(1, 1), "bQ");
+    EXPECT_EQ(black_state.token_at(0, 1), ".");
 }
 
-void test_command_processor_rejects_illegal_move() {
+TEST(CommandProcessorTest, CommandProcessorRejectsIllegalMove) {
     kfc::BoardModel board = make_board({{"wK", ".", ".", "."}, {".", ".", ".", "."}});
     kfc::GameState state(board);
     kfc::CommandProcessor processor(state);
     std::ostringstream sink;
 
     processor.execute("click 50 50", sink);
-    assert(state.has_selection());
+    EXPECT_TRUE(state.has_selection());
 
     processor.execute("click 350 50", sink);
-    assert(state.has_selection());
-    assert_token(state, 0, 0, "wK");
-    assert_token(state, 0, 3, ".");
+    EXPECT_TRUE(state.has_selection());
+    EXPECT_EQ(state.token_at(0, 0), "wK");
+    EXPECT_EQ(state.token_at(0, 3), ".");
 }
 
-void test_pending_move_print_before_arrival() {
+TEST(CommandProcessorTest, PendingMovePrintBeforeArrival) {
     kfc::BoardModel board = make_board({{"wK", ".", "bK"}, {".", ".", "."}});
     kfc::GameState state(board);
     kfc::CommandProcessor processor(state);
@@ -428,10 +412,10 @@ void test_pending_move_print_before_arrival() {
 
     std::ostringstream output;
     processor.execute("print board", output);
-    assert(output.str() == "wK . bK\n. . .");
+    EXPECT_EQ(output.str(), "wK . bK\n. . .");
 }
 
-void test_pending_move_print_after_wait() {
+TEST(CommandProcessorTest, PendingMovePrintAfterArrival) {
     kfc::BoardModel board = make_board({{"wK", ".", "bK"}, {".", ".", "."}});
     kfc::GameState state(board);
     kfc::CommandProcessor processor(state);
@@ -443,10 +427,10 @@ void test_pending_move_print_after_wait() {
 
     std::ostringstream output;
     processor.execute("print board", output);
-    assert(output.str() == ". . bK\n. wK .");
+    EXPECT_EQ(output.str(), ". . bK\n. wK .");
 }
 
-void test_two_cell_move_before_and_after_arrival() {
+TEST(CommandProcessorTest, TwoCellMoveBeforeAndAfterArrival) {
     kfc::BoardModel board = make_board({{"wR", ".", "."}});
     kfc::GameState state(board);
     kfc::CommandProcessor processor(state);
@@ -458,37 +442,37 @@ void test_two_cell_move_before_and_after_arrival() {
 
     std::ostringstream first_print;
     processor.execute("print board", first_print);
-    assert(first_print.str() == "wR . .");
+    EXPECT_EQ(first_print.str(), "wR . .");
 
     processor.execute("wait 1000", sink);
 
     std::ostringstream second_print;
     processor.execute("print board", second_print);
-    assert(second_print.str() == ". . wR");
+    EXPECT_EQ(second_print.str(), ". . wR");
 }
 
-void test_is_piece_moving_while_in_transit() {
+TEST(GameStateTest, IsPieceMovingWhileInTransit) {
     kfc::GameState state(make_board({{"wR", ".", "."}}));
     state.select(0, 0);
     state.move_selected_to(0, 2);
-    assert(state.is_piece_moving(0, 0));
-    assert(!state.is_piece_moving(0, 1));
-    assert(!state.is_piece_moving(0, 2));
+    EXPECT_TRUE(state.is_piece_moving(0, 0));
+    EXPECT_FALSE(state.is_piece_moving(0, 1));
+    EXPECT_FALSE(state.is_piece_moving(0, 2));
 }
 
-void test_is_piece_moving_false_after_settle_no_cooldown() {
+TEST(GameStateTest, IsPieceMovingFalseAfterSettleNoCooldown) {
     kfc::GameState state(make_board({{"wR", ".", "."}}));
     state.select(0, 0);
     state.move_selected_to(0, 2);
-    assert(state.is_piece_moving(0, 0));
+    EXPECT_TRUE(state.is_piece_moving(0, 0));
 
     state.add_clock(2000);
-    assert(!state.is_piece_moving(0, 0));
-    assert(!state.is_piece_moving(0, 2));
-    assert(state.is_selectable_piece(0, 2));
+    EXPECT_FALSE(state.is_piece_moving(0, 0));
+    EXPECT_FALSE(state.is_piece_moving(0, 2));
+    EXPECT_TRUE(state.is_selectable_piece(0, 2));
 }
 
-void test_click_on_moving_piece_does_not_select_or_redirect() {
+TEST(CommandProcessorTest, ClickOnMovingPieceDoesNotSelectOrRedirect) {
     kfc::BoardModel board = make_board({{"wR", ".", "."}});
     kfc::GameState state(board);
     kfc::CommandProcessor processor(state);
@@ -499,17 +483,17 @@ void test_click_on_moving_piece_does_not_select_or_redirect() {
     processor.execute("wait 1000", sink);
 
     processor.execute("click 50 50", sink);
-    assert(!state.has_selection());
+    EXPECT_FALSE(state.has_selection());
 
     processor.execute("click 150 50", sink);
     processor.execute("wait 1000", sink);
 
     std::ostringstream output;
     processor.execute("print board", output);
-    assert(output.str() == ". . wR");
+    EXPECT_EQ(output.str(), ". . wR");
 }
 
-void test_piece_can_move_immediately_after_settle() {
+TEST(CommandProcessorTest, PieceCanMoveImmediatelyAfterSettle) {
     kfc::BoardModel board = make_board({{"wR", ".", ".", "."}});
     kfc::GameState state(board);
     kfc::CommandProcessor processor(state);
@@ -518,20 +502,20 @@ void test_piece_can_move_immediately_after_settle() {
     processor.execute("click 50 50", sink);
     processor.execute("click 150 50", sink);
     processor.execute("wait 1000", sink);
-    assert(!state.is_piece_moving(0, 1));
+    EXPECT_FALSE(state.is_piece_moving(0, 1));
 
     processor.execute("click 150 50", sink);
-    assert(state.has_selection());
+    EXPECT_TRUE(state.has_selection());
 
     processor.execute("click 250 50", sink);
     processor.execute("wait 1000", sink);
 
     std::ostringstream output;
     processor.execute("print board", output);
-    assert(output.str() == ". . wR .");
+    EXPECT_EQ(output.str(), ". . wR .");
 }
 
-void test_opposite_colors_do_not_move_concurrently_in_common_route() {
+TEST(CommandProcessorTest, OppositeColorsDoNotMoveConcurrentlyInCommonRoute) {
     kfc::BoardModel board = make_board({{"wR", ".", "."}, {".", ".", "."}, {"bR", ".", "."}});
     kfc::GameState state(board);
     kfc::CommandProcessor processor(state);
@@ -545,10 +529,10 @@ void test_opposite_colors_do_not_move_concurrently_in_common_route() {
 
     std::ostringstream output;
     processor.execute("print board", output);
-    assert(output.str() == ". . wR\n. . .\nbR . .");
+    EXPECT_EQ(output.str(), ". . wR\n. . .\nbR . .");
 }
 
-void test_opposite_colors_can_move_on_disjoint_routes() {
+TEST(CommandProcessorTest, OppositeColorsCanMoveOnDisjointRoutes) {
     kfc::BoardModel board = make_board({{"wR", ".", ".", "."}, {".", ".", ".", "."}, {".", ".", "bR", "."}});
     kfc::GameState state(board);
     kfc::CommandProcessor processor(state);
@@ -562,10 +546,10 @@ void test_opposite_colors_can_move_on_disjoint_routes() {
 
     std::ostringstream output;
     processor.execute("print board", output);
-    assert(output.str() == ". wR . .\n. . . .\n. . . bR");
+    EXPECT_EQ(output.str(), ". wR . .\n. . . .\n. . . bR");
 }
 
-void test_moving_piece_ignores_redirect() {
+TEST(CommandProcessorTest, MovingPieceIgnoresRedirect) {
     kfc::BoardModel board = make_board({{"wR", ".", "."}});
     kfc::GameState state(board);
     kfc::CommandProcessor processor(state);
@@ -580,10 +564,10 @@ void test_moving_piece_ignores_redirect() {
 
     std::ostringstream output;
     processor.execute("print board", output);
-    assert(output.str() == ". . wR");
+    EXPECT_EQ(output.str(), ". . wR");
 }
 
-void test_move_aborted_if_friendly_occupies_target_before_arrival() {
+TEST(GameStateTest, MoveAbortedIfFriendlyOccupiesTargetBeforeArrival) {
     kfc::BoardModel board = make_board({{"wR", ".", ".", "."}, {".", ".", ".", "."}});
     kfc::GameState state(board);
     state.select(0, 0);
@@ -593,11 +577,11 @@ void test_move_aborted_if_friendly_occupies_target_before_arrival() {
 
     state.add_clock(2000);
 
-    assert_token(state, 0, 0, "wR");
-    assert_token(state, 0, 2, "wK");
+    EXPECT_EQ(state.token_at(0, 0), "wR");
+    EXPECT_EQ(state.token_at(0, 2), "wK");
 }
 
-void test_rejects_move_for_piece_already_in_pending_move() {
+TEST(CommandProcessorTest, RejectsMoveForPieceAlreadyInPendingMove) {
     kfc::BoardModel board = make_board({{"wR", ".", "."}});
     kfc::GameState state(board);
     kfc::CommandProcessor processor(state);
@@ -605,25 +589,25 @@ void test_rejects_move_for_piece_already_in_pending_move() {
 
     processor.execute("click 50 50", sink);
     processor.execute("click 250 50", sink);
-    assert(state.is_piece_moving(0, 0));
+    EXPECT_TRUE(state.is_piece_moving(0, 0));
 
     processor.execute("click 50 50", sink);
-    assert(!state.has_selection());
+    EXPECT_FALSE(state.has_selection());
 
     processor.execute("click 150 50", sink);
-    assert(!state.has_selection());
+    EXPECT_FALSE(state.has_selection());
 
     processor.execute("wait 1000", sink);
-    assert(state.is_piece_moving(0, 0));
+    EXPECT_TRUE(state.is_piece_moving(0, 0));
 
     processor.execute("wait 1000", sink);
 
     std::ostringstream output;
     processor.execute("print board", output);
-    assert(output.str() == ". . wR");
+    EXPECT_EQ(output.str(), ". . wR");
 }
 
-void test_rejects_two_same_color_moves_to_same_square() {
+TEST(CommandProcessorTest, RejectsTwoSameColorMovesToSameSquare) {
     kfc::BoardModel board = make_board({{"wR", ".", ".", "."}, {".", ".", ".", "."}, {".", ".", ".", "wN"}});
     kfc::GameState state(board);
     kfc::CommandProcessor processor(state);
@@ -637,28 +621,28 @@ void test_rejects_two_same_color_moves_to_same_square() {
 
     std::ostringstream output;
     processor.execute("print board", output);
-    assert(output.str() == ". . wR .\n. . . .\n. . . wN");
+    EXPECT_EQ(output.str(), ". . wR .\n. . . .\n. . . wN");
 }
 
-void test_king_capture_sets_game_over() {
+TEST(CommandProcessorTest, KingCaptureSetsGameOver) {
     kfc::BoardModel board = make_board({{"wR", ".", "bK"}});
     kfc::GameState state(board);
     kfc::CommandProcessor processor(state);
     std::ostringstream sink;
 
-    assert(!state.is_game_over());
+    EXPECT_FALSE(state.is_game_over());
 
     processor.execute("click 50 50", sink);
     processor.execute("click 250 50", sink);
-    assert(!state.is_game_over());
+    EXPECT_FALSE(state.is_game_over());
 
     processor.execute("wait 2000", sink);
-    assert(state.is_game_over());
-    assert_token(state, 0, 0, ".");
-    assert_token(state, 0, 2, "wR");
+    EXPECT_TRUE(state.is_game_over());
+    EXPECT_EQ(state.token_at(0, 0), ".");
+    EXPECT_EQ(state.token_at(0, 2), "wR");
 }
 
-void test_commands_ignored_after_game_over() {
+TEST(CommandProcessorTest, CommandsIgnoredAfterGameOver) {
     kfc::BoardModel board = make_board({{"wR", ".", "bK"}, {".", "wN", "."}});
     kfc::GameState state(board);
     kfc::CommandProcessor processor(state);
@@ -667,25 +651,25 @@ void test_commands_ignored_after_game_over() {
     processor.execute("click 50 50", sink);
     processor.execute("click 250 50", sink);
     processor.execute("wait 2000", sink);
-    assert(state.is_game_over());
+    EXPECT_TRUE(state.is_game_over());
 
     const BoardLayout board_snapshot = capture_layout(state);
     const std::int64_t clock_snapshot = state.clock_ms();
 
     processor.execute("click 150 150", sink);
-    assert(!state.has_selection());
+    EXPECT_FALSE(state.has_selection());
 
     processor.execute("click 50 50", sink);
     processor.execute("click 250 50", sink);
-    assert(!state.has_selection());
-    assert(layout_matches(state, board_snapshot));
+    EXPECT_FALSE(state.has_selection());
+    EXPECT_TRUE(layout_matches(state, board_snapshot));
 
     processor.execute("wait 5000", sink);
-    assert(state.clock_ms() == clock_snapshot);
-    assert(layout_matches(state, board_snapshot));
+    EXPECT_EQ(state.clock_ms(), clock_snapshot);
+    EXPECT_TRUE(layout_matches(state, board_snapshot));
 }
 
-void test_print_board_after_king_capture() {
+TEST(CommandProcessorTest, PrintBoardAfterKingCapture) {
     kfc::BoardModel board = make_board({{"wR", ".", "bK"}});
     kfc::GameState state(board);
     kfc::CommandProcessor processor(state);
@@ -697,10 +681,10 @@ void test_print_board_after_king_capture() {
 
     std::ostringstream output;
     processor.execute("print board", output);
-    assert(output.str() == ". . wR");
+    EXPECT_EQ(output.str(), ". . wR");
 }
 
-void test_jump_capture_intercepts_arriving_enemy() {
+TEST(GameStateTest, JumpCaptureInterceptsArrivingEnemy) {
     kfc::BoardModel board = make_board({{".", ".", "."}, {"wR", ".", "."}, {"bR", ".", "."}});
     kfc::GameState state(board);
 
@@ -710,40 +694,40 @@ void test_jump_capture_intercepts_arriving_enemy() {
 
     state.select(1, 0);
     state.jump_selected();
-    assert(state.is_piece_jumping(1, 0));
+    EXPECT_TRUE(state.is_piece_jumping(1, 0));
 
     state.add_clock(500);
 
-    assert_token(state, 2, 0, ".");
-    assert_token(state, 1, 0, "wR");
+    EXPECT_EQ(state.token_at(2, 0), ".");
+    EXPECT_EQ(state.token_at(1, 0), "wR");
 }
 
-void test_moving_piece_cannot_jump() {
+TEST(GameStateTest, MovingPieceCannotJump) {
     kfc::GameState state(make_board({{"wR", ".", "."}}));
     state.select(0, 0);
     state.move_selected_to(0, 2);
-    assert(state.is_piece_moving(0, 0));
+    EXPECT_TRUE(state.is_piece_moving(0, 0));
 
     state.select(0, 0);
     state.jump_selected();
-    assert(state.is_piece_jumping(0, 0) == false);
+    EXPECT_FALSE(state.is_piece_jumping(0, 0));
 
     state.add_clock(2000);
-    assert_token(state, 0, 2, "wR");
+    EXPECT_EQ(state.token_at(0, 2), "wR");
 }
 
-void test_jump_status_cleared_after_duration() {
+TEST(GameStateTest, JumpStatusClearedAfterDuration) {
     kfc::GameState state(make_board({{"wR", ".", "."}}));
     state.select(0, 0);
     state.jump_selected();
-    assert(state.is_piece_jumping(0, 0));
+    EXPECT_TRUE(state.is_piece_jumping(0, 0));
 
     state.add_clock(1000);
-    assert(!state.is_piece_jumping(0, 0));
-    assert_token(state, 0, 0, "wR");
+    EXPECT_FALSE(state.is_piece_jumping(0, 0));
+    EXPECT_EQ(state.token_at(0, 0), "wR");
 }
 
-void test_jump_command_airborne_piece_captures_arriving_enemy() {
+TEST(CommandProcessorTest, JumpCommandAirbornePieceCapturesArrivingEnemy) {
     kfc::BoardModel board = make_board({{".", ".", "."}, {"wK", ".", "bR"}, {".", ".", "."}});
     kfc::GameState state(board);
     kfc::CommandProcessor processor(state);
@@ -756,151 +740,150 @@ void test_jump_command_airborne_piece_captures_arriving_enemy() {
 
     std::ostringstream output;
     processor.execute("print board", output);
-    assert(output.str() == ". . .\nwK . .\n. . .");
+    EXPECT_EQ(output.str(), ". . .\nwK . .\n. . .");
 }
 
-void test_board_error_message_row_width_mismatch() {
-    assert(std::string(kfc::board_error_message(kfc::BoardError::RowWidthMismatch)) ==
-           kfc::kErrorRowWidthMismatch);
+TEST(BoardValidatorTest, BoardErrorMessageRowWidthMismatch) {
+    EXPECT_EQ(std::string(kfc::board_error_message(kfc::BoardError::RowWidthMismatch)), kfc::kErrorRowWidthMismatch);
 }
 
-void test_board_error_message_ok() {
-    assert(std::string(kfc::board_error_message(kfc::BoardError::Ok)) == "");
+TEST(BoardValidatorTest, BoardErrorMessageOk) {
+    EXPECT_EQ(std::string(kfc::board_error_message(kfc::BoardError::Ok)), "");
 }
 
-void test_parse_board_empty_lines() {
+TEST(BoardValidatorTest, ParseBoardEmptyLines) {
     kfc::BoardModel board;
-    assert(kfc::parse_board_rows({}, board) == kfc::BoardError::Ok);
-    assert(board.rows() == 0);
+    EXPECT_EQ(kfc::parse_board_rows({}, board), kfc::BoardError::Ok);
+    EXPECT_EQ(board.rows(), 0);
 }
 
-void test_board_model_equality() {
+TEST(BoardModelTest, BoardModelEquality) {
     const kfc::BoardModel left = make_board({{"wK", ".", "bK"}});
     const kfc::BoardModel same = make_board({{"wK", ".", "bK"}});
     const kfc::BoardModel different = make_board({{"wK", ".", "."}});
-    assert(left == same);
-    assert(!(left == different));
+    EXPECT_EQ(left, same);
+    EXPECT_FALSE(left == different);
 }
 
-void test_board_model_contains_negative() {
+TEST(BoardModelTest, BoardModelContainsNegative) {
     const kfc::BoardModel board = make_board({{"wK", ".", "bK"}});
-    assert(!board.contains(-1, 0));
-    assert(!board.contains(0, -1));
-    assert(board.contains(0, 0));
-    assert(board.contains(0, 2));
+    EXPECT_FALSE(board.contains(-1, 0));
+    EXPECT_FALSE(board.contains(0, -1));
+    EXPECT_TRUE(board.contains(0, 0));
+    EXPECT_TRUE(board.contains(0, 2));
 }
 
-void test_piece_from_token_invalid() {
-    assert(!kfc::Piece::from_token("xZ").has_value());
-    assert(!kfc::Piece::from_token("wX").has_value());
-    assert(!kfc::Piece::from_token("").has_value());
-    assert(!kfc::Piece::from_token("w").has_value());
-    assert(!kfc::Piece::from_token("abc").has_value());
+TEST(PieceTest, PieceFromTokenInvalid) {
+    EXPECT_FALSE(kfc::Piece::from_token("xZ").has_value());
+    EXPECT_FALSE(kfc::Piece::from_token("wX").has_value());
+    EXPECT_FALSE(kfc::Piece::from_token("").has_value());
+    EXPECT_FALSE(kfc::Piece::from_token("w").has_value());
+    EXPECT_FALSE(kfc::Piece::from_token("abc").has_value());
 }
 
-void test_piece_to_token() {
-    assert(kfc::Piece::empty().to_token() == ".");
+TEST(PieceTest, PieceToToken) {
+    EXPECT_EQ(kfc::Piece::empty().to_token(), ".");
     const std::optional<kfc::Piece> piece = kfc::Piece::from_token("bR");
-    assert(piece.has_value());
-    assert(piece->to_token() == "bR");
+    ASSERT_TRUE(piece.has_value());
+    EXPECT_EQ(piece->to_token(), "bR");
 }
 
-void test_piece_color_helpers() {
+TEST(PieceTest, PieceColorHelpers) {
     const kfc::Piece white = *kfc::Piece::from_token("wN");
     const kfc::Piece black = *kfc::Piece::from_token("bN");
     const kfc::Piece empty = kfc::Piece::empty();
-    assert(white.is_white());
-    assert(!white.is_black());
-    assert(black.is_black());
-    assert(white.is_same_color_as(white));
-    assert(!white.is_same_color_as(black));
-    assert(!white.is_same_color_as(empty));
-    assert(white.is_opponent_of(black));
-    assert(!white.is_opponent_of(white));
-    assert(white != black);
-    assert(white == white);
+    EXPECT_TRUE(white.is_white());
+    EXPECT_FALSE(white.is_black());
+    EXPECT_TRUE(black.is_black());
+    EXPECT_TRUE(white.is_same_color_as(white));
+    EXPECT_FALSE(white.is_same_color_as(black));
+    EXPECT_FALSE(white.is_same_color_as(empty));
+    EXPECT_TRUE(white.is_opponent_of(black));
+    EXPECT_FALSE(white.is_opponent_of(white));
+    EXPECT_NE(white, black);
+    EXPECT_EQ(white, white);
 }
 
-void test_bishop_diagonal_move() {
+TEST(MoveValidatorTest, BishopDiagonalMove) {
     const kfc::BoardModel board = make_board({{".", ".", "."}, {".", "wB", "."}, {".", ".", "."}});
-    assert(kfc::is_legal_move(board, 'B', 1, 1, 0, 0));
-    assert(kfc::is_legal_move(board, 'B', 1, 1, 2, 2));
-    assert(!kfc::is_legal_move(board, 'B', 1, 1, 1, 2));
-    assert(!kfc::is_legal_move(board, 'B', 1, 1, 2, 1));
+    EXPECT_TRUE(kfc::is_legal_move(board, 'B', 1, 1, 0, 0));
+    EXPECT_TRUE(kfc::is_legal_move(board, 'B', 1, 1, 2, 2));
+    EXPECT_FALSE(kfc::is_legal_move(board, 'B', 1, 1, 1, 2));
+    EXPECT_FALSE(kfc::is_legal_move(board, 'B', 1, 1, 2, 1));
 }
 
-void test_bishop_blocked_by_piece() {
+TEST(MoveValidatorTest, BishopBlockedByPiece) {
     const kfc::BoardModel board = make_board({{"wP", ".", "."}, {".", "wB", "."}, {".", ".", "."}});
-    assert(!kfc::is_legal_move(board, 'B', 1, 1, 0, 0));
+    EXPECT_FALSE(kfc::is_legal_move(board, 'B', 1, 1, 0, 0));
 }
 
-void test_bishop_captures_enemy() {
+TEST(MoveValidatorTest, BishopCapturesEnemy) {
     const kfc::BoardModel board = make_board({{".", ".", "bP"}, {".", "wB", "."}, {".", ".", "."}});
-    assert(kfc::is_legal_move(board, 'B', 1, 1, 0, 2));
+    EXPECT_TRUE(kfc::is_legal_move(board, 'B', 1, 1, 0, 2));
 }
 
-void test_queen_straight_and_diagonal_moves() {
+TEST(MoveValidatorTest, QueenStraightAndDiagonalMoves) {
     const kfc::BoardModel board =
         make_board({{".", ".", ".", "."}, {".", "wQ", ".", "."}, {".", ".", ".", "."}});
-    assert(kfc::is_legal_move(board, 'Q', 1, 1, 1, 3));
-    assert(kfc::is_legal_move(board, 'Q', 1, 1, 0, 0));
-    assert(!kfc::is_legal_move(board, 'Q', 1, 1, 0, 3));
+    EXPECT_TRUE(kfc::is_legal_move(board, 'Q', 1, 1, 1, 3));
+    EXPECT_TRUE(kfc::is_legal_move(board, 'Q', 1, 1, 0, 0));
+    EXPECT_FALSE(kfc::is_legal_move(board, 'Q', 1, 1, 0, 3));
 }
 
-void test_queen_blocked_by_friendly_piece() {
+TEST(MoveValidatorTest, QueenBlockedByFriendlyPiece) {
     const kfc::BoardModel board = make_board({{".", "wP", ".", "."}, {".", "wQ", ".", "."}});
-    assert(!kfc::is_legal_move(board, 'Q', 1, 1, 0, 1));
+    EXPECT_FALSE(kfc::is_legal_move(board, 'Q', 1, 1, 0, 1));
 }
 
-void test_for_each_cell_on_path() {
+TEST(PathUtilsTest, ForEachCellOnPath) {
     std::vector<std::pair<int, int>> cells;
     kfc::for_each_cell_on_path(0, 0, 0, 3, [&](int row, int col) {
         cells.emplace_back(row, col);
     });
-    assert(cells.size() == 2);
-    assert(cells[0] == std::make_pair(0, 1));
-    assert(cells[1] == std::make_pair(0, 2));
+    EXPECT_EQ(cells.size(), 2);
+    EXPECT_EQ(cells[0], std::make_pair(0, 1));
+    EXPECT_EQ(cells[1], std::make_pair(0, 2));
 
     cells.clear();
     kfc::for_each_cell_on_path(0, 0, 2, 2, [&](int row, int col) {
         cells.emplace_back(row, col);
     });
-    assert(cells.size() == 1);
-    assert(cells[0] == std::make_pair(1, 1));
+    EXPECT_EQ(cells.size(), 1);
+    EXPECT_EQ(cells[0], std::make_pair(1, 1));
 }
 
-void test_paths_share_cell_on_overlapping_routes() {
-    assert(kfc::paths_share_cell({0, 0}, {0, 3}, {0, 1}, {0, 4}));
-    assert(kfc::paths_share_cell({0, 0}, {2, 2}, {0, 2}, {2, 0}));
-    assert(!kfc::paths_share_cell({0, 0}, {0, 2}, {1, 0}, {1, 2}));
+TEST(PathUtilsTest, PathsShareCellOnOverlappingRoutes) {
+    EXPECT_TRUE(kfc::paths_share_cell({0, 0}, {0, 3}, {0, 1}, {0, 4}));
+    EXPECT_TRUE(kfc::paths_share_cell({0, 0}, {2, 2}, {0, 2}, {2, 0}));
+    EXPECT_FALSE(kfc::paths_share_cell({0, 0}, {0, 2}, {1, 0}, {1, 2}));
 }
 
-void test_paths_share_cell_non_straight_paths() {
-    assert(kfc::paths_share_cell({0, 0}, {0, 2}, {0, 2}, {2, 2}));
-    assert(!kfc::paths_share_cell({0, 0}, {0, 1}, {2, 0}, {2, 1}));
+TEST(PathUtilsTest, PathsShareCellNonStraightPaths) {
+    EXPECT_TRUE(kfc::paths_share_cell({0, 0}, {0, 2}, {0, 2}, {2, 2}));
+    EXPECT_FALSE(kfc::paths_share_cell({0, 0}, {0, 1}, {2, 0}, {2, 1}));
 }
 
-void test_command_processor_wait_without_ms() {
+TEST(CommandProcessorTest, CommandProcessorWaitWithoutMs) {
     kfc::GameState state(make_board({{"wK", ".", "bK"}}));
     kfc::CommandProcessor processor(state);
     std::ostringstream sink;
 
-    assert(state.clock_ms() == 0);
+    EXPECT_EQ(state.clock_ms(), 0);
     processor.execute("wait", sink);
-    assert(state.clock_ms() == 0);
+    EXPECT_EQ(state.clock_ms(), 0);
 }
 
-void test_command_processor_unknown_verb() {
+TEST(CommandProcessorTest, CommandProcessorUnknownVerb) {
     kfc::GameState state(make_board({{"wK", ".", "bK"}}));
     kfc::CommandProcessor processor(state);
     std::ostringstream sink;
 
     processor.execute("foobar 1 2", sink);
-    assert(!state.has_selection());
-    assert(state.clock_ms() == 0);
+    EXPECT_FALSE(state.has_selection());
+    EXPECT_EQ(state.clock_ms(), 0);
 }
 
-void test_game_state_custom_rules() {
+TEST(GameStateTest, GameStateCustomRules) {
     kfc::GameRules rules;
     rules.is_legal_move = kfc::is_legal_move;
     rules.on_reach_last_row = [](kfc::Piece piece, std::size_t, std::size_t) { return piece; };
@@ -912,20 +895,20 @@ void test_game_state_custom_rules() {
     kfc::GameState state(board, rules);
     state.select(0, 0);
     state.move_selected_to(0, 2);
-    assert(state.is_piece_moving(0, 0));
+    EXPECT_TRUE(state.is_piece_moving(0, 0));
 
     state.add_clock(1000);
-    assert_token(state, 0, 2, "wR");
-    assert(!state.is_game_over());
+    EXPECT_EQ(state.token_at(0, 2), "wR");
+    EXPECT_FALSE(state.is_game_over());
 
     state.select(0, 2);
     state.jump_selected();
-    assert(state.is_piece_jumping(0, 2));
+    EXPECT_TRUE(state.is_piece_jumping(0, 2));
     state.add_clock(300);
-    assert(!state.is_piece_jumping(0, 2));
+    EXPECT_FALSE(state.is_piece_jumping(0, 2));
 }
 
-void test_jump_command_too_late_does_not_save_piece() {
+TEST(CommandProcessorTest, JumpCommandTooLateDoesNotSavePiece) {
     kfc::BoardModel board = make_board({{".", ".", "."}, {"wK", ".", "bR"}, {".", ".", "."}});
     kfc::GameState state(board);
     kfc::CommandProcessor processor(state);
@@ -938,160 +921,159 @@ void test_jump_command_too_late_does_not_save_piece() {
 
     std::ostringstream output;
     processor.execute("print board", output);
-    assert(output.str() == ". . .\nbR . .\n. . .");
+    EXPECT_EQ(output.str(), ". . .\nbR . .\n. . .");
 }
 
-void test_is_valid_token_invalid_color() {
-    assert(!kfc::is_valid_token("xK"));
-    assert(!kfc::is_valid_token("zP"));
+TEST(BoardValidatorTest, IsValidTokenInvalidColor) {
+    EXPECT_FALSE(kfc::is_valid_token("xK"));
+    EXPECT_FALSE(kfc::is_valid_token("zP"));
 }
 
-void test_piece_opponent_of_empty() {
+TEST(PieceTest, PieceOpponentOfEmpty) {
     const kfc::Piece white = *kfc::Piece::from_token("wK");
     const kfc::Piece empty = kfc::Piece::empty();
-    assert(!white.is_opponent_of(empty));
-    assert(!empty.is_opponent_of(white));
+    EXPECT_FALSE(white.is_opponent_of(empty));
+    EXPECT_FALSE(empty.is_opponent_of(white));
 }
 
-void test_illegal_move_empty_board() {
+TEST(MoveValidatorTest, IllegalMoveEmptyBoard) {
     const kfc::BoardModel board;
-    assert(!kfc::is_legal_move(board, 'K', 0, 0, 0, 1));
+    EXPECT_FALSE(kfc::is_legal_move(board, 'K', 0, 0, 0, 1));
 }
 
-void test_illegal_move_same_cell() {
+TEST(MoveValidatorTest, IllegalMoveSameCell) {
     const kfc::BoardModel board = make_board({{"wK", ".", "bK"}});
-    assert(!kfc::is_legal_move(board, 'K', 0, 0, 0, 0));
+    EXPECT_FALSE(kfc::is_legal_move(board, 'K', 0, 0, 0, 0));
 }
 
-void test_illegal_move_unknown_piece_type() {
+TEST(MoveValidatorTest, IllegalMoveUnknownPieceType) {
     const kfc::BoardModel board = make_board({{"wK", ".", "bK"}});
-    assert(!kfc::is_legal_move(board, 'X', 0, 0, 0, 1));
+    EXPECT_FALSE(kfc::is_legal_move(board, 'X', 0, 0, 0, 1));
 }
 
-void test_parse_board_empty_row_tokens() {
+TEST(BoardValidatorTest, ParseBoardEmptyRowTokens) {
     const std::vector<std::string> lines = {""};
     kfc::BoardModel board;
-    assert(kfc::parse_board_rows(lines, board) == kfc::BoardError::RowWidthMismatch);
+    EXPECT_EQ(kfc::parse_board_rows(lines, board), kfc::BoardError::RowWidthMismatch);
 }
 
-void test_board_model_in_bounds_empty_board() {
+TEST(BoardModelTest, BoardModelInBoundsEmptyBoard) {
     const kfc::BoardModel board;
-    assert(!board.is_in_bounds(0, 0));
-    assert(!board.contains(0, 0));
-    assert(!board.contains(5, 5));
+    EXPECT_FALSE(board.is_in_bounds(0, 0));
+    EXPECT_FALSE(board.contains(0, 0));
+    EXPECT_FALSE(board.contains(5, 5));
 }
 
-void test_board_model_contains_out_of_bounds() {
+TEST(BoardModelTest, BoardModelContainsOutOfBounds) {
     const kfc::BoardModel board = make_board({{"wK", ".", "bK"}});
-    assert(!board.contains(0, 3));
-    assert(!board.contains(1, 0));
+    EXPECT_FALSE(board.contains(0, 3));
+    EXPECT_FALSE(board.contains(1, 0));
 }
 
-void test_board_model_equality_different_sizes() {
+TEST(BoardModelTest, BoardModelEqualityDifferentSizes) {
     const kfc::BoardModel narrow = make_board({{"wK"}});
     const kfc::BoardModel wide = make_board({{"wK", "."}});
-    assert(!(narrow == wide));
+    EXPECT_FALSE(narrow == wide);
 }
 
-void test_write_empty_board() {
+TEST(BoardWriterTest, WriteEmptyBoard) {
     std::ostringstream output;
     kfc::write_board(output, kfc::BoardModel{});
-    assert(output.str().empty());
+    EXPECT_TRUE(output.str().empty());
 }
 
-void test_write_single_row_board() {
+TEST(BoardWriterTest, WriteSingleRowBoard) {
     std::ostringstream output;
     kfc::write_board(output, make_board({{"wK", "bK"}}));
-    assert(output.str() == "wK bK");
+    EXPECT_EQ(output.str(), "wK bK");
 }
 
-void test_for_each_cell_on_path_adjacent() {
+TEST(PathUtilsTest, ForEachCellOnPathAdjacent) {
     std::vector<std::pair<int, int>> cells;
     kfc::for_each_cell_on_path(0, 0, 0, 1, [&](int row, int col) {
         cells.emplace_back(row, col);
     });
-    assert(cells.empty());
+    EXPECT_TRUE(cells.empty());
 }
 
-void test_for_each_cell_on_path_vertical() {
+TEST(PathUtilsTest, ForEachCellOnPathVertical) {
     std::vector<std::pair<int, int>> cells;
     kfc::for_each_cell_on_path(0, 0, 3, 0, [&](int row, int col) {
         cells.emplace_back(row, col);
     });
-    assert(cells.size() == 2);
-    assert(cells[0] == std::make_pair(1, 0));
-    assert(cells[1] == std::make_pair(2, 0));
+    EXPECT_EQ(cells.size(), 2);
+    EXPECT_EQ(cells[0], std::make_pair(1, 0));
+    EXPECT_EQ(cells[1], std::make_pair(2, 0));
 }
 
-void test_paths_share_cell_endpoint_overlap() {
-    assert(kfc::paths_share_cell({0, 0}, {0, 1}, {0, 1}, {0, 2}));
+TEST(PathUtilsTest, PathsShareCellEndpointOverlap) {
+    EXPECT_TRUE(kfc::paths_share_cell({0, 0}, {0, 1}, {0, 1}, {0, 2}));
 }
 
-void test_collision_has_common_route_horizontal_parallel() {
+TEST(CollisionResolverTest, CollisionHasCommonRouteHorizontalParallel) {
     const kfc::PendingMove left_to_right{
         *kfc::Piece::from_token("wR"), {0, 0}, {0, 4}, 1000};
     const kfc::PendingMove middle_to_right{
         *kfc::Piece::from_token("bR"), {0, 2}, {0, 6}, 1000};
-    assert(kfc::CollisionResolver::has_common_route(left_to_right, middle_to_right));
+    EXPECT_TRUE(kfc::CollisionResolver::has_common_route(left_to_right, middle_to_right));
 }
 
-void test_collision_has_common_route_vertical_parallel() {
+TEST(CollisionResolverTest, CollisionHasCommonRouteVerticalParallel) {
     const kfc::PendingMove top_to_bottom{
         *kfc::Piece::from_token("wR"), {0, 0}, {4, 0}, 1000};
     const kfc::PendingMove middle_to_bottom{
         *kfc::Piece::from_token("bR"), {2, 0}, {6, 0}, 1000};
-    assert(kfc::CollisionResolver::has_common_route(top_to_bottom, middle_to_bottom));
+    EXPECT_TRUE(kfc::CollisionResolver::has_common_route(top_to_bottom, middle_to_bottom));
 }
 
-void test_collision_has_common_route_disjoint() {
+TEST(CollisionResolverTest, CollisionHasCommonRouteDisjoint) {
     const kfc::PendingMove left{
         *kfc::Piece::from_token("wR"), {0, 0}, {0, 1}, 1000};
     const kfc::PendingMove right{
         *kfc::Piece::from_token("bR"), {0, 3}, {0, 4}, 1000};
-    assert(!kfc::CollisionResolver::has_common_route(left, right));
+    EXPECT_FALSE(kfc::CollisionResolver::has_common_route(left, right));
 }
 
-void test_collision_conflicts_with_opposite_color_move() {
+TEST(CollisionResolverTest, CollisionConflictsWithOppositeColorMove) {
     std::vector<kfc::PendingMove> pending;
     pending.push_back({*kfc::Piece::from_token("bR"), {0, 2}, {0, 0}, 1000});
     const kfc::PendingMove proposed{*kfc::Piece::from_token("wR"), {0, 0}, {0, 2}, 1000};
-    assert(kfc::CollisionResolver::conflicts_with_opposite_color_move(pending, 500, 'w', proposed));
-    assert(!kfc::CollisionResolver::conflicts_with_opposite_color_move(pending, 1500, 'w',
-                                                                       proposed));
+    EXPECT_TRUE(kfc::CollisionResolver::conflicts_with_opposite_color_move(pending, 500, 'w', proposed));
+    EXPECT_FALSE(kfc::CollisionResolver::conflicts_with_opposite_color_move(pending, 1500, 'w', proposed));
 }
 
-void test_collision_same_color_destination_claimed() {
+TEST(CollisionResolverTest, CollisionSameColorDestinationClaimed) {
     std::vector<kfc::PendingMove> pending;
     pending.push_back({*kfc::Piece::from_token("wN"), {0, 0}, {0, 2}, 1000});
-    assert(kfc::CollisionResolver::is_same_color_destination_claimed(pending, 500, 'w', {0, 2}));
-    assert(!kfc::CollisionResolver::is_same_color_destination_claimed(pending, 500, 'b', {0, 2}));
-    assert(!kfc::CollisionResolver::is_same_color_destination_claimed(pending, 1500, 'w', {0, 2}));
+    EXPECT_TRUE(kfc::CollisionResolver::is_same_color_destination_claimed(pending, 500, 'w', {0, 2}));
+    EXPECT_FALSE(kfc::CollisionResolver::is_same_color_destination_claimed(pending, 500, 'b', {0, 2}));
+    EXPECT_FALSE(kfc::CollisionResolver::is_same_color_destination_claimed(pending, 1500, 'w', {0, 2}));
 }
 
-void test_collision_normal_capture_on_arrival() {
+TEST(CollisionResolverTest, CollisionNormalCaptureOnArrival) {
     kfc::BoardModel board = make_board({{"wR", ".", "bP"}});
     kfc::CollisionResolver resolver;
     const kfc::GameRules rules = kfc::KungFuChessRules::standard();
     bool game_over = false;
     const kfc::ArrivingPieceInfo arriving{
         *kfc::Piece::from_token("wR"), {0, 0}, {0, 2}};
-    assert(resolver.check_for_jump_capture(board, rules, 1000, {}, {0, 2}, arriving, game_over));
-    assert_token(board, 0, 2, "wR");
-    assert(!game_over);
+    EXPECT_TRUE(resolver.check_for_jump_capture(board, rules, 1000, {}, {0, 2}, arriving, game_over));
+    EXPECT_EQ(board.token_at(0, 2), "wR");
+    EXPECT_FALSE(game_over);
 }
 
-void test_collision_empty_destination_not_captured() {
+TEST(CollisionResolverTest, CollisionEmptyDestinationNotCaptured) {
     kfc::BoardModel board = make_board({{"wR", ".", "."}});
     kfc::CollisionResolver resolver;
     const kfc::GameRules rules = kfc::KungFuChessRules::standard();
     bool game_over = false;
     const kfc::ArrivingPieceInfo arriving{
         *kfc::Piece::from_token("wR"), {0, 0}, {0, 2}};
-    assert(!resolver.check_for_jump_capture(board, rules, 1000, {}, {0, 2}, arriving, game_over));
-    assert_token(board, 0, 0, "wR");
+    EXPECT_FALSE(resolver.check_for_jump_capture(board, rules, 1000, {}, {0, 2}, arriving, game_over));
+    EXPECT_EQ(board.token_at(0, 0), "wR");
 }
 
-void test_collision_jump_capture_sets_game_over() {
+TEST(CollisionResolverTest, CollisionJumpCaptureSetsGameOver) {
     kfc::BoardModel board = make_board({{".", ".", "."}, {"wK", ".", "."}, {".", ".", "."}});
     kfc::CollisionResolver resolver;
     const kfc::GameRules rules = kfc::KungFuChessRules::standard();
@@ -1100,11 +1082,11 @@ void test_collision_jump_capture_sets_game_over() {
     bool game_over = false;
     const kfc::ArrivingPieceInfo arriving{
         *kfc::Piece::from_token("bK"), {2, 0}, {1, 0}};
-    assert(resolver.check_for_jump_capture(board, rules, 1000, jumps, {1, 0}, arriving, game_over));
-    assert(game_over);
+    EXPECT_TRUE(resolver.check_for_jump_capture(board, rules, 1000, jumps, {1, 0}, arriving, game_over));
+    EXPECT_TRUE(game_over);
 }
 
-void test_read_vpl_multiple_commands_and_skip_blank_lines() {
+TEST(VplIoTest, ReadVplMultipleCommandsAndSkipBlankLines) {
     const std::string input =
         "Board:\n"
         "wK . bK\n"
@@ -1115,22 +1097,22 @@ void test_read_vpl_multiple_commands_and_skip_blank_lines() {
 
     std::istringstream in(input);
     const kfc::VplInput parsed = kfc::read_vpl_input(in);
-    assert(parsed.error == kfc::BoardError::Ok);
-    assert(parsed.commands.size() == 2);
-    assert(parsed.commands[0] == "wait 100");
-    assert(parsed.commands[1] == "print board");
+    EXPECT_EQ(parsed.error, kfc::BoardError::Ok);
+    EXPECT_EQ(parsed.commands.size(), 2);
+    EXPECT_EQ(parsed.commands[0], "wait 100");
+    EXPECT_EQ(parsed.commands[1], "print board");
 }
 
-void test_read_vpl_no_section_headers() {
+TEST(VplIoTest, ReadVplNoSectionHeaders) {
     const std::string input = "wK . bK\n";
     std::istringstream in(input);
     const kfc::VplInput parsed = kfc::read_vpl_input(in);
-    assert(parsed.error == kfc::BoardError::Ok);
-    assert(parsed.board.rows() == 0);
-    assert(parsed.commands.empty());
+    EXPECT_EQ(parsed.error, kfc::BoardError::Ok);
+    EXPECT_EQ(parsed.board.rows(), 0);
+    EXPECT_TRUE(parsed.commands.empty());
 }
 
-void test_read_vpl_whitespace_padded_board_line() {
+TEST(VplIoTest, ReadVplWhitespacePaddedBoardLine) {
     const std::string input =
         "Board:\n"
         "  wK . bK  \n"
@@ -1138,264 +1120,151 @@ void test_read_vpl_whitespace_padded_board_line() {
 
     std::istringstream in(input);
     const kfc::VplInput parsed = kfc::read_vpl_input(in);
-    assert(parsed.error == kfc::BoardError::Ok);
-    assert_token(parsed.board, 0, 0, "wK");
-    assert_token(parsed.board, 0, 2, "bK");
+    EXPECT_EQ(parsed.error, kfc::BoardError::Ok);
+    EXPECT_EQ(parsed.board.token_at(0, 0), "wK");
+    EXPECT_EQ(parsed.board.token_at(0, 2), "bK");
 }
 
-void test_command_processor_click_without_coords() {
+TEST(CommandProcessorTest, CommandProcessorClickWithoutCoords) {
     kfc::GameState state(make_board({{"wK", ".", "bK"}}));
     kfc::CommandProcessor processor(state);
     std::ostringstream sink;
 
     processor.execute("click", sink);
-    assert(!state.has_selection());
+    EXPECT_FALSE(state.has_selection());
 }
 
-void test_command_processor_jump_without_coords() {
+TEST(CommandProcessorTest, CommandProcessorJumpWithoutCoords) {
     kfc::GameState state(make_board({{"wK", ".", "bK"}}));
     kfc::CommandProcessor processor(state);
     std::ostringstream sink;
 
     processor.execute("jump", sink);
-    assert(!state.is_piece_jumping(0, 0));
+    EXPECT_FALSE(state.is_piece_jumping(0, 0));
 }
 
-void test_command_processor_print_partial_command_ignored() {
+TEST(CommandProcessorTest, CommandProcessorPrintPartialCommandIgnored) {
     kfc::GameState state(make_board({{"wK", ".", "bK"}}));
     kfc::CommandProcessor processor(state);
     std::ostringstream output;
 
     processor.execute("print", output);
-    assert(output.str().empty());
+    EXPECT_TRUE(output.str().empty());
     processor.execute("print foo", output);
-    assert(output.str().empty());
+    EXPECT_TRUE(output.str().empty());
 }
 
-void test_command_processor_select_empty_square() {
+TEST(CommandProcessorTest, CommandProcessorSelectEmptySquare) {
     kfc::GameState state(make_board({{"wK", ".", "bK"}}));
     kfc::CommandProcessor processor(state);
     std::ostringstream sink;
 
     processor.execute("click 150 50", sink);
-    assert(!state.has_selection());
+    EXPECT_FALSE(state.has_selection());
 }
 
-void test_command_processor_friendly_click_same_cell_jumps() {
+TEST(CommandProcessorTest, CommandProcessorFriendlyClickSameCellJumps) {
     kfc::GameState state(make_board({{"wK", ".", "bK"}}));
     kfc::CommandProcessor processor(state);
     std::ostringstream sink;
 
     processor.execute("click 50 50", sink);
-    assert(state.has_selection());
+    EXPECT_TRUE(state.has_selection());
     processor.execute("click 50 50", sink);
-    assert(!state.has_selection());
-    assert(state.is_piece_jumping(0, 0));
+    EXPECT_FALSE(state.has_selection());
+    EXPECT_TRUE(state.is_piece_jumping(0, 0));
 }
 
-void test_command_processor_jump_outside_grid() {
+TEST(CommandProcessorTest, CommandProcessorJumpOutsideGrid) {
     kfc::GameState state(make_board({{"wK", ".", "bK"}}));
     kfc::CommandProcessor processor(state);
     std::ostringstream sink;
 
     processor.execute("jump 350 50", sink);
-    assert(!state.is_piece_jumping(0, 0));
+    EXPECT_FALSE(state.is_piece_jumping(0, 0));
 }
 
-void test_command_processor_jump_on_empty_cell() {
+TEST(CommandProcessorTest, CommandProcessorJumpOnEmptyCell) {
     kfc::GameState state(make_board({{"wK", ".", "bK"}}));
     kfc::CommandProcessor processor(state);
     std::ostringstream sink;
 
     processor.execute("jump 150 50", sink);
-    assert(!state.is_piece_jumping(0, 1));
+    EXPECT_FALSE(state.is_piece_jumping(0, 1));
 }
 
-void test_game_state_select_out_of_bounds() {
+TEST(GameStateTest, GameStateSelectOutOfBounds) {
     kfc::GameState state(make_board({{"wK", ".", "bK"}}));
     state.select(99, 99);
-    assert(!state.has_selection());
+    EXPECT_FALSE(state.has_selection());
 }
 
-void test_game_state_move_and_jump_without_selection() {
+TEST(GameStateTest, GameStateMoveAndJumpWithoutSelection) {
     kfc::GameState state(make_board({{"wK", ".", "bK"}}));
     state.move_selected_to(0, 1);
     state.jump_selected();
-    assert_token(state, 0, 0, "wK");
-    assert(!state.is_piece_jumping(0, 0));
+    EXPECT_EQ(state.token_at(0, 0), "wK");
+    EXPECT_FALSE(state.is_piece_jumping(0, 0));
 }
 
-void test_game_state_jump_at_empty_cell() {
+TEST(GameStateTest, GameStateJumpAtEmptyCell) {
     kfc::GameState state(make_board({{"wK", ".", "bK"}}));
     state.jump_at(0, 1);
-    assert(!state.is_piece_jumping(0, 1));
+    EXPECT_FALSE(state.is_piece_jumping(0, 1));
 }
 
-void test_game_state_is_piece_out_of_bounds() {
+TEST(GameStateTest, GameStateIsPieceOutOfBounds) {
     kfc::GameState state(make_board({{"wK", ".", "bK"}}));
-    assert(!state.is_piece(99, 99));
+    EXPECT_FALSE(state.is_piece(99, 99));
 }
 
-void test_game_state_friendly_selection_requires_selection() {
+TEST(GameStateTest, GameStateFriendlySelectionRequiresSelection) {
     kfc::GameState state(make_board({{"wK", "wN", "bK"}}));
-    assert(!state.is_friendly_to_selection(0, 1));
+    EXPECT_FALSE(state.is_friendly_to_selection(0, 1));
 }
 
-void test_game_state_same_board_layout_as() {
+TEST(GameStateTest, GameStateSameBoardLayoutAs) {
     const kfc::GameState left(make_board({{"wK", ".", "bK"}}));
     const kfc::GameState right(make_board({{"wK", ".", "bK"}}));
     const kfc::GameState different(make_board({{"wK", ".", "."}}));
-    assert(left.same_board_layout_as(right));
-    assert(!left.same_board_layout_as(different));
+    EXPECT_TRUE(left.same_board_layout_as(right));
+    EXPECT_FALSE(left.same_board_layout_as(different));
 }
 
-void test_game_state_capture_move_uses_single_cell_duration() {
+TEST(GameStateTest, GameStateCaptureMoveUsesSingleCellDuration) {
     kfc::GameState state(make_board({{"wR", ".", "bP"}}));
     state.select(0, 0);
     state.move_selected_to(0, 2);
     state.add_clock(999);
-    assert_token(state, 0, 0, "wR");
-    assert_token(state, 0, 2, "bP");
+    EXPECT_EQ(state.token_at(0, 0), "wR");
+    EXPECT_EQ(state.token_at(0, 2), "bP");
     state.add_clock(1);
-    assert_token(state, 0, 0, ".");
-    assert_token(state, 0, 2, "wR");
+    EXPECT_EQ(state.token_at(0, 0), ".");
+    EXPECT_EQ(state.token_at(0, 2), "wR");
 }
 
-void test_standard_rules_configuration() {
+TEST(GameRulesTest, StandardRulesConfiguration) {
     const kfc::GameRules rules = kfc::KungFuChessRules::standard();
-    assert(rules.move_duration_ms == kfc::kMoveDurationMs);
-    assert(rules.jump_duration_ms == kfc::kJumpDurationMs);
-    assert(rules.is_game_over(*kfc::Piece::from_token("wK")));
-    assert(rules.is_game_over(*kfc::Piece::from_token("bK")));
-    assert(!rules.is_game_over(*kfc::Piece::from_token("wP")));
+    EXPECT_EQ(rules.move_duration_ms, kfc::kMoveDurationMs);
+    EXPECT_EQ(rules.jump_duration_ms, kfc::kJumpDurationMs);
+    EXPECT_TRUE(rules.is_game_over(*kfc::Piece::from_token("wK")));
+    EXPECT_TRUE(rules.is_game_over(*kfc::Piece::from_token("bK")));
+    EXPECT_FALSE(rules.is_game_over(*kfc::Piece::from_token("wP")));
 
     const kfc::Piece white_pawn = *kfc::Piece::from_token("wP");
-    assert(rules.on_reach_last_row(white_pawn, 0, 8).type == kfc::kQueenType);
-    assert(rules.on_reach_last_row(white_pawn, 1, 8).type == kfc::kPawnType);
-    assert(rules.on_reach_last_row(*kfc::Piece::from_token("wR"), 0, 8).type == kfc::kRookType);
+    EXPECT_EQ(rules.on_reach_last_row(white_pawn, 0, 8).type, kfc::kQueenType);
+    EXPECT_EQ(rules.on_reach_last_row(white_pawn, 1, 8).type, kfc::kPawnType);
+    EXPECT_EQ(rules.on_reach_last_row(*kfc::Piece::from_token("wR"), 0, 8).type, kfc::kRookType);
 
     const kfc::Piece black_pawn = *kfc::Piece::from_token("bP");
-    assert(rules.on_reach_last_row(black_pawn, 7, 8).type == kfc::kQueenType);
+    EXPECT_EQ(rules.on_reach_last_row(black_pawn, 7, 8).type, kfc::kQueenType);
+}
+
+TEST(BoardModelTest, ValidRectangularBoard) {
+    const kfc::BoardModel board =
+        make_board({{"wK", ".", "bK"}, {".", "wN", "."}, {"bP", ".", "wR"}});
+    EXPECT_TRUE(board.is_valid());
 }
 
 }  // namespace
 
-int main() {
-    test_valid_rectangular_board();
-    test_invalid_empty_board();
-    test_invalid_non_rectangular_board();
-    test_invalid_unknown_token();
-    test_parse_board_rows_success();
-    test_parse_board_unknown_token();
-    test_parse_board_row_width_mismatch();
-    test_read_and_write_roundtrip();
-    test_invalid_board_produces_error();
-    test_board_error_message_row_width_mismatch();
-    test_board_error_message_ok();
-    test_parse_board_empty_lines();
-    test_board_model_equality();
-    test_board_model_contains_negative();
-    test_piece_from_token_invalid();
-    test_piece_to_token();
-    test_piece_color_helpers();
-    test_game_state_wait_increments_clock();
-    test_command_processor_click_select_and_move();
-    test_command_processor_click_outside_grid_ignored();
-    test_command_processor_friendly_click_replaces_selection();
-    test_command_processor_print_board();
-    test_knight_legal_l_move();
-    test_rook_cannot_move_diagonally();
-    test_king_cannot_move_more_than_one_square();
-    test_move_respects_board_boundaries();
-    test_rook_blocked_by_friendly_piece();
-    test_rook_captures_enemy_piece();
-    test_knight_jumps_over_pieces();
-    test_cannot_capture_own_piece();
-    test_bishop_diagonal_move();
-    test_bishop_blocked_by_piece();
-    test_bishop_captures_enemy();
-    test_queen_straight_and_diagonal_moves();
-    test_queen_blocked_by_friendly_piece();
-    test_for_each_cell_on_path();
-    test_paths_share_cell_on_overlapping_routes();
-    test_paths_share_cell_non_straight_paths();
-    test_command_processor_wait_without_ms();
-    test_command_processor_unknown_verb();
-    test_game_state_custom_rules();
-    test_white_pawn_forward_move();
-    test_white_pawn_blocked_forward();
-    test_white_pawn_diagonal_capture();
-    test_white_pawn_cannot_move_backward_or_forward_capture();
-    test_white_pawn_cannot_capture_own_piece();
-    test_black_pawn_forward_move();
-    test_black_pawn_blocked_forward();
-    test_black_pawn_diagonal_capture();
-    test_black_pawn_cannot_move_backward_or_forward_capture();
-    test_pawn_double_move_from_start_row();
-    test_pawn_double_move_blocked_by_intermediate_piece();
-    test_pawn_promotion_to_queen();
-    test_command_processor_capture();
-    test_command_processor_rejects_illegal_move();
-    test_pending_move_print_before_arrival();
-    test_pending_move_print_after_wait();
-    test_two_cell_move_before_and_after_arrival();
-    test_is_piece_moving_while_in_transit();
-    test_is_piece_moving_false_after_settle_no_cooldown();
-    test_click_on_moving_piece_does_not_select_or_redirect();
-    test_piece_can_move_immediately_after_settle();
-    test_opposite_colors_do_not_move_concurrently_in_common_route();
-    test_opposite_colors_can_move_on_disjoint_routes();
-    test_moving_piece_ignores_redirect();
-    test_move_aborted_if_friendly_occupies_target_before_arrival();
-    test_rejects_move_for_piece_already_in_pending_move();
-    test_rejects_two_same_color_moves_to_same_square();
-    test_king_capture_sets_game_over();
-    test_commands_ignored_after_game_over();
-    test_print_board_after_king_capture();
-    test_jump_capture_intercepts_arriving_enemy();
-    test_moving_piece_cannot_jump();
-    test_jump_status_cleared_after_duration();
-    test_jump_command_airborne_piece_captures_arriving_enemy();
-    test_jump_command_too_late_does_not_save_piece();
-    test_is_valid_token_invalid_color();
-    test_piece_opponent_of_empty();
-    test_illegal_move_empty_board();
-    test_illegal_move_same_cell();
-    test_illegal_move_unknown_piece_type();
-    test_parse_board_empty_row_tokens();
-    test_board_model_in_bounds_empty_board();
-    test_board_model_contains_out_of_bounds();
-    test_board_model_equality_different_sizes();
-    test_write_empty_board();
-    test_write_single_row_board();
-    test_for_each_cell_on_path_adjacent();
-    test_for_each_cell_on_path_vertical();
-    test_paths_share_cell_endpoint_overlap();
-    test_collision_has_common_route_horizontal_parallel();
-    test_collision_has_common_route_vertical_parallel();
-    test_collision_has_common_route_disjoint();
-    test_collision_conflicts_with_opposite_color_move();
-    test_collision_same_color_destination_claimed();
-    test_collision_normal_capture_on_arrival();
-    test_collision_empty_destination_not_captured();
-    test_collision_jump_capture_sets_game_over();
-    test_read_vpl_multiple_commands_and_skip_blank_lines();
-    test_read_vpl_no_section_headers();
-    test_read_vpl_whitespace_padded_board_line();
-    test_command_processor_click_without_coords();
-    test_command_processor_jump_without_coords();
-    test_command_processor_print_partial_command_ignored();
-    test_command_processor_select_empty_square();
-    test_command_processor_friendly_click_same_cell_jumps();
-    test_command_processor_jump_outside_grid();
-    test_command_processor_jump_on_empty_cell();
-    test_game_state_select_out_of_bounds();
-    test_game_state_move_and_jump_without_selection();
-    test_game_state_jump_at_empty_cell();
-    test_game_state_is_piece_out_of_bounds();
-    test_game_state_friendly_selection_requires_selection();
-    test_game_state_same_board_layout_as();
-    test_game_state_capture_move_uses_single_cell_duration();
-    test_standard_rules_configuration();
-    return 0;
-}
