@@ -1,48 +1,35 @@
 #pragma once
 
 #include "board_model.h"
+#include "collision_resolver.h"
 #include "game_rules.h"
+#include "move_scheduler.h"
 
 #include <cstdint>
+#include <iosfwd>
 #include <optional>
+#include <string>
 #include <utility>
-#include <vector>
 
 namespace kfc {
-
-struct PendingMove {
-    Piece piece;
-    std::pair<std::size_t, std::size_t> start_pos;
-    std::pair<std::size_t, std::size_t> end_pos;
-    std::int64_t arrival_time = 0;
-};
-
-struct JumpState {
-    Piece piece;
-    std::pair<std::size_t, std::size_t> cell;
-    std::int64_t arrival_time = 0;
-};
-
-struct ArrivingPieceInfo {
-    Piece piece;
-    std::pair<std::size_t, std::size_t> start_pos;
-    std::pair<std::size_t, std::size_t> end_pos;
-};
 
 class GameState {
 public:
     explicit GameState(BoardModel board);
     GameState(BoardModel board, GameRules rules);
 
-    [[nodiscard]] const BoardModel& board() const noexcept { return board_; }
     [[nodiscard]] const GameRules& rules() const noexcept { return rules_; }
+    [[nodiscard]] std::size_t rows() const noexcept { return board_.rows(); }
+    [[nodiscard]] std::size_t cols() const noexcept { return board_.cols(); }
     [[nodiscard]] Piece piece_at(std::size_t row, std::size_t col) const;
+    [[nodiscard]] std::string token_at(std::size_t row, std::size_t col) const;
     [[nodiscard]] bool is_empty(std::size_t row, std::size_t col) const;
     void set_piece(std::size_t row, std::size_t col, Piece piece);
 
-    [[nodiscard]] std::int64_t clock_ms() const noexcept { return clock_ms_; }
+    [[nodiscard]] std::int64_t clock_ms() const noexcept { return scheduler_.clock_ms(); }
     [[nodiscard]] bool has_selection() const noexcept { return selected_.has_value(); }
     [[nodiscard]] bool is_game_over() const noexcept { return game_over_; }
+    [[nodiscard]] bool same_board_layout_as(const GameState& other) const noexcept;
 
     [[nodiscard]] bool selection(std::size_t& row, std::size_t& col) const;
     [[nodiscard]] bool is_in_bounds(std::size_t row, std::size_t col) const noexcept;
@@ -51,9 +38,6 @@ public:
     [[nodiscard]] bool is_piece_jumping(std::size_t row, std::size_t col) const;
     [[nodiscard]] bool is_selectable_piece(std::size_t row, std::size_t col) const;
     [[nodiscard]] bool is_friendly_to_selection(std::size_t row, std::size_t col) const;
-    [[nodiscard]] bool is_square_claimed_by_same_color_pending_move(std::size_t row,
-                                                                    std::size_t col,
-                                                                    char color) const;
     [[nodiscard]] bool is_legal_move(int start_row, int start_col, int end_row,
                                      int end_col) const;
 
@@ -64,19 +48,17 @@ public:
     void move_selected_to(std::size_t to_row, std::size_t to_col);
     void jump_selected();
     void jump_at(std::size_t row, std::size_t col);
+    void write_board(std::ostream& out);
 
 private:
-    void expire_jumps();
-    [[nodiscard]] bool check_for_jump_capture(
-        const std::pair<std::size_t, std::size_t>& target_cell,
-        const ArrivingPieceInfo& arriving_piece_info);
+    [[nodiscard]] bool can_move_selected_to(std::size_t from_row, std::size_t from_col,
+                                            std::size_t to_row, std::size_t to_col) const;
 
     BoardModel board_;
     GameRules rules_;
+    MoveScheduler scheduler_;
+    CollisionResolver collision_resolver_;
     std::optional<std::pair<std::size_t, std::size_t>> selected_;
-    std::vector<PendingMove> pending_moves_;
-    std::vector<JumpState> active_jumps_;
-    std::int64_t clock_ms_ = 0;
     bool game_over_ = false;
 };
 

@@ -1,6 +1,6 @@
 #include "command_processor.h"
 
-#include "vpl_io.h"
+#include "game_config.h"
 
 #include <sstream>
 #include <string>
@@ -40,7 +40,7 @@ void CommandProcessor::execute(const std::string& command, std::ostream& out) {
         return;
     }
 
-    if (verb == "print" && command == "print board") {
+    if (verb == "print" && command == kPrintBoardCommand) {
         handle_print_board(out);
     }
 }
@@ -57,28 +57,40 @@ void CommandProcessor::handle_click(int x, int y) {
     }
 
     if (!state_.has_selection()) {
-        if (state_.is_selectable_piece(row, col)) {
-            state_.select(row, col);
-        }
+        handle_select(row, col);
         return;
     }
 
     if (state_.is_friendly_to_selection(row, col)) {
-        std::size_t from_row = 0;
-        std::size_t from_col = 0;
-        if (state_.selection(from_row, from_col) && from_row == row && from_col == col) {
-            if (state_.is_piece_moving(from_row, from_col) ||
-                state_.is_piece_jumping(from_row, from_col)) {
-                return;
-            }
-            state_.jump_selected();
-            return;
-        }
-
-        state_.select(row, col);
+        handle_friendly_click(row, col);
         return;
     }
 
+    handle_move_attempt(row, col);
+}
+
+void CommandProcessor::handle_select(std::size_t row, std::size_t col) {
+    if (state_.is_selectable_piece(row, col)) {
+        state_.select(row, col);
+    }
+}
+
+void CommandProcessor::handle_friendly_click(std::size_t row, std::size_t col) {
+    std::size_t from_row = 0;
+    std::size_t from_col = 0;
+    if (state_.selection(from_row, from_col) && from_row == row && from_col == col) {
+        if (state_.is_piece_moving(from_row, from_col) ||
+            state_.is_piece_jumping(from_row, from_col)) {
+            return;
+        }
+        state_.jump_selected();
+        return;
+    }
+
+    state_.select(row, col);
+}
+
+void CommandProcessor::handle_move_attempt(std::size_t row, std::size_t col) {
     std::size_t from_row = 0;
     std::size_t from_col = 0;
     if (!state_.selection(from_row, from_col)) {
@@ -86,16 +98,6 @@ void CommandProcessor::handle_click(int x, int y) {
     }
 
     if (state_.is_piece_moving(from_row, from_col) || state_.is_piece_jumping(from_row, from_col)) {
-        return;
-    }
-
-    const Piece moving = state_.piece_at(from_row, from_col);
-    if (!state_.is_legal_move(static_cast<int>(from_row), static_cast<int>(from_col),
-                              static_cast<int>(row), static_cast<int>(col))) {
-        return;
-    }
-
-    if (state_.is_square_claimed_by_same_color_pending_move(row, col, moving.color)) {
         return;
     }
 
@@ -130,8 +132,7 @@ void CommandProcessor::handle_wait(std::int64_t ms) {
 }
 
 void CommandProcessor::handle_print_board(std::ostream& out) {
-    state_.settle_pending_moves();
-    write_board(out, state_.board());
+    state_.write_board(out);
 }
 
 bool CommandProcessor::pixel_to_cell(int x, int y, std::size_t& row, std::size_t& col) const {
@@ -139,14 +140,13 @@ bool CommandProcessor::pixel_to_cell(int x, int y, std::size_t& row, std::size_t
         return false;
     }
 
-    const BoardModel& board = state_.board();
-    if (board.rows() == 0 || board.cols() == 0) {
+    if (state_.rows() == 0 || state_.cols() == 0) {
         return false;
     }
 
     col = static_cast<std::size_t>(x) / static_cast<std::size_t>(kCellPixelSize);
     row = static_cast<std::size_t>(y) / static_cast<std::size_t>(kCellPixelSize);
-    return col < board.cols() && row < board.rows();
+    return col < state_.cols() && row < state_.rows();
 }
 
 }  // namespace kfc

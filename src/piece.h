@@ -13,6 +13,10 @@ struct Piece {
     [[nodiscard]] std::string to_token() const;
     [[nodiscard]] bool is_empty() const noexcept { return type == '\0'; }
     [[nodiscard]] static Piece empty() noexcept;
+    [[nodiscard]] bool is_white() const noexcept;
+    [[nodiscard]] bool is_black() const noexcept;
+    [[nodiscard]] bool is_same_color_as(const Piece& other) const noexcept;
+    [[nodiscard]] bool is_opponent_of(const Piece& other) const noexcept;
 };
 
 [[nodiscard]] bool is_valid_token(const std::string& token) noexcept;

@@ -1,13 +1,31 @@
 #include "piece.h"
 
+#include "game_config.h"
+
 namespace kfc {
 
 Piece Piece::empty() noexcept {
     return {};
 }
 
+bool Piece::is_white() const noexcept {
+    return color == kWhiteColor;
+}
+
+bool Piece::is_black() const noexcept {
+    return color == kBlackColor;
+}
+
+bool Piece::is_same_color_as(const Piece& other) const noexcept {
+    return !is_empty() && !other.is_empty() && color == other.color;
+}
+
+bool Piece::is_opponent_of(const Piece& other) const noexcept {
+    return !is_empty() && !other.is_empty() && color != other.color;
+}
+
 bool is_valid_token(const std::string& token) noexcept {
-    if (token == ".") {
+    if (token.size() == 1 && token[0] == kEmptyToken) {
         return true;
     }
     if (token.size() != 2) {
@@ -16,17 +34,17 @@ bool is_valid_token(const std::string& token) noexcept {
 
     const char color = token[0];
     const char piece = token[1];
-    if (color != 'w' && color != 'b') {
+    if (color != kWhiteColor && color != kBlackColor) {
         return false;
     }
 
     switch (piece) {
-        case 'K':
-        case 'Q':
-        case 'R':
-        case 'B':
-        case 'N':
-        case 'P':
+        case kKingType:
+        case kQueenType:
+        case kRookType:
+        case kBishopType:
+        case kKnightType:
+        case kPawnType:
             return true;
         default:
             return false;
@@ -34,7 +52,7 @@ bool is_valid_token(const std::string& token) noexcept {
 }
 
 std::optional<Piece> Piece::from_token(const std::string& token) {
-    if (token == ".") {
+    if (token.size() == 1 && token[0] == kEmptyToken) {
         return empty();
     }
     if (!is_valid_token(token)) {
@@ -45,7 +63,7 @@ std::optional<Piece> Piece::from_token(const std::string& token) {
 
 std::string Piece::to_token() const {
     if (is_empty()) {
-        return ".";
+        return std::string{kEmptyToken};
     }
     return std::string{color, type};
 }

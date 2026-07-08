@@ -1,37 +1,25 @@
 #include "move_validator.h"
 
+#include "game_config.h"
+#include "path_utils.h"
+
 #include <cstdlib>
 
 namespace kfc {
 
 namespace {
 
-[[nodiscard]] bool is_in_bounds(const BoardModel& board, int row, int col) noexcept {
-    if (row < 0 || col < 0) {
-        return false;
-    }
-    const auto urow = static_cast<std::size_t>(row);
-    const auto ucol = static_cast<std::size_t>(col);
-    return board.is_in_bounds(urow, ucol);
-}
-
 [[nodiscard]] bool is_path_clear(const BoardModel& board, int start_row, int start_col,
                                  int end_row, int end_col) {
-    const int dr = end_row - start_row;
-    const int dc = end_col - start_col;
-    const int step_r = (dr == 0) ? 0 : (dr > 0 ? 1 : -1);
-    const int step_c = (dc == 0) ? 0 : (dc > 0 ? 1 : -1);
-
-    int row = start_row + step_r;
-    int col = start_col + step_c;
-    while (row != end_row || col != end_col) {
-        if (!board.is_empty(static_cast<std::size_t>(row), static_cast<std::size_t>(col))) {
-            return false;
-        }
-        row += step_r;
-        col += step_c;
-    }
-    return true;
+    bool clear = true;
+    for_each_cell_on_path(start_row, start_col, end_row, end_col,
+                          [&](int row, int col) {
+                              if (!board.is_empty(static_cast<std::size_t>(row),
+                                                  static_cast<std::size_t>(col))) {
+                                  clear = false;
+                              }
+                          });
+    return clear;
 }
 
 [[nodiscard]] bool is_king_move(int dr, int dc) noexcept {
@@ -81,7 +69,7 @@ namespace {
     if (board.rows() == 0) {
         return false;
     }
-    if (pawn_color == 'w') {
+    if (pawn_color == kWhiteColor) {
         return start_row == static_cast<int>(board.rows()) - 1;
     }
     return start_row == 0;
@@ -92,9 +80,8 @@ namespace {
     const int dr = end_row - start_row;
     const int dc = end_col - start_col;
 
-    const char pawn_color =
-        board.piece_at(static_cast<std::size_t>(start_row), static_cast<std::size_t>(start_col))
-            .color;
+    const Piece moving =
+        board.piece_at(static_cast<std::size_t>(start_row), static_cast<std::size_t>(start_col));
     const Piece dest =
         board.piece_at(static_cast<std::size_t>(end_row), static_cast<std::size_t>(end_col));
 
@@ -103,19 +90,20 @@ namespace {
             return false;
         }
 
-        if (pawn_color == 'w' && dr == -1) {
+        if (moving.is_white() && dr == -1) {
             return true;
         }
-        if (pawn_color == 'b' && dr == 1) {
+        if (moving.is_black() && dr == 1) {
             return true;
         }
 
-        if (pawn_color == 'w' && dr == -2 && is_pawn_start_row(board, pawn_color, start_row)) {
+        if (moving.is_white() && dr == -2 &&
+            is_pawn_start_row(board, moving.color, start_row)) {
             const int mid_row = start_row - 1;
             return board.is_empty(static_cast<std::size_t>(mid_row),
                                   static_cast<std::size_t>(start_col));
         }
-        if (pawn_color == 'b' && dr == 2 && is_pawn_start_row(board, pawn_color, start_row)) {
+        if (moving.is_black() && dr == 2 && is_pawn_start_row(board, moving.color, start_row)) {
             const int mid_row = start_row + 1;
             return board.is_empty(static_cast<std::size_t>(mid_row),
                                   static_cast<std::size_t>(start_col));
@@ -128,11 +116,11 @@ namespace {
         if (dest.is_empty()) {
             return false;
         }
-        if (pawn_color == 'w' && dr == -1) {
-            return dest.color != 'w';
+        if (moving.is_white() && dr == -1) {
+            return dest.is_black();
         }
-        if (pawn_color == 'b' && dr == 1) {
-            return dest.color != 'b';
+        if (moving.is_black() && dr == 1) {
+            return dest.is_white();
         }
     }
 
@@ -146,10 +134,9 @@ namespace {
     if (dest.is_empty()) {
         return true;
     }
-    const char moving_color =
-        board.piece_at(static_cast<std::size_t>(start_row), static_cast<std::size_t>(start_col))
-            .color;
-    return dest.color != moving_color;
+    const Piece moving =
+        board.piece_at(static_cast<std::size_t>(start_row), static_cast<std::size_t>(start_col));
+    return moving.is_opponent_of(dest);
 }
 
 }  // namespace
@@ -159,7 +146,7 @@ bool is_legal_move(const BoardModel& board, char piece, int start_row, int start
     if (board.rows() == 0 || board.cols() == 0) {
         return false;
     }
-    if (!is_in_bounds(board, start_row, start_col) || !is_in_bounds(board, end_row, end_col)) {
+    if (!board.contains(start_row, start_col) || !board.contains(end_row, end_col)) {
         return false;
     }
     if (start_row == end_row && start_col == end_col) {
@@ -170,29 +157,29 @@ bool is_legal_move(const BoardModel& board, char piece, int start_row, int start
     const int dc = end_col - start_col;
 
     switch (piece) {
-        case 'P':
+        case kPawnType:
             return is_pawn_move(board, start_row, start_col, end_row, end_col);
-        case 'K':
+        case kKingType:
             if (!is_king_move(dr, dc)) {
                 return false;
             }
             break;
-        case 'R':
+        case kRookType:
             if (!is_rook_move(board, start_row, start_col, end_row, end_col)) {
                 return false;
             }
             break;
-        case 'B':
+        case kBishopType:
             if (!is_bishop_move(board, start_row, start_col, end_row, end_col)) {
                 return false;
             }
             break;
-        case 'Q':
+        case kQueenType:
             if (!is_queen_move(board, start_row, start_col, end_row, end_col)) {
                 return false;
             }
             break;
-        case 'N':
+        case kKnightType:
             if (!is_knight_move(dr, dc)) {
                 return false;
             }

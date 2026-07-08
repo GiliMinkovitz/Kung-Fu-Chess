@@ -1,3 +1,4 @@
+#include "game_config.h"
 #include "vpl_io.h"
 #include "command_processor.h"
 #include "game_state.h"
@@ -19,7 +20,7 @@ int main() {
 
     for (const std::string& command : input.commands) {
         processor.execute(command, std::cout);
-        if (command == "print board") {
+        if (command == kfc::kPrintBoardCommand) {
             std::cout << '\n';
         }
     }

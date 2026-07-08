@@ -16,6 +16,7 @@ public:
         return cells_.empty() ? 0 : cells_.front().size();
     }
     [[nodiscard]] bool is_in_bounds(std::size_t row, std::size_t col) const noexcept;
+    [[nodiscard]] bool contains(int row, int col) const noexcept;
     [[nodiscard]] bool is_valid() const noexcept;
 
     [[nodiscard]] Piece piece_at(std::size_t row, std::size_t col) const;

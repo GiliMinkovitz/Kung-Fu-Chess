@@ -8,8 +8,13 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 set(KFC_SOURCES
     src/piece.cpp
     src/board_model.cpp
+    src/board_validator.cpp
+    src/board_writer.cpp
+    src/path_utils.cpp
     src/vpl_io.cpp
     src/game_rules.cpp
+    src/move_scheduler.cpp
+    src/collision_resolver.cpp
     src/game_state.cpp
     src/command_processor.cpp
     src/move_validator.cpp

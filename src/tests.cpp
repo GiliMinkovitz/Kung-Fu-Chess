@@ -1,5 +1,8 @@
 #include "board_model.h"
+#include "board_validator.h"
+#include "board_writer.h"
 #include "command_processor.h"
+#include "game_config.h"
 #include "game_state.h"
 #include "move_validator.h"
 #include "piece.h"
@@ -8,6 +11,7 @@
 #include <cassert>
 #include <sstream>
 #include <string>
+#include <vector>
 
 namespace {
 
@@ -22,7 +26,36 @@ void assert_token(const kfc::BoardModel& board, std::size_t row, std::size_t col
 
 void assert_token(const kfc::GameState& state, std::size_t row, std::size_t col,
                   const char* token) {
-    assert(state.board().token_at(row, col) == token);
+    assert(state.token_at(row, col) == token);
+}
+
+using BoardLayout = std::vector<std::vector<std::string>>;
+
+BoardLayout capture_layout(const kfc::GameState& state) {
+    BoardLayout layout(state.rows(), std::vector<std::string>(state.cols()));
+    for (std::size_t row = 0; row < state.rows(); ++row) {
+        for (std::size_t col = 0; col < state.cols(); ++col) {
+            layout[row][col] = state.token_at(row, col);
+        }
+    }
+    return layout;
+}
+
+bool layout_matches(const kfc::GameState& state, const BoardLayout& layout) {
+    if (state.rows() != layout.size()) {
+        return false;
+    }
+    for (std::size_t row = 0; row < state.rows(); ++row) {
+        if (state.cols() != layout[row].size()) {
+            return false;
+        }
+        for (std::size_t col = 0; col < state.cols(); ++col) {
+            if (state.token_at(row, col) != layout[row][col]) {
+                return false;
+            }
+        }
+    }
+    return true;
 }
 
 void test_valid_rectangular_board() {
@@ -101,7 +134,7 @@ void test_invalid_board_produces_error() {
     std::istringstream in(input);
     const kfc::VplInput parsed = kfc::read_vpl_input(in);
     assert(parsed.error == kfc::BoardError::UnknownToken);
-    assert(std::string(kfc::board_error_message(parsed.error)) == "ERROR UNKNOWN_TOKEN");
+    assert(std::string(kfc::board_error_message(parsed.error)) == kfc::kErrorUnknownToken);
 }
 
 void test_game_state_wait_increments_clock() {
@@ -633,7 +666,7 @@ void test_commands_ignored_after_game_over() {
     processor.execute("wait 2000", sink);
     assert(state.is_game_over());
 
-    const kfc::BoardModel board_snapshot = state.board();
+    const BoardLayout board_snapshot = capture_layout(state);
     const std::int64_t clock_snapshot = state.clock_ms();
 
     processor.execute("click 150 150", sink);
@@ -642,11 +675,11 @@ void test_commands_ignored_after_game_over() {
     processor.execute("click 50 50", sink);
     processor.execute("click 250 50", sink);
     assert(!state.has_selection());
-    assert(state.board() == board_snapshot);
+    assert(layout_matches(state, board_snapshot));
 
     processor.execute("wait 5000", sink);
     assert(state.clock_ms() == clock_snapshot);
-    assert(state.board() == board_snapshot);
+    assert(layout_matches(state, board_snapshot));
 }
 
 void test_print_board_after_king_capture() {

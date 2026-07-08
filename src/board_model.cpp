@@ -11,6 +11,13 @@ bool BoardModel::is_in_bounds(std::size_t row, std::size_t col) const noexcept {
     return row < cells_.size() && col < cells_.front().size();
 }
 
+bool BoardModel::contains(int row, int col) const noexcept {
+    if (row < 0 || col < 0) {
+        return false;
+    }
+    return is_in_bounds(static_cast<std::size_t>(row), static_cast<std::size_t>(col));
+}
+
 bool BoardModel::is_valid() const noexcept {
     if (cells_.empty()) {
         return false;

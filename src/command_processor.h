@@ -14,11 +14,12 @@ public:
     void execute(const std::string& command, std::ostream& out);
 
 private:
-    static constexpr int kCellPixelSize = 100;
-
     GameState& state_;
 
     void handle_click(int x, int y);
+    void handle_select(std::size_t row, std::size_t col);
+    void handle_friendly_click(std::size_t row, std::size_t col);
+    void handle_move_attempt(std::size_t row, std::size_t col);
     void handle_jump(int x, int y);
     void handle_wait(std::int64_t ms);
     void handle_print_board(std::ostream& out);
