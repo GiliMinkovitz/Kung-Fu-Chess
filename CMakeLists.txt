@@ -40,3 +40,21 @@ endif()
 
 enable_testing()
 add_test(NAME KungFuChessTests COMMAND KungFuChessTests)
+
+option(KFC_ENABLE_COVERAGE "Generate HTML coverage report with OpenCppCoverage (MSVC only)" OFF)
+
+if(KFC_ENABLE_COVERAGE AND MSVC)
+    find_program(OPEN_CPP_COVERAGE OpenCppCoverage)
+    if(OPEN_CPP_COVERAGE)
+        add_custom_target(coverage
+            COMMAND ${OPEN_CPP_COVERAGE}
+                --sources ${CMAKE_SOURCE_DIR}/src
+                --export_type html:${CMAKE_BINARY_DIR}/coverage_report
+                -- $<TARGET_FILE:KungFuChessTests>
+            DEPENDS KungFuChessTests
+            COMMENT "Running KungFuChessTests with OpenCppCoverage"
+        )
+    else()
+        message(WARNING "OpenCppCoverage not found; install it to use the coverage target")
+    endif()
+endif()

@@ -1,10 +1,13 @@
 #include "board_model.h"
 #include "board_validator.h"
 #include "board_writer.h"
+#include "collision_resolver.h"
 #include "command_processor.h"
 #include "game_config.h"
+#include "game_rules.h"
 #include "game_state.h"
 #include "move_validator.h"
+#include "path_utils.h"
 #include "piece.h"
 #include "vpl_io.h"
 
@@ -756,6 +759,172 @@ void test_jump_command_airborne_piece_captures_arriving_enemy() {
     assert(output.str() == ". . .\nwK . .\n. . .");
 }
 
+void test_board_error_message_row_width_mismatch() {
+    assert(std::string(kfc::board_error_message(kfc::BoardError::RowWidthMismatch)) ==
+           kfc::kErrorRowWidthMismatch);
+}
+
+void test_board_error_message_ok() {
+    assert(std::string(kfc::board_error_message(kfc::BoardError::Ok)) == "");
+}
+
+void test_parse_board_empty_lines() {
+    kfc::BoardModel board;
+    assert(kfc::parse_board_rows({}, board) == kfc::BoardError::Ok);
+    assert(board.rows() == 0);
+}
+
+void test_board_model_equality() {
+    const kfc::BoardModel left = make_board({{"wK", ".", "bK"}});
+    const kfc::BoardModel same = make_board({{"wK", ".", "bK"}});
+    const kfc::BoardModel different = make_board({{"wK", ".", "."}});
+    assert(left == same);
+    assert(!(left == different));
+}
+
+void test_board_model_contains_negative() {
+    const kfc::BoardModel board = make_board({{"wK", ".", "bK"}});
+    assert(!board.contains(-1, 0));
+    assert(!board.contains(0, -1));
+    assert(board.contains(0, 0));
+    assert(board.contains(0, 2));
+}
+
+void test_piece_from_token_invalid() {
+    assert(!kfc::Piece::from_token("xZ").has_value());
+    assert(!kfc::Piece::from_token("wX").has_value());
+    assert(!kfc::Piece::from_token("").has_value());
+    assert(!kfc::Piece::from_token("w").has_value());
+    assert(!kfc::Piece::from_token("abc").has_value());
+}
+
+void test_piece_to_token() {
+    assert(kfc::Piece::empty().to_token() == ".");
+    const std::optional<kfc::Piece> piece = kfc::Piece::from_token("bR");
+    assert(piece.has_value());
+    assert(piece->to_token() == "bR");
+}
+
+void test_piece_color_helpers() {
+    const kfc::Piece white = *kfc::Piece::from_token("wN");
+    const kfc::Piece black = *kfc::Piece::from_token("bN");
+    const kfc::Piece empty = kfc::Piece::empty();
+    assert(white.is_white());
+    assert(!white.is_black());
+    assert(black.is_black());
+    assert(white.is_same_color_as(white));
+    assert(!white.is_same_color_as(black));
+    assert(!white.is_same_color_as(empty));
+    assert(white.is_opponent_of(black));
+    assert(!white.is_opponent_of(white));
+    assert(white != black);
+    assert(white == white);
+}
+
+void test_bishop_diagonal_move() {
+    const kfc::BoardModel board = make_board({{".", ".", "."}, {".", "wB", "."}, {".", ".", "."}});
+    assert(kfc::is_legal_move(board, 'B', 1, 1, 0, 0));
+    assert(kfc::is_legal_move(board, 'B', 1, 1, 2, 2));
+    assert(!kfc::is_legal_move(board, 'B', 1, 1, 1, 2));
+    assert(!kfc::is_legal_move(board, 'B', 1, 1, 2, 1));
+}
+
+void test_bishop_blocked_by_piece() {
+    const kfc::BoardModel board = make_board({{"wP", ".", "."}, {".", "wB", "."}, {".", ".", "."}});
+    assert(!kfc::is_legal_move(board, 'B', 1, 1, 0, 0));
+}
+
+void test_bishop_captures_enemy() {
+    const kfc::BoardModel board = make_board({{".", ".", "bP"}, {".", "wB", "."}, {".", ".", "."}});
+    assert(kfc::is_legal_move(board, 'B', 1, 1, 0, 2));
+}
+
+void test_queen_straight_and_diagonal_moves() {
+    const kfc::BoardModel board =
+        make_board({{".", ".", ".", "."}, {".", "wQ", ".", "."}, {".", ".", ".", "."}});
+    assert(kfc::is_legal_move(board, 'Q', 1, 1, 1, 3));
+    assert(kfc::is_legal_move(board, 'Q', 1, 1, 0, 0));
+    assert(!kfc::is_legal_move(board, 'Q', 1, 1, 0, 3));
+}
+
+void test_queen_blocked_by_friendly_piece() {
+    const kfc::BoardModel board = make_board({{".", "wP", ".", "."}, {".", "wQ", ".", "."}});
+    assert(!kfc::is_legal_move(board, 'Q', 1, 1, 0, 1));
+}
+
+void test_for_each_cell_on_path() {
+    std::vector<std::pair<int, int>> cells;
+    kfc::for_each_cell_on_path(0, 0, 0, 3, [&](int row, int col) {
+        cells.emplace_back(row, col);
+    });
+    assert(cells.size() == 2);
+    assert(cells[0] == std::make_pair(0, 1));
+    assert(cells[1] == std::make_pair(0, 2));
+
+    cells.clear();
+    kfc::for_each_cell_on_path(0, 0, 2, 2, [&](int row, int col) {
+        cells.emplace_back(row, col);
+    });
+    assert(cells.size() == 1);
+    assert(cells[0] == std::make_pair(1, 1));
+}
+
+void test_paths_share_cell_on_overlapping_routes() {
+    assert(kfc::paths_share_cell({0, 0}, {0, 3}, {0, 1}, {0, 4}));
+    assert(kfc::paths_share_cell({0, 0}, {2, 2}, {0, 2}, {2, 0}));
+    assert(!kfc::paths_share_cell({0, 0}, {0, 2}, {1, 0}, {1, 2}));
+}
+
+void test_paths_share_cell_non_straight_paths() {
+    assert(kfc::paths_share_cell({0, 0}, {0, 2}, {0, 2}, {2, 2}));
+    assert(!kfc::paths_share_cell({0, 0}, {0, 1}, {2, 0}, {2, 1}));
+}
+
+void test_command_processor_wait_without_ms() {
+    kfc::GameState state(make_board({{"wK", ".", "bK"}}));
+    kfc::CommandProcessor processor(state);
+    std::ostringstream sink;
+
+    assert(state.clock_ms() == 0);
+    processor.execute("wait", sink);
+    assert(state.clock_ms() == 0);
+}
+
+void test_command_processor_unknown_verb() {
+    kfc::GameState state(make_board({{"wK", ".", "bK"}}));
+    kfc::CommandProcessor processor(state);
+    std::ostringstream sink;
+
+    processor.execute("foobar 1 2", sink);
+    assert(!state.has_selection());
+    assert(state.clock_ms() == 0);
+}
+
+void test_game_state_custom_rules() {
+    kfc::GameRules rules;
+    rules.is_legal_move = kfc::is_legal_move;
+    rules.on_reach_last_row = [](kfc::Piece piece, std::size_t, std::size_t) { return piece; };
+    rules.is_game_over = [](kfc::Piece) { return false; };
+    rules.move_duration_ms = 500;
+    rules.jump_duration_ms = 300;
+
+    kfc::BoardModel board = make_board({{"wR", ".", "."}});
+    kfc::GameState state(board, rules);
+    state.select(0, 0);
+    state.move_selected_to(0, 2);
+    assert(state.is_piece_moving(0, 0));
+
+    state.add_clock(1000);
+    assert_token(state, 0, 2, "wR");
+    assert(!state.is_game_over());
+
+    state.select(0, 2);
+    state.jump_selected();
+    assert(state.is_piece_jumping(0, 2));
+    state.add_clock(300);
+    assert(!state.is_piece_jumping(0, 2));
+}
+
 void test_jump_command_too_late_does_not_save_piece() {
     kfc::BoardModel board = make_board({{".", ".", "."}, {"wK", ".", "bR"}, {".", ".", "."}});
     kfc::GameState state(board);
@@ -772,6 +941,343 @@ void test_jump_command_too_late_does_not_save_piece() {
     assert(output.str() == ". . .\nbR . .\n. . .");
 }
 
+void test_is_valid_token_invalid_color() {
+    assert(!kfc::is_valid_token("xK"));
+    assert(!kfc::is_valid_token("zP"));
+}
+
+void test_piece_opponent_of_empty() {
+    const kfc::Piece white = *kfc::Piece::from_token("wK");
+    const kfc::Piece empty = kfc::Piece::empty();
+    assert(!white.is_opponent_of(empty));
+    assert(!empty.is_opponent_of(white));
+}
+
+void test_illegal_move_empty_board() {
+    const kfc::BoardModel board;
+    assert(!kfc::is_legal_move(board, 'K', 0, 0, 0, 1));
+}
+
+void test_illegal_move_same_cell() {
+    const kfc::BoardModel board = make_board({{"wK", ".", "bK"}});
+    assert(!kfc::is_legal_move(board, 'K', 0, 0, 0, 0));
+}
+
+void test_illegal_move_unknown_piece_type() {
+    const kfc::BoardModel board = make_board({{"wK", ".", "bK"}});
+    assert(!kfc::is_legal_move(board, 'X', 0, 0, 0, 1));
+}
+
+void test_parse_board_empty_row_tokens() {
+    const std::vector<std::string> lines = {""};
+    kfc::BoardModel board;
+    assert(kfc::parse_board_rows(lines, board) == kfc::BoardError::RowWidthMismatch);
+}
+
+void test_board_model_in_bounds_empty_board() {
+    const kfc::BoardModel board;
+    assert(!board.is_in_bounds(0, 0));
+    assert(!board.contains(0, 0));
+    assert(!board.contains(5, 5));
+}
+
+void test_board_model_contains_out_of_bounds() {
+    const kfc::BoardModel board = make_board({{"wK", ".", "bK"}});
+    assert(!board.contains(0, 3));
+    assert(!board.contains(1, 0));
+}
+
+void test_board_model_equality_different_sizes() {
+    const kfc::BoardModel narrow = make_board({{"wK"}});
+    const kfc::BoardModel wide = make_board({{"wK", "."}});
+    assert(!(narrow == wide));
+}
+
+void test_write_empty_board() {
+    std::ostringstream output;
+    kfc::write_board(output, kfc::BoardModel{});
+    assert(output.str().empty());
+}
+
+void test_write_single_row_board() {
+    std::ostringstream output;
+    kfc::write_board(output, make_board({{"wK", "bK"}}));
+    assert(output.str() == "wK bK");
+}
+
+void test_for_each_cell_on_path_adjacent() {
+    std::vector<std::pair<int, int>> cells;
+    kfc::for_each_cell_on_path(0, 0, 0, 1, [&](int row, int col) {
+        cells.emplace_back(row, col);
+    });
+    assert(cells.empty());
+}
+
+void test_for_each_cell_on_path_vertical() {
+    std::vector<std::pair<int, int>> cells;
+    kfc::for_each_cell_on_path(0, 0, 3, 0, [&](int row, int col) {
+        cells.emplace_back(row, col);
+    });
+    assert(cells.size() == 2);
+    assert(cells[0] == std::make_pair(1, 0));
+    assert(cells[1] == std::make_pair(2, 0));
+}
+
+void test_paths_share_cell_endpoint_overlap() {
+    assert(kfc::paths_share_cell({0, 0}, {0, 1}, {0, 1}, {0, 2}));
+}
+
+void test_collision_has_common_route_horizontal_parallel() {
+    const kfc::PendingMove left_to_right{
+        *kfc::Piece::from_token("wR"), {0, 0}, {0, 4}, 1000};
+    const kfc::PendingMove middle_to_right{
+        *kfc::Piece::from_token("bR"), {0, 2}, {0, 6}, 1000};
+    assert(kfc::CollisionResolver::has_common_route(left_to_right, middle_to_right));
+}
+
+void test_collision_has_common_route_vertical_parallel() {
+    const kfc::PendingMove top_to_bottom{
+        *kfc::Piece::from_token("wR"), {0, 0}, {4, 0}, 1000};
+    const kfc::PendingMove middle_to_bottom{
+        *kfc::Piece::from_token("bR"), {2, 0}, {6, 0}, 1000};
+    assert(kfc::CollisionResolver::has_common_route(top_to_bottom, middle_to_bottom));
+}
+
+void test_collision_has_common_route_disjoint() {
+    const kfc::PendingMove left{
+        *kfc::Piece::from_token("wR"), {0, 0}, {0, 1}, 1000};
+    const kfc::PendingMove right{
+        *kfc::Piece::from_token("bR"), {0, 3}, {0, 4}, 1000};
+    assert(!kfc::CollisionResolver::has_common_route(left, right));
+}
+
+void test_collision_conflicts_with_opposite_color_move() {
+    std::vector<kfc::PendingMove> pending;
+    pending.push_back({*kfc::Piece::from_token("bR"), {0, 2}, {0, 0}, 1000});
+    const kfc::PendingMove proposed{*kfc::Piece::from_token("wR"), {0, 0}, {0, 2}, 1000};
+    assert(kfc::CollisionResolver::conflicts_with_opposite_color_move(pending, 500, 'w', proposed));
+    assert(!kfc::CollisionResolver::conflicts_with_opposite_color_move(pending, 1500, 'w',
+                                                                       proposed));
+}
+
+void test_collision_same_color_destination_claimed() {
+    std::vector<kfc::PendingMove> pending;
+    pending.push_back({*kfc::Piece::from_token("wN"), {0, 0}, {0, 2}, 1000});
+    assert(kfc::CollisionResolver::is_same_color_destination_claimed(pending, 500, 'w', {0, 2}));
+    assert(!kfc::CollisionResolver::is_same_color_destination_claimed(pending, 500, 'b', {0, 2}));
+    assert(!kfc::CollisionResolver::is_same_color_destination_claimed(pending, 1500, 'w', {0, 2}));
+}
+
+void test_collision_normal_capture_on_arrival() {
+    kfc::BoardModel board = make_board({{"wR", ".", "bP"}});
+    kfc::CollisionResolver resolver;
+    const kfc::GameRules rules = kfc::KungFuChessRules::standard();
+    bool game_over = false;
+    const kfc::ArrivingPieceInfo arriving{
+        *kfc::Piece::from_token("wR"), {0, 0}, {0, 2}};
+    assert(resolver.check_for_jump_capture(board, rules, 1000, {}, {0, 2}, arriving, game_over));
+    assert_token(board, 0, 2, "wR");
+    assert(!game_over);
+}
+
+void test_collision_empty_destination_not_captured() {
+    kfc::BoardModel board = make_board({{"wR", ".", "."}});
+    kfc::CollisionResolver resolver;
+    const kfc::GameRules rules = kfc::KungFuChessRules::standard();
+    bool game_over = false;
+    const kfc::ArrivingPieceInfo arriving{
+        *kfc::Piece::from_token("wR"), {0, 0}, {0, 2}};
+    assert(!resolver.check_for_jump_capture(board, rules, 1000, {}, {0, 2}, arriving, game_over));
+    assert_token(board, 0, 0, "wR");
+}
+
+void test_collision_jump_capture_sets_game_over() {
+    kfc::BoardModel board = make_board({{".", ".", "."}, {"wK", ".", "."}, {".", ".", "."}});
+    kfc::CollisionResolver resolver;
+    const kfc::GameRules rules = kfc::KungFuChessRules::standard();
+    std::vector<kfc::JumpState> jumps;
+    jumps.push_back({*kfc::Piece::from_token("wK"), {1, 0}, 2000});
+    bool game_over = false;
+    const kfc::ArrivingPieceInfo arriving{
+        *kfc::Piece::from_token("bK"), {2, 0}, {1, 0}};
+    assert(resolver.check_for_jump_capture(board, rules, 1000, jumps, {1, 0}, arriving, game_over));
+    assert(game_over);
+}
+
+void test_read_vpl_multiple_commands_and_skip_blank_lines() {
+    const std::string input =
+        "Board:\n"
+        "wK . bK\n"
+        "Commands:\n"
+        "wait 100\n"
+        "\n"
+        "print board\n";
+
+    std::istringstream in(input);
+    const kfc::VplInput parsed = kfc::read_vpl_input(in);
+    assert(parsed.error == kfc::BoardError::Ok);
+    assert(parsed.commands.size() == 2);
+    assert(parsed.commands[0] == "wait 100");
+    assert(parsed.commands[1] == "print board");
+}
+
+void test_read_vpl_no_section_headers() {
+    const std::string input = "wK . bK\n";
+    std::istringstream in(input);
+    const kfc::VplInput parsed = kfc::read_vpl_input(in);
+    assert(parsed.error == kfc::BoardError::Ok);
+    assert(parsed.board.rows() == 0);
+    assert(parsed.commands.empty());
+}
+
+void test_read_vpl_whitespace_padded_board_line() {
+    const std::string input =
+        "Board:\n"
+        "  wK . bK  \n"
+        "Commands:\n";
+
+    std::istringstream in(input);
+    const kfc::VplInput parsed = kfc::read_vpl_input(in);
+    assert(parsed.error == kfc::BoardError::Ok);
+    assert_token(parsed.board, 0, 0, "wK");
+    assert_token(parsed.board, 0, 2, "bK");
+}
+
+void test_command_processor_click_without_coords() {
+    kfc::GameState state(make_board({{"wK", ".", "bK"}}));
+    kfc::CommandProcessor processor(state);
+    std::ostringstream sink;
+
+    processor.execute("click", sink);
+    assert(!state.has_selection());
+}
+
+void test_command_processor_jump_without_coords() {
+    kfc::GameState state(make_board({{"wK", ".", "bK"}}));
+    kfc::CommandProcessor processor(state);
+    std::ostringstream sink;
+
+    processor.execute("jump", sink);
+    assert(!state.is_piece_jumping(0, 0));
+}
+
+void test_command_processor_print_partial_command_ignored() {
+    kfc::GameState state(make_board({{"wK", ".", "bK"}}));
+    kfc::CommandProcessor processor(state);
+    std::ostringstream output;
+
+    processor.execute("print", output);
+    assert(output.str().empty());
+    processor.execute("print foo", output);
+    assert(output.str().empty());
+}
+
+void test_command_processor_select_empty_square() {
+    kfc::GameState state(make_board({{"wK", ".", "bK"}}));
+    kfc::CommandProcessor processor(state);
+    std::ostringstream sink;
+
+    processor.execute("click 150 50", sink);
+    assert(!state.has_selection());
+}
+
+void test_command_processor_friendly_click_same_cell_jumps() {
+    kfc::GameState state(make_board({{"wK", ".", "bK"}}));
+    kfc::CommandProcessor processor(state);
+    std::ostringstream sink;
+
+    processor.execute("click 50 50", sink);
+    assert(state.has_selection());
+    processor.execute("click 50 50", sink);
+    assert(!state.has_selection());
+    assert(state.is_piece_jumping(0, 0));
+}
+
+void test_command_processor_jump_outside_grid() {
+    kfc::GameState state(make_board({{"wK", ".", "bK"}}));
+    kfc::CommandProcessor processor(state);
+    std::ostringstream sink;
+
+    processor.execute("jump 350 50", sink);
+    assert(!state.is_piece_jumping(0, 0));
+}
+
+void test_command_processor_jump_on_empty_cell() {
+    kfc::GameState state(make_board({{"wK", ".", "bK"}}));
+    kfc::CommandProcessor processor(state);
+    std::ostringstream sink;
+
+    processor.execute("jump 150 50", sink);
+    assert(!state.is_piece_jumping(0, 1));
+}
+
+void test_game_state_select_out_of_bounds() {
+    kfc::GameState state(make_board({{"wK", ".", "bK"}}));
+    state.select(99, 99);
+    assert(!state.has_selection());
+}
+
+void test_game_state_move_and_jump_without_selection() {
+    kfc::GameState state(make_board({{"wK", ".", "bK"}}));
+    state.move_selected_to(0, 1);
+    state.jump_selected();
+    assert_token(state, 0, 0, "wK");
+    assert(!state.is_piece_jumping(0, 0));
+}
+
+void test_game_state_jump_at_empty_cell() {
+    kfc::GameState state(make_board({{"wK", ".", "bK"}}));
+    state.jump_at(0, 1);
+    assert(!state.is_piece_jumping(0, 1));
+}
+
+void test_game_state_is_piece_out_of_bounds() {
+    kfc::GameState state(make_board({{"wK", ".", "bK"}}));
+    assert(!state.is_piece(99, 99));
+}
+
+void test_game_state_friendly_selection_requires_selection() {
+    kfc::GameState state(make_board({{"wK", "wN", "bK"}}));
+    assert(!state.is_friendly_to_selection(0, 1));
+}
+
+void test_game_state_same_board_layout_as() {
+    const kfc::GameState left(make_board({{"wK", ".", "bK"}}));
+    const kfc::GameState right(make_board({{"wK", ".", "bK"}}));
+    const kfc::GameState different(make_board({{"wK", ".", "."}}));
+    assert(left.same_board_layout_as(right));
+    assert(!left.same_board_layout_as(different));
+}
+
+void test_game_state_capture_move_uses_single_cell_duration() {
+    kfc::GameState state(make_board({{"wR", ".", "bP"}}));
+    state.select(0, 0);
+    state.move_selected_to(0, 2);
+    state.add_clock(999);
+    assert_token(state, 0, 0, "wR");
+    assert_token(state, 0, 2, "bP");
+    state.add_clock(1);
+    assert_token(state, 0, 0, ".");
+    assert_token(state, 0, 2, "wR");
+}
+
+void test_standard_rules_configuration() {
+    const kfc::GameRules rules = kfc::KungFuChessRules::standard();
+    assert(rules.move_duration_ms == kfc::kMoveDurationMs);
+    assert(rules.jump_duration_ms == kfc::kJumpDurationMs);
+    assert(rules.is_game_over(*kfc::Piece::from_token("wK")));
+    assert(rules.is_game_over(*kfc::Piece::from_token("bK")));
+    assert(!rules.is_game_over(*kfc::Piece::from_token("wP")));
+
+    const kfc::Piece white_pawn = *kfc::Piece::from_token("wP");
+    assert(rules.on_reach_last_row(white_pawn, 0, 8).type == kfc::kQueenType);
+    assert(rules.on_reach_last_row(white_pawn, 1, 8).type == kfc::kPawnType);
+    assert(rules.on_reach_last_row(*kfc::Piece::from_token("wR"), 0, 8).type == kfc::kRookType);
+
+    const kfc::Piece black_pawn = *kfc::Piece::from_token("bP");
+    assert(rules.on_reach_last_row(black_pawn, 7, 8).type == kfc::kQueenType);
+}
+
 }  // namespace
 
 int main() {
@@ -784,6 +1290,14 @@ int main() {
     test_parse_board_row_width_mismatch();
     test_read_and_write_roundtrip();
     test_invalid_board_produces_error();
+    test_board_error_message_row_width_mismatch();
+    test_board_error_message_ok();
+    test_parse_board_empty_lines();
+    test_board_model_equality();
+    test_board_model_contains_negative();
+    test_piece_from_token_invalid();
+    test_piece_to_token();
+    test_piece_color_helpers();
     test_game_state_wait_increments_clock();
     test_command_processor_click_select_and_move();
     test_command_processor_click_outside_grid_ignored();
@@ -797,6 +1311,17 @@ int main() {
     test_rook_captures_enemy_piece();
     test_knight_jumps_over_pieces();
     test_cannot_capture_own_piece();
+    test_bishop_diagonal_move();
+    test_bishop_blocked_by_piece();
+    test_bishop_captures_enemy();
+    test_queen_straight_and_diagonal_moves();
+    test_queen_blocked_by_friendly_piece();
+    test_for_each_cell_on_path();
+    test_paths_share_cell_on_overlapping_routes();
+    test_paths_share_cell_non_straight_paths();
+    test_command_processor_wait_without_ms();
+    test_command_processor_unknown_verb();
+    test_game_state_custom_rules();
     test_white_pawn_forward_move();
     test_white_pawn_blocked_forward();
     test_white_pawn_diagonal_capture();
@@ -832,5 +1357,45 @@ int main() {
     test_jump_status_cleared_after_duration();
     test_jump_command_airborne_piece_captures_arriving_enemy();
     test_jump_command_too_late_does_not_save_piece();
+    test_is_valid_token_invalid_color();
+    test_piece_opponent_of_empty();
+    test_illegal_move_empty_board();
+    test_illegal_move_same_cell();
+    test_illegal_move_unknown_piece_type();
+    test_parse_board_empty_row_tokens();
+    test_board_model_in_bounds_empty_board();
+    test_board_model_contains_out_of_bounds();
+    test_board_model_equality_different_sizes();
+    test_write_empty_board();
+    test_write_single_row_board();
+    test_for_each_cell_on_path_adjacent();
+    test_for_each_cell_on_path_vertical();
+    test_paths_share_cell_endpoint_overlap();
+    test_collision_has_common_route_horizontal_parallel();
+    test_collision_has_common_route_vertical_parallel();
+    test_collision_has_common_route_disjoint();
+    test_collision_conflicts_with_opposite_color_move();
+    test_collision_same_color_destination_claimed();
+    test_collision_normal_capture_on_arrival();
+    test_collision_empty_destination_not_captured();
+    test_collision_jump_capture_sets_game_over();
+    test_read_vpl_multiple_commands_and_skip_blank_lines();
+    test_read_vpl_no_section_headers();
+    test_read_vpl_whitespace_padded_board_line();
+    test_command_processor_click_without_coords();
+    test_command_processor_jump_without_coords();
+    test_command_processor_print_partial_command_ignored();
+    test_command_processor_select_empty_square();
+    test_command_processor_friendly_click_same_cell_jumps();
+    test_command_processor_jump_outside_grid();
+    test_command_processor_jump_on_empty_cell();
+    test_game_state_select_out_of_bounds();
+    test_game_state_move_and_jump_without_selection();
+    test_game_state_jump_at_empty_cell();
+    test_game_state_is_piece_out_of_bounds();
+    test_game_state_friendly_selection_requires_selection();
+    test_game_state_same_board_layout_as();
+    test_game_state_capture_move_uses_single_cell_duration();
+    test_standard_rules_configuration();
     return 0;
 }
