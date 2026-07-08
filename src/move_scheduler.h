@@ -3,6 +3,7 @@
 #include "piece.h"
 
 #include <cstdint>
+#include <functional>
 #include <utility>
 #include <vector>
 
@@ -21,17 +22,21 @@ struct JumpState {
     std::int64_t arrival_time = 0;
 };
 
+class BoardModel;
+class CollisionResolver;
+struct GameRules;
+struct ArrivingPieceInfo;
+
 class MoveScheduler {
 public:
     [[nodiscard]] std::int64_t clock_ms() const noexcept { return clock_ms_; }
-    [[nodiscard]] const std::vector<PendingMove>& pending_moves() const noexcept {
-        return pending_moves_;
-    }
-    [[nodiscard]] const std::vector<JumpState>& active_jumps() const noexcept {
-        return active_jumps_;
-    }
 
     void add_clock(std::int64_t ms) noexcept { clock_ms_ += ms; }
+    void for_each_pending_due(const std::function<void(const PendingMove&)>& fn);
+    [[nodiscard]] bool check_for_jump_capture(
+        const CollisionResolver& resolver, BoardModel& board, const GameRules& rules,
+        const std::pair<std::size_t, std::size_t>& target_cell,
+        const ArrivingPieceInfo& arriving_piece_info, bool& game_over) const;
 
     [[nodiscard]] bool is_piece_moving(std::size_t row, std::size_t col) const;
     [[nodiscard]] bool is_piece_jumping(std::size_t row, std::size_t col) const;
@@ -43,7 +48,6 @@ public:
     void schedule_move(PendingMove move);
     void schedule_jump(JumpState jump);
     void expire_jumps();
-    void set_pending_moves(std::vector<PendingMove> moves);
 
 private:
     std::vector<PendingMove> pending_moves_;

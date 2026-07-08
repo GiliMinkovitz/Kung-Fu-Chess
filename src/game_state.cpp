@@ -102,17 +102,9 @@ void GameState::add_clock(std::int64_t ms) {
 }
 
 void GameState::settle_pending_moves() {
-    std::vector<PendingMove> still_pending;
-    still_pending.reserve(scheduler_.pending_moves().size());
-
-    for (const PendingMove& move : scheduler_.pending_moves()) {
-        if (scheduler_.clock_ms() < move.arrival_time) {
-            still_pending.push_back(move);
-            continue;
-        }
-
+    scheduler_.for_each_pending_due([this](const PendingMove& move) {
         if (!can_settle_move(board_, rules_, move)) {
-            continue;
+            return;
         }
 
         const auto [start_row, start_col] = move.start_pos;
@@ -126,15 +118,13 @@ void GameState::settle_pending_moves() {
             move.end_pos,
         };
 
-        if (!collision_resolver_.check_for_jump_capture(
-                board_, rules_, scheduler_.clock_ms(), scheduler_.active_jumps(), move.end_pos,
-                arriving_piece_info, game_over_)) {
+        if (!scheduler_.check_for_jump_capture(collision_resolver_, board_, rules_, move.end_pos,
+                                               arriving_piece_info, game_over_)) {
             board_.set_piece(end_row, end_col,
                              rules_.on_reach_last_row(move.piece, end_row, board_.rows()));
         }
-    }
+    });
 
-    scheduler_.set_pending_moves(std::move(still_pending));
     scheduler_.expire_jumps();
 }
 

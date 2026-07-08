@@ -1,6 +1,8 @@
 #include "move_scheduler.h"
 
+#include "board_model.h"
 #include "collision_resolver.h"
+#include "game_rules.h"
 
 namespace kfc {
 
@@ -36,6 +38,29 @@ bool MoveScheduler::conflicts_with_opposite_color_move(char moving_color,
                                                                  moving_color, proposed);
 }
 
+void MoveScheduler::for_each_pending_due(const std::function<void(const PendingMove&)>& fn) {
+    std::vector<PendingMove> still_pending;
+    still_pending.reserve(pending_moves_.size());
+
+    for (PendingMove& move : pending_moves_) {
+        if (clock_ms_ < move.arrival_time) {
+            still_pending.push_back(std::move(move));
+        } else {
+            fn(move);
+        }
+    }
+
+    pending_moves_ = std::move(still_pending);
+}
+
+bool MoveScheduler::check_for_jump_capture(
+    const CollisionResolver& resolver, BoardModel& board, const GameRules& rules,
+    const std::pair<std::size_t, std::size_t>& target_cell,
+    const ArrivingPieceInfo& arriving_piece_info, bool& game_over) const {
+    return resolver.check_for_jump_capture(board, rules, clock_ms_, active_jumps_, target_cell,
+                                           arriving_piece_info, game_over);
+}
+
 void MoveScheduler::schedule_move(PendingMove move) {
     pending_moves_.push_back(std::move(move));
 }
@@ -55,10 +80,6 @@ void MoveScheduler::expire_jumps() {
     }
 
     active_jumps_ = std::move(still_jumping);
-}
-
-void MoveScheduler::set_pending_moves(std::vector<PendingMove> moves) {
-    pending_moves_ = std::move(moves);
 }
 
 }  // namespace kfc
