@@ -1,7 +1,5 @@
 #include "game_state.h"
 
-#include "move_validator.h"
-
 #include <algorithm>
 
 namespace kfc {
@@ -121,7 +119,8 @@ namespace {
     return false;
 }
 
-[[nodiscard]] bool can_settle_move(const BoardModel& board, const PendingMove& move) {
+[[nodiscard]] bool can_settle_move(const BoardModel& board, const GameRules& rules,
+                                   const PendingMove& move) {
     const auto [start_row, start_col] = move.start_pos;
     const auto [end_row, end_col] = move.end_pos;
 
@@ -129,30 +128,22 @@ namespace {
         return false;
     }
 
-    return is_legal_move(board, move.piece.type, static_cast<int>(start_row),
-                         static_cast<int>(start_col), static_cast<int>(end_row),
-                         static_cast<int>(end_col));
+    return rules.is_legal_move(board, move.piece.type, static_cast<int>(start_row),
+                               static_cast<int>(start_col), static_cast<int>(end_row),
+                               static_cast<int>(end_col));
 }
 
-[[nodiscard]] Piece promote_if_pawn(Piece piece, std::size_t end_row, std::size_t board_rows) {
-    if (piece.type != 'P') {
-        return piece;
-    }
-
-    const char color = piece.color;
-    const std::size_t last_row = board_rows - 1;
-    if (color == 'w' && end_row == 0) {
-        return Piece{color, 'Q'};
-    }
-    if (color == 'b' && end_row == last_row) {
-        return Piece{color, 'Q'};
-    }
-    return piece;
+[[nodiscard]] Piece apply_on_reach_last_row(const GameRules& rules, Piece piece,
+                                            std::size_t end_row, std::size_t board_rows) {
+    return rules.on_reach_last_row(piece, end_row, board_rows);
 }
 
 }  // namespace
 
-GameState::GameState(BoardModel board) : board_(std::move(board)) {}
+GameState::GameState(BoardModel board) : GameState(std::move(board), KungFuChessRules::standard()) {}
+
+GameState::GameState(BoardModel board, GameRules rules)
+    : board_(std::move(board)), rules_(std::move(rules)) {}
 
 Piece GameState::piece_at(std::size_t row, std::size_t col) const {
     return board_.piece_at(row, col);
@@ -224,6 +215,12 @@ bool GameState::is_square_claimed_by_same_color_pending_move(std::size_t row, st
     return is_same_color_destination_claimed(pending_moves_, clock_ms_, color, {row, col});
 }
 
+bool GameState::is_legal_move(int start_row, int start_col, int end_row, int end_col) const {
+    const Piece moving =
+        board_.piece_at(static_cast<std::size_t>(start_row), static_cast<std::size_t>(start_col));
+    return rules_.is_legal_move(board_, moving.type, start_row, start_col, end_row, end_col);
+}
+
 void GameState::add_clock(std::int64_t ms) {
     clock_ms_ += ms;
     settle_pending_moves();
@@ -250,7 +247,7 @@ bool GameState::check_for_jump_capture(
     for (const JumpState& jump : active_jumps_) {
         if (clock_ms_ <= jump.arrival_time && jump.cell == target_cell &&
             arriving_piece_info.piece.color != jump.piece.color) {
-            if (arriving_piece_info.piece.type == 'K') {
+            if (rules_.is_game_over(arriving_piece_info.piece)) {
                 game_over_ = true;
             }
             return true;
@@ -259,11 +256,12 @@ bool GameState::check_for_jump_capture(
 
     const Piece destination = board_.piece_at(end_row, end_col);
     if (!destination.is_empty() && destination.color != arriving_piece_info.piece.color) {
-        if (destination.type == 'K') {
+        if (rules_.is_game_over(destination)) {
             game_over_ = true;
         }
         board_.set_piece(end_row, end_col,
-                         promote_if_pawn(arriving_piece_info.piece, end_row, board_.rows()));
+                         apply_on_reach_last_row(rules_, arriving_piece_info.piece, end_row,
+                                                 board_.rows()));
         return true;
     }
 
@@ -280,7 +278,7 @@ void GameState::settle_pending_moves() {
             continue;
         }
 
-        if (!can_settle_move(board_, move)) {
+        if (!can_settle_move(board_, rules_, move)) {
             continue;
         }
 
@@ -296,7 +294,8 @@ void GameState::settle_pending_moves() {
         };
 
         if (!check_for_jump_capture(move.end_pos, arriving_piece_info)) {
-            board_.set_piece(end_row, end_col, promote_if_pawn(move.piece, end_row, board_.rows()));
+            board_.set_piece(end_row, end_col,
+                             apply_on_reach_last_row(rules_, move.piece, end_row, board_.rows()));
         }
     }
 
@@ -335,12 +334,13 @@ void GameState::move_selected_to(std::size_t to_row, std::size_t to_col) {
     const bool is_capture =
         !destination.is_empty() && destination.color != moving.color;
     const std::int64_t move_duration =
-        is_capture ? kMoveDurationMs
+        is_capture ? rules_.move_duration_ms
                    : static_cast<std::int64_t>(std::max(row_delta, col_delta)) *
-                         kMoveDurationMs;
+                         rules_.move_duration_ms;
 
-    if (!is_legal_move(board_, moving.type, static_cast<int>(from_row), static_cast<int>(from_col),
-                       static_cast<int>(to_row), static_cast<int>(to_col))) {
+    if (!rules_.is_legal_move(board_, moving.type, static_cast<int>(from_row),
+                              static_cast<int>(from_col), static_cast<int>(to_row),
+                              static_cast<int>(to_col))) {
         return;
     }
 
@@ -385,7 +385,7 @@ void GameState::jump_at(std::size_t row, std::size_t col) {
     active_jumps_.push_back(JumpState{
         board_.piece_at(row, col),
         {row, col},
-        clock_ms_ + kJumpDurationMs,
+        clock_ms_ + rules_.jump_duration_ms,
     });
 }
 

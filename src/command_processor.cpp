@@ -1,6 +1,5 @@
 #include "command_processor.h"
 
-#include "move_validator.h"
 #include "vpl_io.h"
 
 #include <sstream>
@@ -91,8 +90,8 @@ void CommandProcessor::handle_click(int x, int y) {
     }
 
     const Piece moving = state_.piece_at(from_row, from_col);
-    if (!is_legal_move(state_.board(), moving.type, static_cast<int>(from_row),
-                       static_cast<int>(from_col), static_cast<int>(row), static_cast<int>(col))) {
+    if (!state_.is_legal_move(static_cast<int>(from_row), static_cast<int>(from_col),
+                              static_cast<int>(row), static_cast<int>(col))) {
         return;
     }
 

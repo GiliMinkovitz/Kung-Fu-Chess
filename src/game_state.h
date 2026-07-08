@@ -1,6 +1,7 @@
 #pragma once
 
 #include "board_model.h"
+#include "game_rules.h"
 
 #include <cstdint>
 #include <optional>
@@ -30,12 +31,11 @@ struct ArrivingPieceInfo {
 
 class GameState {
 public:
-    static constexpr std::int64_t kMoveDurationMs = 1000;
-    static constexpr std::int64_t kJumpDurationMs = 1000;
-
     explicit GameState(BoardModel board);
+    GameState(BoardModel board, GameRules rules);
 
     [[nodiscard]] const BoardModel& board() const noexcept { return board_; }
+    [[nodiscard]] const GameRules& rules() const noexcept { return rules_; }
     [[nodiscard]] Piece piece_at(std::size_t row, std::size_t col) const;
     [[nodiscard]] bool is_empty(std::size_t row, std::size_t col) const;
     void set_piece(std::size_t row, std::size_t col, Piece piece);
@@ -54,6 +54,8 @@ public:
     [[nodiscard]] bool is_square_claimed_by_same_color_pending_move(std::size_t row,
                                                                     std::size_t col,
                                                                     char color) const;
+    [[nodiscard]] bool is_legal_move(int start_row, int start_col, int end_row,
+                                     int end_col) const;
 
     void add_clock(std::int64_t ms);
     void settle_pending_moves();
@@ -70,6 +72,7 @@ private:
         const ArrivingPieceInfo& arriving_piece_info);
 
     BoardModel board_;
+    GameRules rules_;
     std::optional<std::pair<std::size_t, std::size_t>> selected_;
     std::vector<PendingMove> pending_moves_;
     std::vector<JumpState> active_jumps_;

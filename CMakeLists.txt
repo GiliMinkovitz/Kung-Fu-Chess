@@ -9,6 +9,7 @@ set(KFC_SOURCES
     src/piece.cpp
     src/board_model.cpp
     src/vpl_io.cpp
+    src/game_rules.cpp
     src/game_state.cpp
     src/command_processor.cpp
     src/move_validator.cpp
