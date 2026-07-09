@@ -24,6 +24,7 @@ set(KFC_SOURCES
     src/logic/game_rules.cpp
     src/logic/move_scheduler.cpp
     src/logic/collision_resolver.cpp
+    src/logic/real_time_arbiter.cpp
     src/logic/game_state.cpp
     src/adapters/command_processor.cpp
     src/logic/move_validator.cpp

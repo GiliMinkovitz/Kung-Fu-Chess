@@ -1,9 +1,8 @@
 #pragma once
 
 #include "core/board_model.h"
-#include "logic/collision_resolver.h"
 #include "logic/game_rules.h"
-#include "logic/move_scheduler.h"
+#include "logic/real_time_arbiter.h"
 
 #include <cstdint>
 #include <functional>
@@ -28,7 +27,7 @@ public:
     void place_piece_at(std::size_t row, std::size_t col, Piece piece);
     void place_new_piece_at(std::size_t row, std::size_t col, PieceColor color, PieceKind kind);
 
-    [[nodiscard]] std::int64_t clock_ms() const noexcept { return scheduler_.clock_ms(); }
+    [[nodiscard]] std::int64_t clock_ms() const noexcept { return arbiter_.clock_ms(); }
     [[nodiscard]] bool has_selection() const noexcept { return selected_.has_value(); }
     [[nodiscard]] bool is_game_over() const noexcept { return game_over_; }
     [[nodiscard]] bool same_board_layout_as(const GameState& other) const noexcept;
@@ -62,8 +61,7 @@ private:
 
     BoardModel board_;
     GameRules rules_;
-    MoveScheduler scheduler_;
-    CollisionResolver collision_resolver_;
+    RealTimeArbiter arbiter_;
     std::optional<std::pair<std::size_t, std::size_t>> selected_;
     bool game_over_ = false;
 };

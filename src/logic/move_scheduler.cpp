@@ -6,9 +6,11 @@
 
 namespace kfc {
 
-bool MoveScheduler::is_piece_moving(std::size_t row, std::size_t col) const {
+bool MoveScheduler::is_piece_moving(uint64_t current_time_ms, std::size_t row,
+                                    std::size_t col) const {
+    const auto clock_ms = static_cast<std::int64_t>(current_time_ms);
     for (const PendingMove& move : pending_moves_) {
-        if (clock_ms_ < move.arrival_time && move.start_pos.first == row &&
+        if (clock_ms < move.arrival_time && move.start_pos.first == row &&
             move.start_pos.second == col) {
             return true;
         }
@@ -16,9 +18,11 @@ bool MoveScheduler::is_piece_moving(std::size_t row, std::size_t col) const {
     return false;
 }
 
-bool MoveScheduler::is_piece_jumping(std::size_t row, std::size_t col) const {
+bool MoveScheduler::is_piece_jumping(uint64_t current_time_ms, std::size_t row,
+                                     std::size_t col) const {
+    const auto clock_ms = static_cast<std::int64_t>(current_time_ms);
     for (const JumpState& jump : active_jumps_) {
-        if (clock_ms_ < jump.arrival_time && jump.cell.first == row &&
+        if (clock_ms < jump.arrival_time && jump.cell.first == row &&
             jump.cell.second == col) {
             return true;
         }
@@ -27,23 +31,27 @@ bool MoveScheduler::is_piece_jumping(std::size_t row, std::size_t col) const {
 }
 
 bool MoveScheduler::is_same_color_destination_claimed(
-    PieceColor color, const std::pair<std::size_t, std::size_t>& end_pos) const {
-    return CollisionResolver::is_same_color_destination_claimed(pending_moves_, clock_ms_, color,
-                                                                end_pos);
+    uint64_t current_time_ms, PieceColor color,
+    const std::pair<std::size_t, std::size_t>& end_pos) const {
+    return CollisionResolver::is_same_color_destination_claimed(
+        pending_moves_, static_cast<std::int64_t>(current_time_ms), color, end_pos);
 }
 
-bool MoveScheduler::conflicts_with_opposite_color_move(PieceColor moving_color,
-                                                       const PendingMove& proposed) const {
-    return CollisionResolver::conflicts_with_opposite_color_move(pending_moves_, clock_ms_,
-                                                                 moving_color, proposed);
+bool MoveScheduler::conflicts_with_opposite_color_move(uint64_t current_time_ms,
+                                                     PieceColor moving_color,
+                                                     const PendingMove& proposed) const {
+    return CollisionResolver::conflicts_with_opposite_color_move(
+        pending_moves_, static_cast<std::int64_t>(current_time_ms), moving_color, proposed);
 }
 
-void MoveScheduler::for_each_pending_due(const std::function<void(const PendingMove&)>& fn) {
+void MoveScheduler::for_each_pending_due(uint64_t current_time_ms,
+                                         const std::function<void(const PendingMove&)>& fn) {
+    const auto clock_ms = static_cast<std::int64_t>(current_time_ms);
     std::vector<PendingMove> still_pending;
     still_pending.reserve(pending_moves_.size());
 
     for (PendingMove& move : pending_moves_) {
-        if (clock_ms_ < move.arrival_time) {
+        if (clock_ms < move.arrival_time) {
             still_pending.push_back(std::move(move));
         } else {
             fn(move);
@@ -54,11 +62,12 @@ void MoveScheduler::for_each_pending_due(const std::function<void(const PendingM
 }
 
 bool MoveScheduler::check_for_jump_capture(
-    const CollisionResolver& resolver, BoardModel& board, const GameRules& rules,
-    const std::pair<std::size_t, std::size_t>& target_cell,
+    uint64_t current_time_ms, const CollisionResolver& resolver, BoardModel& board,
+    const GameRules& rules, const std::pair<std::size_t, std::size_t>& target_cell,
     const ArrivingPieceInfo& arriving_piece_info, bool& game_over) const {
-    return resolver.check_for_jump_capture(board, rules, clock_ms_, active_jumps_, target_cell,
-                                           arriving_piece_info, game_over);
+    return resolver.check_for_jump_capture(board, rules, static_cast<std::int64_t>(current_time_ms),
+                                           active_jumps_, target_cell, arriving_piece_info,
+                                           game_over);
 }
 
 void MoveScheduler::schedule_move(PendingMove move) {
@@ -69,12 +78,13 @@ void MoveScheduler::schedule_jump(JumpState jump) {
     active_jumps_.push_back(std::move(jump));
 }
 
-void MoveScheduler::expire_jumps() {
+void MoveScheduler::expire_jumps(uint64_t current_time_ms) {
+    const auto clock_ms = static_cast<std::int64_t>(current_time_ms);
     std::vector<JumpState> still_jumping;
     still_jumping.reserve(active_jumps_.size());
 
     for (JumpState& jump : active_jumps_) {
-        if (clock_ms_ < jump.arrival_time) {
+        if (clock_ms < jump.arrival_time) {
             still_jumping.push_back(std::move(jump));
         }
     }
