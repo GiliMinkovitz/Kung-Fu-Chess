@@ -1,8 +1,8 @@
-#include "logic/board_validator.h"
+#include "board_validator.h"
 
-#include "core/game_config.h"
-#include "core/piece_factory.h"
-#include "core/piece_token.h"
+#include "../core/game_config.h"
+#include "../core/piece_factory.h"
+#include "../core/piece_token.h"
 
 #include <sstream>
 #include <string>

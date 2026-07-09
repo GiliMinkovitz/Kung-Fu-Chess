@@ -1,6 +1,6 @@
-#include "logic/move_validator.h"
+#include "move_validator.h"
 
-#include "logic/path_utils.h"
+#include "path_utils.h"
 
 #include <cstdlib>
 

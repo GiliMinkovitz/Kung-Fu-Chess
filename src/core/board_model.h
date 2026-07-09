@@ -1,7 +1,7 @@
 #pragma once
 
-#include "core/piece.h"
-#include "core/piece_factory.h"
+#include "piece.h"
+#include "piece_factory.h"
 
 #include <cstddef>
 #include <initializer_list>

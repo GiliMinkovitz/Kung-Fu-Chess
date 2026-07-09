@@ -1,8 +1,8 @@
 #pragma once
 
-#include "core/piece.h"
-#include "logic/collision_resolver.h"
-#include "logic/move_scheduler.h"
+#include "../core/piece.h"
+#include "collision_resolver.h"
+#include "move_scheduler.h"
 
 #include <cstdint>
 #include <utility>

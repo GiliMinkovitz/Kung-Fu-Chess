@@ -1,6 +1,6 @@
 #pragma once
 
-#include "core/position.h"
+#include "position.h"
 
 #include <cstdint>
 

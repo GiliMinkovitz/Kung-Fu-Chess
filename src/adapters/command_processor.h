@@ -1,6 +1,6 @@
 #pragma once
 
-#include "logic/game_state.h"
+#include "../logic/game_state.h"
 
 #include <iosfwd>
 #include <string>

@@ -1,7 +1,7 @@
 #pragma once
 
-#include "core/board_model.h"
-#include "core/piece.h"
+#include "../core/board_model.h"
+#include "../core/piece.h"
 
 namespace kfc {
 

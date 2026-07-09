@@ -1,6 +1,6 @@
 #pragma once
 
-#include "core/piece.h"
+#include "../core/piece.h"
 
 #include <cstdint>
 #include <functional>

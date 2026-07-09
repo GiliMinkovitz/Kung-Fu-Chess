@@ -1,6 +1,6 @@
-#include "adapters/vpl_io.h"
+#include "vpl_io.h"
 
-#include "core/game_config.h"
+#include "../core/game_config.h"
 
 #include <istream>
 #include <string>

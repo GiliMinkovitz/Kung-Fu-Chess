@@ -1,4 +1,4 @@
-#include "adapters/board_writer.h"
+#include "board_writer.h"
 
 #include <ostream>
 

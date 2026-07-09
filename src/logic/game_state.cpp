@@ -1,6 +1,6 @@
-#include "logic/game_state.h"
+#include "game_state.h"
 
-#include "core/piece_factory.h"
+#include "../core/piece_factory.h"
 
 #include <algorithm>
 

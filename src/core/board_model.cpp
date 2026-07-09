@@ -1,8 +1,8 @@
-#include "core/board_model.h"
+#include "board_model.h"
 
-#include "core/game_config.h"
-#include "core/piece_factory.h"
-#include "core/piece_token.h"
+#include "game_config.h"
+#include "piece_factory.h"
+#include "piece_token.h"
 
 #include <cassert>
 #include <stdexcept>

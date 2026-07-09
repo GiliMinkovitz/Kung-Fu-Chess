@@ -1,6 +1,6 @@
-#include "logic/collision_resolver.h"
+#include "collision_resolver.h"
 
-#include "logic/path_utils.h"
+#include "path_utils.h"
 
 #include <algorithm>
 

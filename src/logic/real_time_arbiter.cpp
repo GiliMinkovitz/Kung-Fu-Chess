@@ -1,7 +1,7 @@
-#include "logic/real_time_arbiter.h"
+#include "real_time_arbiter.h"
 
-#include "core/board_model.h"
-#include "logic/game_rules.h"
+#include "../core/board_model.h"
+#include "game_rules.h"
 
 namespace kfc {
 

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "core/board_model.h"
+#include "../core/board_model.h"
 
 #include <iosfwd>
 

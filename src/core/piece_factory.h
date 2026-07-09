@@ -1,6 +1,6 @@
 #pragma once
 
-#include "core/piece.h"
+#include "piece.h"
 
 namespace kfc {
 

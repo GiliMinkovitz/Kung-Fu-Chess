@@ -1,7 +1,7 @@
-#include "logic/game_rules.h"
+#include "game_rules.h"
 
-#include "core/game_config.h"
-#include "logic/move_validator.h"
+#include "../core/game_config.h"
+#include "move_validator.h"
 
 namespace kfc {
 namespace KungFuChessRules {

@@ -1,4 +1,4 @@
-#include "core/piece_factory.h"
+#include "piece_factory.h"
 
 namespace kfc {
 
