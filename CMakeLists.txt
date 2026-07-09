@@ -13,6 +13,7 @@ endif()
 
 set(KFC_SOURCES
     src/core/piece.cpp
+    src/core/position.cpp
     src/core/board_model.cpp
     src/logic/board_validator.cpp
     src/adapters/board_writer.cpp
@@ -38,6 +39,7 @@ target_include_directories(${PROJECT_NAME} PRIVATE
 set(KFC_TEST_SOURCES
     tests/unit/core/board_model_tests.cpp
     tests/unit/core/piece_tests.cpp
+    tests/unit/core/position_tests.cpp
     tests/unit/logic/board_validator_tests.cpp
     tests/unit/logic/path_utils_tests.cpp
     tests/unit/logic/move_validator_tests.cpp
