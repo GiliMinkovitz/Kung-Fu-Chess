@@ -80,18 +80,43 @@ bool RealTimeArbiter::is_same_color_destination_claimed(
                                                         end_pos);
 }
 
-bool RealTimeArbiter::conflicts_with_opposite_color_move(PieceColor moving_color,
-                                                         const PendingMove& proposed) const {
+bool RealTimeArbiter::would_conflict_with_opposite_color_move(
+    PieceColor moving_color, Piece::Id piece_id,
+    const std::pair<std::size_t, std::size_t>& start_pos,
+    const std::pair<std::size_t, std::size_t>& end_pos, std::int64_t move_duration_ms) const {
+    const PendingMove proposed{
+        piece_id,
+        moving_color,
+        start_pos,
+        end_pos,
+        clock_ms_ + move_duration_ms,
+    };
     return scheduler_.conflicts_with_opposite_color_move(static_cast<uint64_t>(clock_ms_),
                                                          moving_color, proposed);
 }
 
-void RealTimeArbiter::schedule_move(PendingMove move) {
-    scheduler_.schedule_move(std::move(move));
+void RealTimeArbiter::request_move(Piece::Id piece_id, PieceColor color,
+                                   const std::pair<std::size_t, std::size_t>& start_pos,
+                                   const std::pair<std::size_t, std::size_t>& end_pos,
+                                   std::int64_t move_duration_ms) {
+    scheduler_.schedule_move(PendingMove{
+        piece_id,
+        color,
+        start_pos,
+        end_pos,
+        clock_ms_ + move_duration_ms,
+    });
 }
 
-void RealTimeArbiter::schedule_jump(JumpState jump) {
-    scheduler_.schedule_jump(std::move(jump));
+void RealTimeArbiter::request_jump(Piece::Id piece_id, PieceColor color,
+                                   const std::pair<std::size_t, std::size_t>& cell,
+                                   std::int64_t jump_duration_ms) {
+    scheduler_.schedule_jump(JumpState{
+        piece_id,
+        color,
+        cell,
+        clock_ms_ + jump_duration_ms,
+    });
 }
 
 }  // namespace kfc

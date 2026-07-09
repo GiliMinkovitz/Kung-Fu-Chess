@@ -1,10 +1,6 @@
 #include "logic/game_state.h"
 
-
-
 #include "core/piece_factory.h"
-
-#include "logic/move_scheduler.h"
 
 
 
@@ -304,21 +300,8 @@ bool GameState::can_move_selected_to(std::size_t from_row, std::size_t from_col,
 
 
 
-    const PendingMove proposed{
-
-        moving->id,
-
-        moving->color,
-
-        {from_row, from_col},
-
-        {to_row, to_col},
-
-        arbiter_.clock_ms() + move_duration,
-
-    };
-
-    return !arbiter_.conflicts_with_opposite_color_move(moving->color, proposed);
+    return !arbiter_.would_conflict_with_opposite_color_move(
+        moving->color, moving->id, {from_row, from_col}, {to_row, to_col}, move_duration);
 
 }
 
@@ -360,19 +343,8 @@ void GameState::move_selected_to(std::size_t to_row, std::size_t to_col) {
 
 
 
-    arbiter_.schedule_move(PendingMove{
-
-        moving->id,
-
-        moving->color,
-
-        {from_row, from_col},
-
-        {to_row, to_col},
-
-        arbiter_.clock_ms() + move_duration,
-
-    });
+    arbiter_.request_move(moving->id, moving->color, {from_row, from_col}, {to_row, to_col},
+                          move_duration);
 
     clear_selection();
 
@@ -428,17 +400,7 @@ void GameState::jump_at(std::size_t row, std::size_t col) {
 
 
 
-    arbiter_.schedule_jump(JumpState{
-
-        piece->id,
-
-        piece->color,
-
-        {row, col},
-
-        arbiter_.clock_ms() + rules_.jump_duration_ms,
-
-    });
+    arbiter_.request_jump(piece->id, piece->color, {row, col}, rules_.jump_duration_ms);
 
 }
 

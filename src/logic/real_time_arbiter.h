@@ -1,5 +1,6 @@
 #pragma once
 
+#include "core/piece.h"
 #include "logic/collision_resolver.h"
 #include "logic/move_scheduler.h"
 
@@ -21,11 +22,19 @@ public:
     [[nodiscard]] bool is_piece_jumping(std::size_t row, std::size_t col) const;
     [[nodiscard]] bool is_same_color_destination_claimed(
         PieceColor color, const std::pair<std::size_t, std::size_t>& end_pos) const;
-    [[nodiscard]] bool conflicts_with_opposite_color_move(PieceColor moving_color,
-                                                          const PendingMove& proposed) const;
+    [[nodiscard]] bool would_conflict_with_opposite_color_move(
+        PieceColor moving_color, Piece::Id piece_id,
+        const std::pair<std::size_t, std::size_t>& start_pos,
+        const std::pair<std::size_t, std::size_t>& end_pos,
+        std::int64_t move_duration_ms) const;
 
-    void schedule_move(PendingMove move);
-    void schedule_jump(JumpState jump);
+    void request_move(Piece::Id piece_id, PieceColor color,
+                      const std::pair<std::size_t, std::size_t>& start_pos,
+                      const std::pair<std::size_t, std::size_t>& end_pos,
+                      std::int64_t move_duration_ms);
+    void request_jump(Piece::Id piece_id, PieceColor color,
+                      const std::pair<std::size_t, std::size_t>& cell,
+                      std::int64_t jump_duration_ms);
 
 private:
     MoveScheduler scheduler_;

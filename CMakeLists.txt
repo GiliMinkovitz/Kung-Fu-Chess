@@ -48,6 +48,7 @@ set(KFC_TEST_SOURCES
     tests/unit/logic/move_validator_tests.cpp
     tests/unit/logic/collision_resolver_tests.cpp
     tests/unit/logic/game_state_tests.cpp
+    tests/unit/logic/real_time_arbiter_tests.cpp
     tests/unit/logic/game_rules_tests.cpp
     tests/unit/adapters/board_writer_tests.cpp
     tests/unit/adapters/command_processor_tests.cpp
