@@ -1,6 +1,10 @@
 cmake_minimum_required(VERSION 3.16)
 project(KungFuChess VERSION 0.1.0 LANGUAGES CXX)
 
+message(STATUS "Source directory is: ${CMAKE_SOURCE_DIR}")
+file(GLOB_RECURSE ALL_FILES "${CMAKE_SOURCE_DIR}/src/*")
+message(STATUS "Found files: ${ALL_FILES}")
+
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
