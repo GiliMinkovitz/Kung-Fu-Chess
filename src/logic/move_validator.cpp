@@ -1,6 +1,5 @@
 #include "logic/move_validator.h"
 
-#include "core/game_config.h"
 #include "logic/path_utils.h"
 
 #include <cstdlib>
@@ -64,12 +63,12 @@ namespace {
     return (adr == 2 && adc == 1) || (adr == 1 && adc == 2);
 }
 
-[[nodiscard]] bool is_pawn_start_row(const BoardModel& board, char pawn_color,
+[[nodiscard]] bool is_pawn_start_row(const BoardModel& board, PieceColor pawn_color,
                                      int start_row) noexcept {
     if (board.rows() == 0) {
         return false;
     }
-    if (pawn_color == kWhiteColor) {
+    if (pawn_color == PieceColor::White) {
         return start_row == static_cast<int>(board.rows()) - 1;
     }
     return start_row == 0;
@@ -80,30 +79,33 @@ namespace {
     const int dr = end_row - start_row;
     const int dc = end_col - start_col;
 
-    const Piece moving =
-        board.piece_at(static_cast<std::size_t>(start_row), static_cast<std::size_t>(start_col));
-    const Piece dest =
+    const Piece* moving = board.piece_at(static_cast<std::size_t>(start_row),
+                                         static_cast<std::size_t>(start_col));
+    const Piece* dest =
         board.piece_at(static_cast<std::size_t>(end_row), static_cast<std::size_t>(end_col));
+    if (moving == nullptr) {
+        return false;
+    }
 
     if (dc == 0) {
-        if (!dest.is_empty()) {
+        if (dest != nullptr) {
             return false;
         }
 
-        if (moving.is_white() && dr == -1) {
+        if (moving->is_white() && dr == -1) {
             return true;
         }
-        if (moving.is_black() && dr == 1) {
+        if (moving->is_black() && dr == 1) {
             return true;
         }
 
-        if (moving.is_white() && dr == -2 &&
-            is_pawn_start_row(board, moving.color, start_row)) {
+        if (moving->is_white() && dr == -2 &&
+            is_pawn_start_row(board, moving->color, start_row)) {
             const int mid_row = start_row - 1;
             return board.is_empty(static_cast<std::size_t>(mid_row),
                                   static_cast<std::size_t>(start_col));
         }
-        if (moving.is_black() && dr == 2 && is_pawn_start_row(board, moving.color, start_row)) {
+        if (moving->is_black() && dr == 2 && is_pawn_start_row(board, moving->color, start_row)) {
             const int mid_row = start_row + 1;
             return board.is_empty(static_cast<std::size_t>(mid_row),
                                   static_cast<std::size_t>(start_col));
@@ -113,14 +115,14 @@ namespace {
     }
 
     if (std::abs(dc) == 1) {
-        if (dest.is_empty()) {
+        if (dest == nullptr) {
             return false;
         }
-        if (moving.is_white() && dr == -1) {
-            return dest.is_black();
+        if (moving->is_white() && dr == -1) {
+            return dest->is_black();
         }
-        if (moving.is_black() && dr == 1) {
-            return dest.is_white();
+        if (moving->is_black() && dr == 1) {
+            return dest->is_white();
         }
     }
 
@@ -129,20 +131,23 @@ namespace {
 
 [[nodiscard]] bool is_destination_legal(const BoardModel& board, int start_row, int start_col,
                                         int end_row, int end_col) {
-    const Piece dest =
+    const Piece* dest =
         board.piece_at(static_cast<std::size_t>(end_row), static_cast<std::size_t>(end_col));
-    if (dest.is_empty()) {
+    if (dest == nullptr) {
         return true;
     }
-    const Piece moving =
-        board.piece_at(static_cast<std::size_t>(start_row), static_cast<std::size_t>(start_col));
-    return moving.is_opponent_of(dest);
+    const Piece* moving = board.piece_at(static_cast<std::size_t>(start_row),
+                                         static_cast<std::size_t>(start_col));
+    if (moving == nullptr) {
+        return false;
+    }
+    return moving->is_opponent_of(*dest);
 }
 
 }  // namespace
 
-bool is_legal_move(const BoardModel& board, char piece, int start_row, int start_col, int end_row,
-                   int end_col) {
+bool is_legal_move(const BoardModel& board, PieceKind kind, int start_row, int start_col,
+                   int end_row, int end_col) {
     if (board.rows() == 0 || board.cols() == 0) {
         return false;
     }
@@ -156,30 +161,30 @@ bool is_legal_move(const BoardModel& board, char piece, int start_row, int start
     const int dr = end_row - start_row;
     const int dc = end_col - start_col;
 
-    switch (piece) {
-        case kPawnType:
+    switch (kind) {
+        case PieceKind::Pawn:
             return is_pawn_move(board, start_row, start_col, end_row, end_col);
-        case kKingType:
+        case PieceKind::King:
             if (!is_king_move(dr, dc)) {
                 return false;
             }
             break;
-        case kRookType:
+        case PieceKind::Rook:
             if (!is_rook_move(board, start_row, start_col, end_row, end_col)) {
                 return false;
             }
             break;
-        case kBishopType:
+        case PieceKind::Bishop:
             if (!is_bishop_move(board, start_row, start_col, end_row, end_col)) {
                 return false;
             }
             break;
-        case kQueenType:
+        case PieceKind::Queen:
             if (!is_queen_move(board, start_row, start_col, end_row, end_col)) {
                 return false;
             }
             break;
-        case kKnightType:
+        case PieceKind::Knight:
             if (!is_knight_move(dr, dc)) {
                 return false;
             }

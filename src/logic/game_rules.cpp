@@ -10,22 +10,21 @@ namespace {
 
 [[nodiscard]] Piece promote_pawn_to_queen(Piece piece, std::size_t end_row,
                                           std::size_t board_rows) {
-    if (piece.type != kPawnType) {
+    if (piece.kind != PieceKind::Pawn) {
         return piece;
     }
 
     const std::size_t last_row = board_rows - 1;
     if (piece.is_white() && end_row == 0) {
-        return Piece{kWhiteColor, kQueenType};
-    }
-    if (piece.is_black() && end_row == last_row) {
-        return Piece{kBlackColor, kQueenType};
+        piece.kind = PieceKind::Queen;
+    } else if (piece.is_black() && end_row == last_row) {
+        piece.kind = PieceKind::Queen;
     }
     return piece;
 }
 
-[[nodiscard]] bool king_capture_ends_game(Piece lost_piece) {
-    return lost_piece.type == kKingType;
+[[nodiscard]] bool king_capture_ends_game(const Piece& lost_piece) {
+    return lost_piece.kind == PieceKind::King;
 }
 
 }  // namespace

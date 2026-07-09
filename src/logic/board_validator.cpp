@@ -1,7 +1,8 @@
 #include "logic/board_validator.h"
 
 #include "core/game_config.h"
-#include "core/piece.h"
+#include "core/piece_factory.h"
+#include "core/piece_token.h"
 
 #include <sstream>
 #include <string>
@@ -32,6 +33,8 @@ BoardError parse_board_rows(const std::vector<std::string>& lines, BoardModel& b
     }
 
     std::size_t expected_width = 0;
+    PieceFactory factory;
+    std::size_t row_index = 0;
     for (const std::string& line : lines) {
         const std::vector<std::string> tokens = split_row(line);
         if (expected_width == 0) {
@@ -43,17 +46,14 @@ BoardError parse_board_rows(const std::vector<std::string>& lines, BoardModel& b
             return BoardError::RowWidthMismatch;
         }
 
-        std::vector<Piece> row;
-        row.reserve(tokens.size());
         for (const std::string& token : tokens) {
-            const std::optional<Piece> piece = Piece::from_token(token);
-            if (!piece.has_value()) {
+            if (!is_valid_token(token)) {
                 return BoardError::UnknownToken;
             }
-            row.push_back(*piece);
         }
 
-        parsed.append_row(std::move(row));
+        parsed.append_token_row(tokens, row_index, factory);
+        ++row_index;
     }
 
     board = std::move(parsed);

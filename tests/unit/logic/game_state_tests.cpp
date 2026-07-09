@@ -1,9 +1,9 @@
 #include "core/board_model.h"
 #include "core/game_config.h"
+#include "core/piece_factory.h"
 #include "logic/game_rules.h"
 #include "logic/game_state.h"
 #include "logic/move_validator.h"
-#include "core/piece.h"
 #include "test_helpers.h"
 
 #include <doctest/doctest.h>
@@ -62,7 +62,7 @@ TEST_CASE("GameStateTest - MoveAbortedIfFriendlyOccupiesTargetBeforeArrival") {
     state.select(0, 0);
     state.move_selected_to(0, 2);
 
-    state.set_piece(0, 2, *kfc::Piece::from_token("wK"));
+    state.place_new_piece_at(0, 2, kfc::PieceColor::White, kfc::PieceKind::King);
 
     state.add_clock(2000);
 
@@ -117,7 +117,7 @@ TEST_CASE("GameStateTest - GameStateCustomRules") {
     kfc::GameRules rules;
     rules.is_legal_move = kfc::is_legal_move;
     rules.on_reach_last_row = [](kfc::Piece piece, std::size_t, std::size_t) { return piece; };
-    rules.is_game_over = [](kfc::Piece) { return false; };
+    rules.is_game_over = [](const kfc::Piece&) { return false; };
     rules.move_duration_ms = 500;
     rules.jump_duration_ms = 300;
 

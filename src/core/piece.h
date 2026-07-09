@@ -1,25 +1,34 @@
 #pragma once
 
-#include <optional>
-#include <string>
+#include "core/position.h"
+
+#include <cstdint>
 
 namespace kfc {
 
-struct Piece {
-    char color = '\0';
-    char type = '\0';
+enum class PieceColor { White, Black };
 
-    [[nodiscard]] static std::optional<Piece> from_token(const std::string& token);
-    [[nodiscard]] std::string to_token() const;
-    [[nodiscard]] bool is_empty() const noexcept { return type == '\0'; }
-    [[nodiscard]] static Piece empty() noexcept;
+enum class PieceKind { King, Queen, Rook, Bishop, Knight, Pawn };
+
+enum class PieceState { Idle, Moving, Captured };
+
+class Piece {
+public:
+    using Id = std::uint32_t;
+    static constexpr Id kInvalidId = 0;
+
+    Id id = kInvalidId;
+    PieceColor color = PieceColor::White;
+    PieceKind kind = PieceKind::Pawn;
+    Position cell{};
+    PieceState state = PieceState::Idle;
+
     [[nodiscard]] bool is_white() const noexcept;
     [[nodiscard]] bool is_black() const noexcept;
     [[nodiscard]] bool is_same_color_as(const Piece& other) const noexcept;
     [[nodiscard]] bool is_opponent_of(const Piece& other) const noexcept;
 };
 
-[[nodiscard]] bool is_valid_token(const std::string& token) noexcept;
 [[nodiscard]] bool operator==(const Piece& lhs, const Piece& rhs) noexcept;
 [[nodiscard]] bool operator!=(const Piece& lhs, const Piece& rhs) noexcept;
 

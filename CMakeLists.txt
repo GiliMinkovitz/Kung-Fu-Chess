@@ -13,6 +13,8 @@ endif()
 
 set(KFC_SOURCES
     src/core/piece.cpp
+    src/core/piece_factory.cpp
+    src/core/piece_token.cpp
     src/core/position.cpp
     src/core/board_model.cpp
     src/logic/board_validator.cpp

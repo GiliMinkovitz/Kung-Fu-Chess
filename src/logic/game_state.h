@@ -21,10 +21,11 @@ public:
     [[nodiscard]] const GameRules& rules() const noexcept { return rules_; }
     [[nodiscard]] std::size_t rows() const noexcept { return board_.rows(); }
     [[nodiscard]] std::size_t cols() const noexcept { return board_.cols(); }
-    [[nodiscard]] Piece piece_at(std::size_t row, std::size_t col) const;
+    [[nodiscard]] const Piece* piece_at(std::size_t row, std::size_t col) const;
     [[nodiscard]] std::string token_at(std::size_t row, std::size_t col) const;
     [[nodiscard]] bool is_empty(std::size_t row, std::size_t col) const;
-    void set_piece(std::size_t row, std::size_t col, Piece piece);
+    void place_piece_at(std::size_t row, std::size_t col, Piece piece);
+    void place_new_piece_at(std::size_t row, std::size_t col, PieceColor color, PieceKind kind);
 
     [[nodiscard]] std::int64_t clock_ms() const noexcept { return scheduler_.clock_ms(); }
     [[nodiscard]] bool has_selection() const noexcept { return selected_.has_value(); }

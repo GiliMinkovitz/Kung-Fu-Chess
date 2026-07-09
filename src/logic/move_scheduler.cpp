@@ -27,12 +27,12 @@ bool MoveScheduler::is_piece_jumping(std::size_t row, std::size_t col) const {
 }
 
 bool MoveScheduler::is_same_color_destination_claimed(
-    char color, const std::pair<std::size_t, std::size_t>& end_pos) const {
+    PieceColor color, const std::pair<std::size_t, std::size_t>& end_pos) const {
     return CollisionResolver::is_same_color_destination_claimed(pending_moves_, clock_ms_, color,
                                                                 end_pos);
 }
 
-bool MoveScheduler::conflicts_with_opposite_color_move(char moving_color,
+bool MoveScheduler::conflicts_with_opposite_color_move(PieceColor moving_color,
                                                        const PendingMove& proposed) const {
     return CollisionResolver::conflicts_with_opposite_color_move(pending_moves_, clock_ms_,
                                                                  moving_color, proposed);

@@ -1,6 +1,7 @@
 #include "logic/game_state.h"
 
 #include "adapters/board_writer.h"
+#include "core/piece_factory.h"
 
 #include <algorithm>
 
@@ -13,11 +14,12 @@ namespace {
     const auto [start_row, start_col] = move.start_pos;
     const auto [end_row, end_col] = move.end_pos;
 
-    if (board.piece_at(start_row, start_col) != move.piece) {
+    const Piece* piece = board.piece_at(start_row, start_col);
+    if (piece == nullptr || piece->id != move.piece_id) {
         return false;
     }
 
-    return rules.is_legal_move(board, move.piece.type, static_cast<int>(start_row),
+    return rules.is_legal_move(board, piece->kind, static_cast<int>(start_row),
                                static_cast<int>(start_col), static_cast<int>(end_row),
                                static_cast<int>(end_col));
 }
@@ -29,7 +31,7 @@ GameState::GameState(BoardModel board) : GameState(std::move(board), KungFuChess
 GameState::GameState(BoardModel board, GameRules rules)
     : board_(std::move(board)), rules_(std::move(rules)) {}
 
-Piece GameState::piece_at(std::size_t row, std::size_t col) const {
+const Piece* GameState::piece_at(std::size_t row, std::size_t col) const {
     return board_.piece_at(row, col);
 }
 
@@ -41,8 +43,16 @@ bool GameState::is_empty(std::size_t row, std::size_t col) const {
     return board_.is_empty(row, col);
 }
 
-void GameState::set_piece(std::size_t row, std::size_t col, Piece piece) {
-    board_.set_piece(row, col, piece);
+void GameState::place_piece_at(std::size_t row, std::size_t col, Piece piece) {
+    board_.place_piece_at(row, col, std::move(piece));
+}
+
+void GameState::place_new_piece_at(std::size_t row, std::size_t col, PieceColor color,
+                                   PieceKind kind) {
+    PieceFactory factory(board_.next_piece_id());
+    board_.place_piece_at(row, col,
+                          factory.create(color, kind,
+                                         Position{static_cast<int>(row), static_cast<int>(col)}));
 }
 
 bool GameState::same_board_layout_as(const GameState& other) const noexcept {
@@ -86,14 +96,21 @@ bool GameState::is_friendly_to_selection(std::size_t row, std::size_t col) const
         return false;
     }
 
-    const Piece selected_piece = board_.piece_at(selected_->first, selected_->second);
-    return board_.piece_at(row, col).is_same_color_as(selected_piece);
+    const Piece* selected_piece = board_.piece_at(selected_->first, selected_->second);
+    const Piece* cell_piece = board_.piece_at(row, col);
+    if (selected_piece == nullptr || cell_piece == nullptr) {
+        return false;
+    }
+    return cell_piece->is_same_color_as(*selected_piece);
 }
 
 bool GameState::is_legal_move(int start_row, int start_col, int end_row, int end_col) const {
-    const Piece moving =
+    const Piece* moving =
         board_.piece_at(static_cast<std::size_t>(start_row), static_cast<std::size_t>(start_col));
-    return rules_.is_legal_move(board_, moving.type, start_row, start_col, end_row, end_col);
+    if (moving == nullptr) {
+        return false;
+    }
+    return rules_.is_legal_move(board_, moving->kind, start_row, start_col, end_row, end_col);
 }
 
 void GameState::add_clock(std::int64_t ms) {
@@ -110,18 +127,24 @@ void GameState::settle_pending_moves() {
         const auto [start_row, start_col] = move.start_pos;
         const auto [end_row, end_col] = move.end_pos;
 
-        board_.set_piece(start_row, start_col, Piece::empty());
+        board_.clear_cell(start_row, start_col);
 
         const ArrivingPieceInfo arriving_piece_info{
-            move.piece,
+            move.piece_id,
             move.start_pos,
             move.end_pos,
         };
 
         if (!scheduler_.check_for_jump_capture(collision_resolver_, board_, rules_, move.end_pos,
                                                arriving_piece_info, game_over_)) {
-            board_.set_piece(end_row, end_col,
-                             rules_.on_reach_last_row(move.piece, end_row, board_.rows()));
+            Piece updated = board_.get_piece(move.piece_id);
+            updated = rules_.on_reach_last_row(updated, end_row, board_.rows());
+            updated.cell = Position{static_cast<int>(end_row), static_cast<int>(end_col)};
+            updated.state = PieceState::Idle;
+            board_.place_piece(std::move(updated));
+        } else {
+            Piece& arriving_piece = board_.get_piece(move.piece_id);
+            arriving_piece.state = PieceState::Captured;
         }
     });
 
@@ -160,27 +183,31 @@ bool GameState::can_move_selected_to(std::size_t from_row, std::size_t from_col,
         return false;
     }
 
-    const Piece moving = board_.piece_at(from_row, from_col);
+    const Piece* moving = board_.piece_at(from_row, from_col);
+    if (moving == nullptr) {
+        return false;
+    }
     if (!is_legal_move(static_cast<int>(from_row), static_cast<int>(from_col),
                        static_cast<int>(to_row), static_cast<int>(to_col))) {
         return false;
     }
-    if (scheduler_.is_same_color_destination_claimed(moving.color, {to_row, to_col})) {
+    if (scheduler_.is_same_color_destination_claimed(moving->color, {to_row, to_col})) {
         return false;
     }
 
-    const Piece destination = board_.piece_at(to_row, to_col);
-    const bool is_capture = !destination.is_empty() && destination.is_opponent_of(moving);
+    const Piece* destination = board_.piece_at(to_row, to_col);
+    const bool is_capture = destination != nullptr && destination->is_opponent_of(*moving);
     const std::int64_t move_duration =
         compute_move_duration(from_row, from_col, to_row, to_col, is_capture);
 
     const PendingMove proposed{
-        moving,
+        moving->id,
+        moving->color,
         {from_row, from_col},
         {to_row, to_col},
         scheduler_.clock_ms() + move_duration,
     };
-    return !scheduler_.conflicts_with_opposite_color_move(moving.color, proposed);
+    return !scheduler_.conflicts_with_opposite_color_move(moving->color, proposed);
 }
 
 void GameState::move_selected_to(std::size_t to_row, std::size_t to_col) {
@@ -193,14 +220,17 @@ void GameState::move_selected_to(std::size_t to_row, std::size_t to_col) {
         return;
     }
 
-    const Piece moving = board_.piece_at(from_row, from_col);
-    const Piece destination = board_.piece_at(to_row, to_col);
-    const bool is_capture = !destination.is_empty() && destination.is_opponent_of(moving);
+    const Piece* moving = board_.piece_at(from_row, from_col);
+    const Piece* destination = board_.piece_at(to_row, to_col);
+    const bool is_capture = destination != nullptr && destination->is_opponent_of(*moving);
     const std::int64_t move_duration =
         compute_move_duration(from_row, from_col, to_row, to_col, is_capture);
 
+    board_.get_piece(moving->id).state = PieceState::Moving;
+
     scheduler_.schedule_move(PendingMove{
-        moving,
+        moving->id,
+        moving->color,
         {from_row, from_col},
         {to_row, to_col},
         scheduler_.clock_ms() + move_duration,
@@ -227,8 +257,14 @@ void GameState::jump_at(std::size_t row, std::size_t col) {
         return;
     }
 
+    const Piece* piece = board_.piece_at(row, col);
+    if (piece == nullptr) {
+        return;
+    }
+
     scheduler_.schedule_jump(JumpState{
-        board_.piece_at(row, col),
+        piece->id,
+        piece->color,
         {row, col},
         scheduler_.clock_ms() + rules_.jump_duration_ms,
     });

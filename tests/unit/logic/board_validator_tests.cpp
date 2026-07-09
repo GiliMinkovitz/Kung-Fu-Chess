@@ -1,3 +1,4 @@
+#include "core/piece_token.h"
 #include "core/board_model.h"
 #include "logic/board_validator.h"
 #include "core/game_config.h"

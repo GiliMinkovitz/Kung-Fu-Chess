@@ -44,13 +44,13 @@ bool CollisionResolver::has_common_route(const PendingMove& a, const PendingMove
 }
 
 bool CollisionResolver::conflicts_with_opposite_color_move(
-    const std::vector<PendingMove>& pending_moves, std::int64_t clock_ms, char moving_color,
-    const PendingMove& proposed) {
+    const std::vector<PendingMove>& pending_moves, std::int64_t clock_ms,
+    PieceColor moving_color, const PendingMove& proposed) {
     for (const PendingMove& existing : pending_moves) {
         if (clock_ms >= existing.arrival_time) {
             continue;
         }
-        if (existing.piece.color == moving_color) {
+        if (existing.color == moving_color) {
             continue;
         }
         if (has_common_route(existing, proposed)) {
@@ -61,13 +61,13 @@ bool CollisionResolver::conflicts_with_opposite_color_move(
 }
 
 bool CollisionResolver::is_same_color_destination_claimed(
-    const std::vector<PendingMove>& pending_moves, std::int64_t clock_ms, char moving_color,
+    const std::vector<PendingMove>& pending_moves, std::int64_t clock_ms, PieceColor moving_color,
     const std::pair<std::size_t, std::size_t>& end_pos) {
     for (const PendingMove& existing : pending_moves) {
         if (clock_ms >= existing.arrival_time) {
             continue;
         }
-        if (existing.piece.color != moving_color) {
+        if (existing.color != moving_color) {
             continue;
         }
         if (existing.end_pos == end_pos) {
@@ -83,24 +83,28 @@ bool CollisionResolver::check_for_jump_capture(
     const std::pair<std::size_t, std::size_t>& target_cell,
     const ArrivingPieceInfo& arriving_piece_info, bool& game_over) const {
     const auto [end_row, end_col] = target_cell;
+    const Piece& arriving_piece = board.get_piece(arriving_piece_info.piece_id);
 
     for (const JumpState& jump : active_jumps) {
         if (clock_ms <= jump.arrival_time && jump.cell == target_cell &&
-            arriving_piece_info.piece.color != jump.piece.color) {
-            if (rules.is_game_over(arriving_piece_info.piece)) {
+            arriving_piece.color != jump.color) {
+            if (rules.is_game_over(arriving_piece)) {
                 game_over = true;
             }
             return true;
         }
     }
 
-    const Piece destination = board.piece_at(end_row, end_col);
-    if (!destination.is_empty() && destination.color != arriving_piece_info.piece.color) {
-        if (rules.is_game_over(destination)) {
+    const Piece* destination = board.piece_at(end_row, end_col);
+    if (destination != nullptr && destination->color != arriving_piece.color) {
+        if (rules.is_game_over(*destination)) {
             game_over = true;
         }
-        board.set_piece(end_row, end_col,
-                        rules.on_reach_last_row(arriving_piece_info.piece, end_row, board.rows()));
+        board.remove_piece_at(end_row, end_col);
+        Piece placed = rules.on_reach_last_row(arriving_piece, end_row, board.rows());
+        placed.cell = Position{static_cast<int>(end_row), static_cast<int>(end_col)};
+        placed.state = PieceState::Idle;
+        board.place_piece(std::move(placed));
         return true;
     }
 
