@@ -1,5 +1,6 @@
-#include "core/board_model.h"
+#include "adapters/board_writer.h"
 #include "adapters/command_processor.h"
+#include "core/board_model.h"
 #include "logic/game_state.h"
 #include "test_helpers.h"
 
@@ -11,7 +12,7 @@ namespace {
 
 std::string capture_board(kfc::GameState& state) {
     std::ostringstream out;
-    state.write_board(out);
+    state.write_board(out, kfc::write_board);
     return out.str();
 }
 

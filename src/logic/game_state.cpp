@@ -1,6 +1,5 @@
 #include "logic/game_state.h"
 
-#include "adapters/board_writer.h"
 #include "core/piece_factory.h"
 
 #include <algorithm>
@@ -270,9 +269,10 @@ void GameState::jump_at(std::size_t row, std::size_t col) {
     });
 }
 
-void GameState::write_board(std::ostream& out) {
+void GameState::write_board(
+    std::ostream& out, const std::function<void(std::ostream&, const BoardModel&)>& writer) {
     settle_pending_moves();
-    kfc::write_board(out, board_);
+    writer(out, board_);
 }
 
 }  // namespace kfc

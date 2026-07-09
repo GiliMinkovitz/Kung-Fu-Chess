@@ -1,5 +1,6 @@
 #include "adapters/command_processor.h"
 
+#include "adapters/board_writer.h"
 #include "core/game_config.h"
 
 #include <sstream>
@@ -132,7 +133,7 @@ void CommandProcessor::handle_wait(std::int64_t ms) {
 }
 
 void CommandProcessor::handle_print_board(std::ostream& out) {
-    state_.write_board(out);
+    state_.write_board(out, kfc::write_board);
 }
 
 bool CommandProcessor::pixel_to_cell(int x, int y, std::size_t& row, std::size_t& col) const {

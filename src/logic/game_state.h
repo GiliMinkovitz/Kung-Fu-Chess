@@ -6,6 +6,7 @@
 #include "logic/move_scheduler.h"
 
 #include <cstdint>
+#include <functional>
 #include <iosfwd>
 #include <optional>
 #include <string>
@@ -49,7 +50,8 @@ public:
     void move_selected_to(std::size_t to_row, std::size_t to_col);
     void jump_selected();
     void jump_at(std::size_t row, std::size_t col);
-    void write_board(std::ostream& out);
+    void write_board(std::ostream& out,
+                     const std::function<void(std::ostream&, const BoardModel&)>& writer);
 
 private:
     [[nodiscard]] bool can_move_selected_to(std::size_t from_row, std::size_t from_col,
