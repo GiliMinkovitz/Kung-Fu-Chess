@@ -1,4 +1,4 @@
-#include "board_model.h"
+#include "core/board_model.h"
 
 #include <cassert>
 

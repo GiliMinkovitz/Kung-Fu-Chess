@@ -1,5 +1,5 @@
-#include "board_model.h"
-#include "move_validator.h"
+#include "core/board_model.h"
+#include "logic/move_validator.h"
 #include "test_helpers.h"
 
 #include <doctest/doctest.h>

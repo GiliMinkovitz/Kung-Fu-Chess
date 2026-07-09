@@ -1,7 +1,7 @@
 #pragma once
 
-#include "board_model.h"
-#include "board_validator.h"
+#include "logic/board_validator.h"
+#include "core/board_model.h"
 
 #include <iosfwd>
 #include <string>

@@ -1,6 +1,6 @@
-#include "piece.h"
+#include "core/piece.h"
 
-#include "game_config.h"
+#include "core/game_config.h"
 
 namespace kfc {
 

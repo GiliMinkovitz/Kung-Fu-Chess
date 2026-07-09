@@ -1,7 +1,7 @@
 #pragma once
 
-#include "board_model.h"
-#include "game_state.h"
+#include "core/board_model.h"
+#include "logic/game_state.h"
 
 #include <string>
 #include <vector>

@@ -1,6 +1,6 @@
-#include "board_model.h"
-#include "board_validator.h"
-#include "game_config.h"
+#include "core/board_model.h"
+#include "logic/board_validator.h"
+#include "core/game_config.h"
 #include "test_helpers.h"
 
 #include <doctest/doctest.h>

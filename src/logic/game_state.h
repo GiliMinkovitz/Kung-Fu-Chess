@@ -1,9 +1,9 @@
 #pragma once
 
-#include "board_model.h"
-#include "collision_resolver.h"
-#include "game_rules.h"
-#include "move_scheduler.h"
+#include "core/board_model.h"
+#include "logic/collision_resolver.h"
+#include "logic/game_rules.h"
+#include "logic/move_scheduler.h"
 
 #include <cstdint>
 #include <iosfwd>

@@ -1,4 +1,4 @@
-#include "piece.h"
+#include "core/piece.h"
 
 #include <doctest/doctest.h>
 #include <optional>

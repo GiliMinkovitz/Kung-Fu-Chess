@@ -12,23 +12,27 @@ if(POLICY CMP0135)
 endif()
 
 set(KFC_SOURCES
-    src/piece.cpp
-    src/board_model.cpp
-    src/board_validator.cpp
-    src/board_writer.cpp
-    src/path_utils.cpp
-    src/vpl_io.cpp
-    src/game_rules.cpp
-    src/move_scheduler.cpp
-    src/collision_resolver.cpp
-    src/game_state.cpp
-    src/command_processor.cpp
-    src/move_validator.cpp
+    src/core/piece.cpp
+    src/core/board_model.cpp
+    src/logic/board_validator.cpp
+    src/adapters/board_writer.cpp
+    src/logic/path_utils.cpp
+    src/adapters/vpl_io.cpp
+    src/logic/game_rules.cpp
+    src/logic/move_scheduler.cpp
+    src/logic/collision_resolver.cpp
+    src/logic/game_state.cpp
+    src/adapters/command_processor.cpp
+    src/logic/move_validator.cpp
 )
 
 add_executable(${PROJECT_NAME}
     src/main.cpp
     ${KFC_SOURCES}
+)
+
+target_include_directories(${PROJECT_NAME} PRIVATE
+    ${CMAKE_SOURCE_DIR}/src
 )
 
 set(KFC_TEST_SOURCES
@@ -43,6 +47,7 @@ set(KFC_TEST_SOURCES
     tests/game_rules_tests.cpp
     tests/command_processor_tests.cpp
     tests/vpl_io_tests.cpp
+    tests/integration_test.cpp
 )
 
 add_executable(KungFuChessTests

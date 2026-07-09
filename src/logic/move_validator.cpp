@@ -1,7 +1,7 @@
-#include "move_validator.h"
+#include "logic/move_validator.h"
 
-#include "game_config.h"
-#include "path_utils.h"
+#include "core/game_config.h"
+#include "logic/path_utils.h"
 
 #include <cstdlib>
 

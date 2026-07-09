@@ -1,6 +1,6 @@
-#include "game_config.h"
-#include "game_rules.h"
-#include "piece.h"
+#include "core/game_config.h"
+#include "logic/game_rules.h"
+#include "core/piece.h"
 
 #include <doctest/doctest.h>
 #include <optional>

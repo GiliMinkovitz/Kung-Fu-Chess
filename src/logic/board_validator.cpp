@@ -1,7 +1,7 @@
-#include "board_validator.h"
+#include "logic/board_validator.h"
 
-#include "game_config.h"
-#include "piece.h"
+#include "core/game_config.h"
+#include "core/piece.h"
 
 #include <sstream>
 #include <string>

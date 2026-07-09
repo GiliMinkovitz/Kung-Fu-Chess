@@ -1,9 +1,9 @@
 // Repository: https://github.com/GiliMinkovitz/Kung-Fu-Chess.git
 
-#include "game_config.h"
-#include "vpl_io.h"
-#include "command_processor.h"
-#include "game_state.h"
+#include "core/game_config.h"
+#include "adapters/vpl_io.h"
+#include "adapters/command_processor.h"
+#include "logic/game_state.h"
 
 #include <iostream>
 

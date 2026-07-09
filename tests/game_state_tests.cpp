@@ -1,9 +1,9 @@
-#include "board_model.h"
-#include "game_config.h"
-#include "game_rules.h"
-#include "game_state.h"
-#include "move_validator.h"
-#include "piece.h"
+#include "core/board_model.h"
+#include "core/game_config.h"
+#include "logic/game_rules.h"
+#include "logic/game_state.h"
+#include "logic/move_validator.h"
+#include "core/piece.h"
 #include "test_helpers.h"
 
 #include <doctest/doctest.h>

@@ -1,6 +1,6 @@
-#include "game_state.h"
+#include "logic/game_state.h"
 
-#include "board_writer.h"
+#include "adapters/board_writer.h"
 
 #include <algorithm>
 

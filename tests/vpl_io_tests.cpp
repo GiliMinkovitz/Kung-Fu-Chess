@@ -1,8 +1,8 @@
-#include "board_model.h"
-#include "board_validator.h"
-#include "board_writer.h"
-#include "game_config.h"
-#include "vpl_io.h"
+#include "core/board_model.h"
+#include "logic/board_validator.h"
+#include "adapters/board_writer.h"
+#include "core/game_config.h"
+#include "adapters/vpl_io.h"
 #include "test_helpers.h"
 
 #include <doctest/doctest.h>

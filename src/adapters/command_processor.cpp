@@ -1,6 +1,6 @@
-#include "command_processor.h"
+#include "adapters/command_processor.h"
 
-#include "game_config.h"
+#include "core/game_config.h"
 
 #include <sstream>
 #include <string>

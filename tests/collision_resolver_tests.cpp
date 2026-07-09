@@ -1,8 +1,8 @@
-#include "board_model.h"
-#include "collision_resolver.h"
-#include "game_config.h"
-#include "game_rules.h"
-#include "piece.h"
+#include "core/board_model.h"
+#include "logic/collision_resolver.h"
+#include "core/game_config.h"
+#include "logic/game_rules.h"
+#include "core/piece.h"
 #include "test_helpers.h"
 
 #include <doctest/doctest.h>

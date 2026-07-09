@@ -1,7 +1,7 @@
 #pragma once
 
-#include "board_model.h"
-#include "piece.h"
+#include "core/board_model.h"
+#include "core/piece.h"
 
 #include <cstdint>
 #include <functional>

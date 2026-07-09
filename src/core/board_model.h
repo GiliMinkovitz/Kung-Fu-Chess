@@ -1,6 +1,6 @@
 #pragma once
 
-#include "piece.h"
+#include "core/piece.h"
 
 #include <cstddef>
 #include <initializer_list>
