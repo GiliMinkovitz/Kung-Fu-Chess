@@ -36,18 +36,18 @@ target_include_directories(${PROJECT_NAME} PRIVATE
 )
 
 set(KFC_TEST_SOURCES
-    tests/board_model_tests.cpp
-    tests/board_validator_tests.cpp
-    tests/board_writer_tests.cpp
-    tests/piece_tests.cpp
-    tests/path_utils_tests.cpp
-    tests/move_validator_tests.cpp
-    tests/collision_resolver_tests.cpp
-    tests/game_state_tests.cpp
-    tests/game_rules_tests.cpp
-    tests/command_processor_tests.cpp
-    tests/vpl_io_tests.cpp
-    tests/integration_test.cpp
+    tests/unit/core/board_model_tests.cpp
+    tests/unit/core/piece_tests.cpp
+    tests/unit/logic/board_validator_tests.cpp
+    tests/unit/logic/path_utils_tests.cpp
+    tests/unit/logic/move_validator_tests.cpp
+    tests/unit/logic/collision_resolver_tests.cpp
+    tests/unit/logic/game_state_tests.cpp
+    tests/unit/logic/game_rules_tests.cpp
+    tests/unit/adapters/board_writer_tests.cpp
+    tests/unit/adapters/command_processor_tests.cpp
+    tests/unit/adapters/vpl_io_tests.cpp
+    tests/integration/integration_test.cpp
 )
 
 add_executable(KungFuChessTests
