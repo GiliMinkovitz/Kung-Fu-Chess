@@ -37,7 +37,7 @@
           </tr>
           <tr>
             <td class="headerItem">Test Date:</td>
-            <td class="headerValue">2026-07-12 15:25:03</td>
+            <td class="headerValue">2026-07-12 16:35:34</td>
             <td></td>
             <td class="headerItem">Functions:</td>
             <td class="headerCovTableEntryHi">100.0&nbsp;%</td>
@@ -128,21 +128,21 @@
 <span id="L66"><span class="lineNum">      66</span> <span class="tlaGNC">          61 :     scheduler_.expire_jumps(current_time_ms);</span></span>
 <span id="L67"><span class="lineNum">      67</span> <span class="tlaGNC">          61 : }</span></span>
 <span id="L68"><span class="lineNum">      68</span>              : </span>
-<span id="L69"><span class="lineNum">      69</span> <span class="tlaGNC">         137 : bool RealTimeArbiter::is_piece_moving(std::size_t row, std::size_t col) const {</span></span>
-<span id="L70"><span class="lineNum">      70</span> <span class="tlaGNC">         137 :     return scheduler_.is_piece_moving(static_cast&lt;uint64_t&gt;(clock_ms_), row, col);</span></span>
+<span id="L69"><span class="lineNum">      69</span> <span class="tlaGNC">         136 : bool RealTimeArbiter::is_piece_moving(std::size_t row, std::size_t col) const {</span></span>
+<span id="L70"><span class="lineNum">      70</span> <span class="tlaGNC">         136 :     return scheduler_.is_piece_moving(static_cast&lt;uint64_t&gt;(clock_ms_), row, col);</span></span>
 <span id="L71"><span class="lineNum">      71</span>              : }</span>
 <span id="L72"><span class="lineNum">      72</span>              : </span>
-<span id="L73"><span class="lineNum">      73</span> <span class="tlaGNC">         126 : bool RealTimeArbiter::is_piece_jumping(std::size_t row, std::size_t col) const {</span></span>
-<span id="L74"><span class="lineNum">      74</span> <span class="tlaGNC">         126 :     return scheduler_.is_piece_jumping(static_cast&lt;uint64_t&gt;(clock_ms_), row, col);</span></span>
+<span id="L73"><span class="lineNum">      73</span> <span class="tlaGNC">         125 : bool RealTimeArbiter::is_piece_jumping(std::size_t row, std::size_t col) const {</span></span>
+<span id="L74"><span class="lineNum">      74</span> <span class="tlaGNC">         125 :     return scheduler_.is_piece_jumping(static_cast&lt;uint64_t&gt;(clock_ms_), row, col);</span></span>
 <span id="L75"><span class="lineNum">      75</span>              : }</span>
 <span id="L76"><span class="lineNum">      76</span>              : </span>
-<span id="L77"><span class="lineNum">      77</span> <span class="tlaGNC">          37 : bool RealTimeArbiter::is_same_color_destination_claimed(</span></span>
+<span id="L77"><span class="lineNum">      77</span> <span class="tlaGNC">          36 : bool RealTimeArbiter::is_same_color_destination_claimed(</span></span>
 <span id="L78"><span class="lineNum">      78</span>              :     PieceColor color, const std::pair&lt;std::size_t, std::size_t&gt;&amp; end_pos) const {</span>
-<span id="L79"><span class="lineNum">      79</span> <span class="tlaGNC">          37 :     return scheduler_.is_same_color_destination_claimed(static_cast&lt;uint64_t&gt;(clock_ms_), color,</span></span>
-<span id="L80"><span class="lineNum">      80</span> <span class="tlaGNC">          37 :                                                         end_pos);</span></span>
+<span id="L79"><span class="lineNum">      79</span> <span class="tlaGNC">          36 :     return scheduler_.is_same_color_destination_claimed(static_cast&lt;uint64_t&gt;(clock_ms_), color,</span></span>
+<span id="L80"><span class="lineNum">      80</span> <span class="tlaGNC">          36 :                                                         end_pos);</span></span>
 <span id="L81"><span class="lineNum">      81</span>              : }</span>
 <span id="L82"><span class="lineNum">      82</span>              : </span>
-<span id="L83"><span class="lineNum">      83</span> <span class="tlaGNC">          36 : bool RealTimeArbiter::would_conflict_with_opposite_color_move(</span></span>
+<span id="L83"><span class="lineNum">      83</span> <span class="tlaGNC">          35 : bool RealTimeArbiter::would_conflict_with_opposite_color_move(</span></span>
 <span id="L84"><span class="lineNum">      84</span>              :     PieceColor moving_color, Piece::Id piece_id,</span>
 <span id="L85"><span class="lineNum">      85</span>              :     const std::pair&lt;std::size_t, std::size_t&gt;&amp; start_pos,</span>
 <span id="L86"><span class="lineNum">      86</span>              :     const std::pair&lt;std::size_t, std::size_t&gt;&amp; end_pos, std::int64_t move_duration_ms) const {</span>
@@ -151,10 +151,10 @@
 <span id="L89"><span class="lineNum">      89</span>              :         moving_color,</span>
 <span id="L90"><span class="lineNum">      90</span>              :         start_pos,</span>
 <span id="L91"><span class="lineNum">      91</span>              :         end_pos,</span>
-<span id="L92"><span class="lineNum">      92</span> <span class="tlaGNC">          36 :         clock_ms_ + move_duration_ms,</span></span>
-<span id="L93"><span class="lineNum">      93</span> <span class="tlaGNC">          36 :     };</span></span>
-<span id="L94"><span class="lineNum">      94</span> <span class="tlaGNC">          36 :     return scheduler_.conflicts_with_opposite_color_move(static_cast&lt;uint64_t&gt;(clock_ms_),</span></span>
-<span id="L95"><span class="lineNum">      95</span> <span class="tlaGNC">          72 :                                                          moving_color, proposed);</span></span>
+<span id="L92"><span class="lineNum">      92</span> <span class="tlaGNC">          35 :         clock_ms_ + move_duration_ms,</span></span>
+<span id="L93"><span class="lineNum">      93</span> <span class="tlaGNC">          35 :     };</span></span>
+<span id="L94"><span class="lineNum">      94</span> <span class="tlaGNC">          35 :     return scheduler_.conflicts_with_opposite_color_move(static_cast&lt;uint64_t&gt;(clock_ms_),</span></span>
+<span id="L95"><span class="lineNum">      95</span> <span class="tlaGNC">          70 :                                                          moving_color, proposed);</span></span>
 <span id="L96"><span class="lineNum">      96</span>              : }</span>
 <span id="L97"><span class="lineNum">      97</span>              : </span>
 <span id="L98"><span class="lineNum">      98</span> <span class="tlaGNC">          37 : void RealTimeArbiter::request_move(Piece::Id piece_id, PieceColor color,</span></span>

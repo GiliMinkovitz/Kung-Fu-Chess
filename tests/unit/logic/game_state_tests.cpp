@@ -56,20 +56,6 @@ TEST_CASE("GameStateTest - IsPieceMovingFalseAfterSettleNoCooldown") {
     CHECK(state.is_selectable_piece(0, 2));
 }
 
-TEST_CASE("GameStateTest - MoveAbortedIfFriendlyOccupiesTargetBeforeArrival") {
-    kfc::BoardModel board = kfc::test::make_board({{"wR", ".", ".", "."}, {".", ".", ".", "."}});
-    kfc::GameState state(board);
-    state.select(0, 0);
-    state.move_selected_to(0, 2);
-
-    kfc::test::place_new_piece_at(state, 0, 2, kfc::PieceColor::White, kfc::PieceKind::King);
-
-    state.add_clock(2000);
-
-    CHECK_EQ(state.token_at(0, 0), "wR");
-    CHECK_EQ(state.token_at(0, 2), "wK");
-}
-
 TEST_CASE("GameStateTest - JumpCaptureInterceptsArrivingEnemy") {
     kfc::BoardModel board = kfc::test::make_board({{".", ".", "."}, {"wR", ".", "."}, {"bR", ".", "."}});
     kfc::GameState state(board);

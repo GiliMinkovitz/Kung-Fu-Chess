@@ -37,7 +37,7 @@
           </tr>
           <tr>
             <td class="headerItem">Test Date:</td>
-            <td class="headerValue">2026-07-12 15:25:03</td>
+            <td class="headerValue">2026-07-12 16:35:34</td>
             <td></td>
             <td class="headerItem">Functions:</td>
             <td class="headerCovTableEntryHi">100.0&nbsp;%</td>
@@ -68,42 +68,42 @@
 <span id="L6"><span class="lineNum">       6</span>              : </span>
 <span id="L7"><span class="lineNum">       7</span>              : namespace kfc {</span>
 <span id="L8"><span class="lineNum">       8</span>              : </span>
-<span id="L9"><span class="lineNum">       9</span> <span class="tlaGNC">         137 : bool MoveScheduler::is_piece_moving(uint64_t current_time_ms, std::size_t row,</span></span>
+<span id="L9"><span class="lineNum">       9</span> <span class="tlaGNC">         136 : bool MoveScheduler::is_piece_moving(uint64_t current_time_ms, std::size_t row,</span></span>
 <span id="L10"><span class="lineNum">      10</span>              :                                     std::size_t col) const {</span>
-<span id="L11"><span class="lineNum">      11</span> <span class="tlaGNC">         137 :     const auto clock_ms = static_cast&lt;std::int64_t&gt;(current_time_ms);</span></span>
-<span id="L12"><span class="lineNum">      12</span> <span class="tlaGNC">         287 :     for (const PendingMove&amp; move : pending_moves_) {</span></span>
+<span id="L11"><span class="lineNum">      11</span> <span class="tlaGNC">         136 :     const auto clock_ms = static_cast&lt;std::int64_t&gt;(current_time_ms);</span></span>
+<span id="L12"><span class="lineNum">      12</span> <span class="tlaGNC">         285 :     for (const PendingMove&amp; move : pending_moves_) {</span></span>
 <span id="L13"><span class="lineNum">      13</span> <span class="tlaGNC">          32 :         if (clock_ms &lt; move.arrival_time &amp;&amp; move.start_pos.first == row &amp;&amp;</span></span>
 <span id="L14"><span class="lineNum">      14</span> <span class="tlaGNC">          22 :             move.start_pos.second == col) {</span></span>
 <span id="L15"><span class="lineNum">      15</span> <span class="tlaGNC">          19 :             return true;</span></span>
 <span id="L16"><span class="lineNum">      16</span>              :         }</span>
 <span id="L17"><span class="lineNum">      17</span>              :     }</span>
-<span id="L18"><span class="lineNum">      18</span> <span class="tlaGNC">         118 :     return false;</span></span>
+<span id="L18"><span class="lineNum">      18</span> <span class="tlaGNC">         117 :     return false;</span></span>
 <span id="L19"><span class="lineNum">      19</span>              : }</span>
 <span id="L20"><span class="lineNum">      20</span>              : </span>
-<span id="L21"><span class="lineNum">      21</span> <span class="tlaGNC">         126 : bool MoveScheduler::is_piece_jumping(uint64_t current_time_ms, std::size_t row,</span></span>
+<span id="L21"><span class="lineNum">      21</span> <span class="tlaGNC">         125 : bool MoveScheduler::is_piece_jumping(uint64_t current_time_ms, std::size_t row,</span></span>
 <span id="L22"><span class="lineNum">      22</span>              :                                      std::size_t col) const {</span>
-<span id="L23"><span class="lineNum">      23</span> <span class="tlaGNC">         126 :     const auto clock_ms = static_cast&lt;std::int64_t&gt;(current_time_ms);</span></span>
-<span id="L24"><span class="lineNum">      24</span> <span class="tlaGNC">         255 :     for (const JumpState&amp; jump : active_jumps_) {</span></span>
+<span id="L23"><span class="lineNum">      23</span> <span class="tlaGNC">         125 :     const auto clock_ms = static_cast&lt;std::int64_t&gt;(current_time_ms);</span></span>
+<span id="L24"><span class="lineNum">      24</span> <span class="tlaGNC">         253 :     for (const JumpState&amp; jump : active_jumps_) {</span></span>
 <span id="L25"><span class="lineNum">      25</span> <span class="tlaGNC">          10 :         if (clock_ms &lt; jump.arrival_time &amp;&amp; jump.cell.first == row &amp;&amp;</span></span>
 <span id="L26"><span class="lineNum">      26</span> <span class="tlaGNC">          10 :             jump.cell.second == col) {</span></span>
 <span id="L27"><span class="lineNum">      27</span> <span class="tlaGNC">           7 :             return true;</span></span>
 <span id="L28"><span class="lineNum">      28</span>              :         }</span>
 <span id="L29"><span class="lineNum">      29</span>              :     }</span>
-<span id="L30"><span class="lineNum">      30</span> <span class="tlaGNC">         119 :     return false;</span></span>
+<span id="L30"><span class="lineNum">      30</span> <span class="tlaGNC">         118 :     return false;</span></span>
 <span id="L31"><span class="lineNum">      31</span>              : }</span>
 <span id="L32"><span class="lineNum">      32</span>              : </span>
-<span id="L33"><span class="lineNum">      33</span> <span class="tlaGNC">          37 : bool MoveScheduler::is_same_color_destination_claimed(</span></span>
+<span id="L33"><span class="lineNum">      33</span> <span class="tlaGNC">          36 : bool MoveScheduler::is_same_color_destination_claimed(</span></span>
 <span id="L34"><span class="lineNum">      34</span>              :     uint64_t current_time_ms, PieceColor color,</span>
 <span id="L35"><span class="lineNum">      35</span>              :     const std::pair&lt;std::size_t, std::size_t&gt;&amp; end_pos) const {</span>
-<span id="L36"><span class="lineNum">      36</span> <span class="tlaGNC">          74 :     return CollisionResolver::is_same_color_destination_claimed(</span></span>
-<span id="L37"><span class="lineNum">      37</span> <span class="tlaGNC">          37 :         pending_moves_, static_cast&lt;std::int64_t&gt;(current_time_ms), color, end_pos);</span></span>
+<span id="L36"><span class="lineNum">      36</span> <span class="tlaGNC">          72 :     return CollisionResolver::is_same_color_destination_claimed(</span></span>
+<span id="L37"><span class="lineNum">      37</span> <span class="tlaGNC">          36 :         pending_moves_, static_cast&lt;std::int64_t&gt;(current_time_ms), color, end_pos);</span></span>
 <span id="L38"><span class="lineNum">      38</span>              : }</span>
 <span id="L39"><span class="lineNum">      39</span>              : </span>
-<span id="L40"><span class="lineNum">      40</span> <span class="tlaGNC">          36 : bool MoveScheduler::conflicts_with_opposite_color_move(uint64_t current_time_ms,</span></span>
+<span id="L40"><span class="lineNum">      40</span> <span class="tlaGNC">          35 : bool MoveScheduler::conflicts_with_opposite_color_move(uint64_t current_time_ms,</span></span>
 <span id="L41"><span class="lineNum">      41</span>              :                                                      PieceColor moving_color,</span>
 <span id="L42"><span class="lineNum">      42</span>              :                                                      const PendingMove&amp; proposed) const {</span>
-<span id="L43"><span class="lineNum">      43</span> <span class="tlaGNC">          72 :     return CollisionResolver::conflicts_with_opposite_color_move(</span></span>
-<span id="L44"><span class="lineNum">      44</span> <span class="tlaGNC">          36 :         pending_moves_, static_cast&lt;std::int64_t&gt;(current_time_ms), moving_color, proposed);</span></span>
+<span id="L43"><span class="lineNum">      43</span> <span class="tlaGNC">          70 :     return CollisionResolver::conflicts_with_opposite_color_move(</span></span>
+<span id="L44"><span class="lineNum">      44</span> <span class="tlaGNC">          35 :         pending_moves_, static_cast&lt;std::int64_t&gt;(current_time_ms), moving_color, proposed);</span></span>
 <span id="L45"><span class="lineNum">      45</span>              : }</span>
 <span id="L46"><span class="lineNum">      46</span>              : </span>
 <span id="L47"><span class="lineNum">      47</span> <span class="tlaGNC">          61 : void MoveScheduler::for_each_pending_due(uint64_t current_time_ms,</span></span>

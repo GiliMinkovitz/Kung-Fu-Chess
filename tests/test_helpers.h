@@ -75,11 +75,4 @@ inline Piece make_piece(PieceColor color, PieceKind kind) {
     return factory.create(color, kind, {0, 0});
 }
 
-inline void place_new_piece_at(GameState& state, std::size_t row, std::size_t col,
-                               PieceColor color, PieceKind kind) {
-    PieceFactory factory(state.board_.next_piece_id());
-    state.board_.place_piece_at(
-        row, col, factory.create(color, kind, Position{static_cast<int>(row), static_cast<int>(col)}));
-}
-
 }  // namespace kfc::test

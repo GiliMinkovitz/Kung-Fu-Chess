@@ -77,3 +77,12 @@ TEST_CASE("BoardModelTest - FindPieceByIdReturnsNullForInvalidId") {
     board.clear_cell(0, 0);
     CHECK(board.piece_at(0, 0) == nullptr);
 }
+
+TEST_CASE("BoardModelTest - InvalidZeroWidthRow") {
+    kfc::BoardModel board;
+    kfc::PieceFactory factory;
+    board.append_token_row({}, 0, factory);
+    CHECK_EQ(board.rows(), 1);
+    CHECK_EQ(board.cols(), 0);
+    CHECK_FALSE(board.is_valid());
+}

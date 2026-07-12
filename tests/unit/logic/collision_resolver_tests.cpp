@@ -37,6 +37,12 @@ TEST_CASE("CollisionResolverTest - CollisionHasCommonRouteDisjoint") {
     CHECK_FALSE(kfc::CollisionResolver::has_common_route(left, right));
 }
 
+TEST_CASE("CollisionResolverTest - CollisionHasCommonRouteMixedOrientation") {
+    const kfc::PendingMove diagonal{1, kfc::PieceColor::White, {0, 0}, {2, 2}, 1000};
+    const kfc::PendingMove horizontal{2, kfc::PieceColor::Black, {3, 0}, {3, 3}, 1000};
+    CHECK_FALSE(kfc::CollisionResolver::has_common_route(diagonal, horizontal));
+}
+
 TEST_CASE("CollisionResolverTest - CollisionConflictsWithOppositeColorMove") {
     std::vector<kfc::PendingMove> pending;
     pending.push_back({2, kfc::PieceColor::Black, {0, 2}, {0, 0}, 1000});

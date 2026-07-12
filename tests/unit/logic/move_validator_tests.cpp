@@ -222,3 +222,9 @@ TEST_CASE("MoveValidatorTest - CaptureFromEmptySquare") {
     const kfc::BoardModel board = kfc::test::make_board({{".", "bK"}});
     CHECK_FALSE(kfc::is_legal_move(board, kfc::PieceKind::Rook, 0, 0, 0, 1));
 }
+
+TEST_CASE("MoveValidatorTest - PawnDiagonalWrongDirectionWithEnemy") {
+    const kfc::BoardModel board =
+        kfc::test::make_board({{".", ".", "."}, {".", "wP", "."}, {".", ".", "bK"}});
+    CHECK_FALSE(kfc::is_legal_move(board, kfc::PieceKind::Pawn, 1, 1, 2, 2));
+}

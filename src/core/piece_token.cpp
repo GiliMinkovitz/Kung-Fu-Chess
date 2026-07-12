@@ -32,9 +32,6 @@ std::optional<PieceDescriptor> descriptor_from_token(const std::string& token) {
 
     const std::optional<PieceColor> color = color_from_char(token[0]);
     const std::optional<PieceKind> kind = kind_from_char(token[1]);
-    if (!color.has_value() || !kind.has_value()) {
-        return std::nullopt;
-    }
     return PieceDescriptor{*color, *kind};
 }
 

@@ -1,5 +1,6 @@
 #include "core/board_model.h"
 #include "core/game_config.h"
+#include "core/piece_factory.h"
 #include "logic/game_rules.h"
 #include "logic/real_time_arbiter.h"
 #include "test_helpers.h"
@@ -70,6 +71,26 @@ TEST_CASE("RealTimeArbiterTest - RequestJumpExpiresAfterDuration") {
     arbiter.update_time(kfc::kJumpDurationMs, board, rules, game_over);
 
     CHECK_FALSE(arbiter.is_piece_jumping(0, 0));
+}
+
+TEST_CASE("RealTimeArbiterTest - MoveAbortedIfFriendlyOccupiesTargetBeforeArrival") {
+    kfc::BoardModel board = kfc::test::make_board({{"wR", ".", ".", "."}});
+    kfc::RealTimeArbiter arbiter;
+    kfc::GameRules rules = kfc::KungFuChessRules::standard();
+    bool game_over = false;
+    const auto piece_id = piece_id_at(board, 0, 0);
+
+    board.get_piece(piece_id).state = kfc::PieceState::Moving;
+    arbiter.request_move(piece_id, kfc::PieceColor::White, {0, 0}, {0, 2}, 2 * kfc::kMoveDurationMs);
+
+    kfc::PieceFactory factory(board.next_piece_id());
+    board.place_piece_at(0, 2,
+                          factory.create(kfc::PieceColor::White, kfc::PieceKind::King, {0, 2}));
+
+    arbiter.update_time(2 * kfc::kMoveDurationMs, board, rules, game_over);
+
+    CHECK_EQ(board.token_at(0, 0), "wR");
+    CHECK_EQ(board.token_at(0, 2), "wK");
 }
 
 TEST_CASE("RealTimeArbiterTest - WouldConflictWithOppositeColorMove") {

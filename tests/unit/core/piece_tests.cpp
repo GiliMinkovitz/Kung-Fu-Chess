@@ -16,6 +16,8 @@ TEST_CASE("PieceTest - PieceFromTokenInvalid") {
 
 TEST_CASE("PieceTest - PieceToToken") {
     CHECK_EQ(kfc::to_token(kfc::PieceColor::White, kfc::PieceKind::Rook), "wR");
+    CHECK_EQ(kfc::to_token(kfc::PieceColor::White, kfc::PieceKind::Bishop), "wB");
+    CHECK_EQ(kfc::to_token(kfc::PieceColor::Black, kfc::PieceKind::Bishop), "bB");
     const std::optional<kfc::PieceDescriptor> descriptor = kfc::descriptor_from_token("bR");
     REQUIRE(descriptor.has_value());
     CHECK_EQ(kfc::to_token(descriptor->color, descriptor->kind), "bR");

@@ -13,17 +13,7 @@
 
 namespace kfc {
 
-class GameState;
-
-namespace test {
-void place_new_piece_at(GameState& state, std::size_t row, std::size_t col, PieceColor color,
-                        PieceKind kind);
-}
-
 class GameState {
-    friend void test::place_new_piece_at(GameState& state, std::size_t row, std::size_t col,
-                                         PieceColor color, PieceKind kind);
-
 public:
     explicit GameState(BoardModel board);
     GameState(BoardModel board, GameRules rules);
