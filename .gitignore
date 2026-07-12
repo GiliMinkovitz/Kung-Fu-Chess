@@ -11,4 +11,4 @@ CMakeCache.txt
 CMakeFiles/
 cmake_install.cmake
 Makefile
-coverage_report/
+third_party/

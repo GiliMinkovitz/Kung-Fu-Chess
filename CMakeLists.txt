@@ -82,23 +82,36 @@ else()
 endif()
 
 # ---------------------------------------------------------------------------
-# doctest (FetchContent)
+# doctest
 # ---------------------------------------------------------------------------
 
-# FetchContent lets CMake download third-party code at configure time,
-# so contributors do not need to install doctest separately.
-include(FetchContent)
+# Prefer a vendored copy (works in WSL when HTTPS/git SSL is blocked, e.g. NetFree).
+set(DOCTEST_LOCAL_DIR "${CMAKE_SOURCE_DIR}/third_party/doctest")
+if(EXISTS "${DOCTEST_LOCAL_DIR}/doctest/doctest.h")
+    message(STATUS "Using local doctest from ${DOCTEST_LOCAL_DIR}")
+    set(doctest_SOURCE_DIR "${DOCTEST_LOCAL_DIR}")
 
-# Pin a specific release tag so every configure gets the same doctest version.
-FetchContent_Declare(
-    doctest
-    GIT_REPOSITORY https://github.com/doctest/doctest.git
-    GIT_TAG        v2.4.11
-)
+    add_library(doctest INTERFACE)
+    add_library(doctest::doctest ALIAS doctest)
+    target_include_directories(doctest INTERFACE "${DOCTEST_LOCAL_DIR}")
 
-# Download (if needed), add doctest as a subproject, and expose imported
-# targets such as doctest::doctest and doctest::doctest_with_main.
-FetchContent_MakeAvailable(doctest)
+    add_library(doctest_with_main STATIC EXCLUDE_FROM_ALL
+        "${DOCTEST_LOCAL_DIR}/doctest/parts/doctest.cpp")
+    add_library(doctest::doctest_with_main ALIAS doctest_with_main)
+    target_compile_definitions(doctest_with_main PRIVATE DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN)
+    set_target_properties(doctest_with_main PROPERTIES CXX_STANDARD 11 CXX_STANDARD_REQUIRED ON)
+    target_link_libraries(doctest_with_main PUBLIC doctest)
+else()
+    include(FetchContent)
+
+    FetchContent_Declare(
+        doctest
+        URL https://github.com/doctest/doctest/archive/refs/tags/v2.4.11.tar.gz
+        DOWNLOAD_EXTRACT_TIMESTAMP TRUE
+    )
+
+    FetchContent_MakeAvailable(doctest)
+endif()
 
 # doctest_with_main supplies main() that runs all registered TEST_CASE() blocks.
 target_link_libraries(KungFuChessTests PRIVATE doctest::doctest_with_main)
@@ -110,20 +123,45 @@ include(${doctest_SOURCE_DIR}/scripts/cmake/doctest.cmake)
 # Register each doctest case with CTest at build time.
 doctest_discover_tests(KungFuChessTests)
 
-option(KFC_ENABLE_COVERAGE "Generate HTML coverage report with OpenCppCoverage (MSVC only)" OFF)
+option(ENABLE_COVERAGE "Enable code coverage instrumentation and LCOV HTML reports" OFF)
 
-if(KFC_ENABLE_COVERAGE AND MSVC)
-    find_program(OPEN_CPP_COVERAGE OpenCppCoverage)
-    if(OPEN_CPP_COVERAGE)
-        add_custom_target(coverage
-            COMMAND ${OPEN_CPP_COVERAGE}
-                --sources ${CMAKE_SOURCE_DIR}/src
-                --export_type html:${CMAKE_BINARY_DIR}/coverage_report
-                -- $<TARGET_FILE:KungFuChessTests>
-            DEPENDS KungFuChessTests
-            COMMENT "Running KungFuChessTests with OpenCppCoverage"
-        )
-    else()
-        message(WARNING "OpenCppCoverage not found; install it to use the coverage target")
+if(ENABLE_COVERAGE)
+    if(NOT CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+        message(FATAL_ERROR "ENABLE_COVERAGE requires GCC or Clang (e.g. Linux, WSL, or MinGW)")
     endif()
+
+    foreach(_kfc_target IN ITEMS ${PROJECT_NAME} KungFuChessTests)
+        target_compile_options(${_kfc_target} PRIVATE --coverage)
+        target_link_options(${_kfc_target} PRIVATE --coverage)
+    endforeach()
+
+    find_program(LCOV lcov REQUIRED)
+    find_program(GENHTML genhtml REQUIRED)
+
+    set(KFC_COVERAGE_REPORT_DIR "${CMAKE_SOURCE_DIR}/coverage_report")
+
+    add_custom_target(coverage
+        COMMAND bash -c "rm -rf '${KFC_COVERAGE_REPORT_DIR}' '${CMAKE_BINARY_DIR}/coverage.info'"
+        COMMAND ${LCOV} --directory ${CMAKE_BINARY_DIR} --zerocounters
+        COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure
+        COMMAND ${LCOV}
+            --directory ${CMAKE_BINARY_DIR}
+            --capture
+            --output-file ${CMAKE_BINARY_DIR}/coverage.info
+            --ignore-errors source
+        COMMAND ${LCOV}
+            --remove ${CMAKE_BINARY_DIR}/coverage.info
+            '/usr/*'
+            '*/tests/*'
+            '*/_deps/*'
+            --output-file ${CMAKE_BINARY_DIR}/coverage.info
+            --ignore-errors unused
+        COMMAND ${GENHTML}
+            ${CMAKE_BINARY_DIR}/coverage.info
+            --output-directory ${KFC_COVERAGE_REPORT_DIR}
+            --ignore-errors source
+        WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+        DEPENDS KungFuChessTests
+        COMMENT "Generating LCOV HTML coverage report in coverage_report/"
+    )
 endif()
