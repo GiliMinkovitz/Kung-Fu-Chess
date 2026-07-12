@@ -2,6 +2,7 @@
 #include "test_helpers.h"
 
 #include <doctest/doctest.h>
+#include <stdexcept>
 
 TEST_CASE("BoardModelTest - InvalidEmptyBoard") {
     const kfc::BoardModel board;
@@ -52,4 +53,27 @@ TEST_CASE("BoardModelTest - ValidRectangularBoard") {
     const kfc::BoardModel board =
         kfc::test::make_board({{"wK", ".", "bK"}, {".", "wN", "."}, {"bP", ".", "wR"}});
     CHECK(board.is_valid());
+}
+
+TEST_CASE("BoardModelTest - GetPieceInvalidIdThrows") {
+    kfc::BoardModel board = kfc::test::make_board({{"wK"}});
+    CHECK_THROWS_AS(
+        [&board]() -> kfc::Piece& { return board.get_piece(999); }(), std::out_of_range);
+    CHECK_THROWS_AS(
+        [&board]() -> kfc::Piece& { return board.get_piece(kfc::Piece::kInvalidId); }(),
+        std::out_of_range);
+}
+
+TEST_CASE("BoardModelTest - PlacePieceInvalidIdThrows") {
+    kfc::BoardModel board;
+    kfc::Piece invalid = kfc::test::make_piece(kfc::PieceColor::White, kfc::PieceKind::King);
+    invalid.id = 99;
+    CHECK_THROWS_AS(board.place_piece(std::move(invalid)), std::invalid_argument);
+}
+
+TEST_CASE("BoardModelTest - FindPieceByIdReturnsNullForInvalidId") {
+    kfc::BoardModel board = kfc::test::make_board({{"wK"}});
+    CHECK(board.piece_at(0, 0) != nullptr);
+    board.clear_cell(0, 0);
+    CHECK(board.piece_at(0, 0) == nullptr);
 }

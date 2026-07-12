@@ -1,10 +1,12 @@
 #include "core/piece.h"
 #include "core/piece_factory.h"
 #include "core/piece_token.h"
+#include "core/game_config.h"
 
 #include <doctest/doctest.h>
 
 TEST_CASE("PieceTest - PieceFromTokenInvalid") {
+    CHECK_FALSE(kfc::descriptor_from_token(".").has_value());
     CHECK_FALSE(kfc::descriptor_from_token("xZ").has_value());
     CHECK_FALSE(kfc::descriptor_from_token("wX").has_value());
     CHECK_FALSE(kfc::descriptor_from_token("").has_value());
@@ -52,4 +54,9 @@ TEST_CASE("PieceTest - PieceStateDefaultsToIdle") {
     const kfc::Piece piece =
         factory.create(kfc::PieceColor::White, kfc::PieceKind::Pawn, {0, 0});
     CHECK_EQ(piece.state, kfc::PieceState::Idle);
+}
+
+TEST_CASE("PieceTest - TokenCharFallbackForInvalidEnum") {
+    CHECK_EQ(kfc::color_to_char(static_cast<kfc::PieceColor>(99)), kfc::kWhiteColor);
+    CHECK_EQ(kfc::kind_to_char(static_cast<kfc::PieceKind>(99)), kfc::kPawnType);
 }

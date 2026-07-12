@@ -19,6 +19,18 @@ TEST_CASE("CollisionResolverTest - CollisionHasCommonRouteVerticalParallel") {
     CHECK(kfc::CollisionResolver::has_common_route(top_to_bottom, middle_to_bottom));
 }
 
+TEST_CASE("CollisionResolverTest - CollisionHasCommonRouteVerticalParallelColumns") {
+    const kfc::PendingMove column_zero{1, kfc::PieceColor::White, {0, 0}, {4, 0}, 1000};
+    const kfc::PendingMove column_two{2, kfc::PieceColor::Black, {0, 2}, {4, 2}, 1000};
+    CHECK(kfc::CollisionResolver::has_common_route(column_zero, column_two));
+}
+
+TEST_CASE("CollisionResolverTest - CollisionHasCommonRouteVerticalDisjointColumns") {
+    const kfc::PendingMove upper{1, kfc::PieceColor::White, {0, 0}, {2, 0}, 1000};
+    const kfc::PendingMove lower{2, kfc::PieceColor::Black, {4, 2}, {6, 2}, 1000};
+    CHECK_FALSE(kfc::CollisionResolver::has_common_route(upper, lower));
+}
+
 TEST_CASE("CollisionResolverTest - CollisionHasCommonRouteDisjoint") {
     const kfc::PendingMove left{1, kfc::PieceColor::White, {0, 0}, {0, 1}, 1000};
     const kfc::PendingMove right{2, kfc::PieceColor::Black, {0, 3}, {0, 4}, 1000};
@@ -33,6 +45,21 @@ TEST_CASE("CollisionResolverTest - CollisionConflictsWithOppositeColorMove") {
         pending, 500, kfc::PieceColor::White, proposed));
     CHECK_FALSE(kfc::CollisionResolver::conflicts_with_opposite_color_move(
         pending, 1500, kfc::PieceColor::White, proposed));
+}
+
+TEST_CASE("CollisionResolverTest - CollisionSkipsSameColorPendingWhenCheckingConflict") {
+    std::vector<kfc::PendingMove> pending;
+    pending.push_back({1, kfc::PieceColor::White, {0, 0}, {0, 1}, 1000});
+    pending.push_back({2, kfc::PieceColor::Black, {0, 2}, {0, 0}, 1000});
+    const kfc::PendingMove proposed{3, kfc::PieceColor::White, {0, 0}, {0, 2}, 1000};
+    CHECK(kfc::CollisionResolver::conflicts_with_opposite_color_move(
+        pending, 500, kfc::PieceColor::White, proposed));
+
+    const std::vector<kfc::PendingMove> same_color_only{
+        {1, kfc::PieceColor::White, {0, 0}, {0, 2}, 1000},
+    };
+    CHECK_FALSE(kfc::CollisionResolver::conflicts_with_opposite_color_move(
+        same_color_only, 500, kfc::PieceColor::White, proposed));
 }
 
 TEST_CASE("CollisionResolverTest - CollisionSameColorDestinationClaimed") {

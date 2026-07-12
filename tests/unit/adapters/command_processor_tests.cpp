@@ -468,3 +468,41 @@ TEST_CASE("CommandProcessorTest - CommandProcessorJumpOnEmptyCell") {
     processor.execute("jump 150 50", sink);
     CHECK_FALSE(state.is_piece_jumping(0, 1));
 }
+
+TEST_CASE("CommandProcessorTest - ClickOnEmptyBoardIgnored") {
+    kfc::GameState state(kfc::BoardModel{});
+    kfc::CommandProcessor processor(state);
+    std::ostringstream sink;
+
+    processor.execute("click 50 50", sink);
+    CHECK_FALSE(state.has_selection());
+}
+
+TEST_CASE("CommandProcessorTest - JumpWhilePieceMovingIgnored") {
+    kfc::GameState state(kfc::test::make_board({{"wR", ".", "."}}));
+    kfc::CommandProcessor processor(state);
+    std::ostringstream sink;
+
+    processor.execute("click 50 50", sink);
+    processor.execute("click 250 50", sink);
+    REQUIRE(state.is_piece_moving(0, 0));
+    state.select(0, 0);
+    processor.execute("jump 50 50", sink);
+    CHECK(state.is_piece_moving(0, 0));
+    CHECK_FALSE(state.is_piece_jumping(0, 0));
+}
+
+TEST_CASE("CommandProcessorTest - MoveAttemptWhilePieceMovingIgnored") {
+    kfc::GameState state(kfc::test::make_board({{"wR", ".", "bK"}}));
+    kfc::CommandProcessor processor(state);
+    std::ostringstream sink;
+
+    processor.execute("click 50 50", sink);
+    processor.execute("click 250 50", sink);
+    REQUIRE(state.is_piece_moving(0, 0));
+    state.select(0, 0);
+    processor.execute("click 150 50", sink);
+    CHECK(state.is_piece_moving(0, 0));
+    CHECK(state.has_selection());
+    CHECK_EQ(state.token_at(0, 0), "wR");
+}

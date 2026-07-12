@@ -31,6 +31,11 @@ TEST_CASE("PathUtilsTest - PathsShareCellNonStraightPaths") {
     CHECK_FALSE(kfc::paths_share_cell({0, 0}, {0, 1}, {2, 0}, {2, 1}));
 }
 
+TEST_CASE("PathUtilsTest - PathsShareCellKnightPathsEndpointOverlap") {
+    CHECK(kfc::paths_share_cell({0, 0}, {2, 1}, {0, 0}, {1, 2}));
+    CHECK_FALSE(kfc::paths_share_cell({0, 0}, {2, 1}, {3, 3}, {1, 2}));
+}
+
 TEST_CASE("PathUtilsTest - ForEachCellOnPathAdjacent") {
     std::vector<std::pair<int, int>> cells;
     kfc::for_each_cell_on_path(0, 0, 0, 1, [&](int row, int col) {

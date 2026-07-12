@@ -206,3 +206,19 @@ TEST_CASE("MoveValidatorTest - IllegalMoveUnknownPieceType") {
     const kfc::BoardModel board = kfc::test::make_board({{"wK", ".", "bK"}});
     CHECK_FALSE(kfc::is_legal_move(board, static_cast<kfc::PieceKind>(99), 0, 0, 0, 1));
 }
+
+TEST_CASE("MoveValidatorTest - PawnInvalidForwardDistance") {
+    const kfc::BoardModel board = kfc::test::make_board(
+        {{".", ".", "."}, {".", ".", "."}, {".", ".", "."}, {".", "wP", "."}});
+    CHECK_FALSE(kfc::is_legal_move(board, kfc::PieceKind::Pawn, 3, 1, 0, 1));
+}
+
+TEST_CASE("MoveValidatorTest - PawnInvalidDiagonalMove") {
+    const kfc::BoardModel board = kfc::test::make_board({{".", ".", "."}, {".", "wP", "."}});
+    CHECK_FALSE(kfc::is_legal_move(board, kfc::PieceKind::Pawn, 1, 1, 1, 0));
+}
+
+TEST_CASE("MoveValidatorTest - CaptureFromEmptySquare") {
+    const kfc::BoardModel board = kfc::test::make_board({{".", "bK"}});
+    CHECK_FALSE(kfc::is_legal_move(board, kfc::PieceKind::Rook, 0, 0, 0, 1));
+}
