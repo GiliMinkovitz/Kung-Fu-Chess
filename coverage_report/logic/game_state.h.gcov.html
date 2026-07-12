@@ -37,7 +37,7 @@
           </tr>
           <tr>
             <td class="headerItem">Test Date:</td>
-            <td class="headerValue">2026-07-12 14:25:50</td>
+            <td class="headerValue">2026-07-12 15:25:03</td>
             <td></td>
             <td class="headerItem">Functions:</td>
             <td class="headerCovTableEntryHi">100.0&nbsp;%</td>
@@ -75,60 +75,66 @@
 <span id="L13"><span class="lineNum">      13</span>              : </span>
 <span id="L14"><span class="lineNum">      14</span>              : namespace kfc {</span>
 <span id="L15"><span class="lineNum">      15</span>              : </span>
-<span id="L16"><span class="lineNum">      16</span>              : class GameState {</span>
-<span id="L17"><span class="lineNum">      17</span>              : public:</span>
-<span id="L18"><span class="lineNum">      18</span>              :     explicit GameState(BoardModel board);</span>
-<span id="L19"><span class="lineNum">      19</span>              :     GameState(BoardModel board, GameRules rules);</span>
-<span id="L20"><span class="lineNum">      20</span>              : </span>
-<span id="L21"><span class="lineNum">      21</span>              :     [[nodiscard]] const GameRules&amp; rules() const noexcept { return rules_; }</span>
-<span id="L22"><span class="lineNum">      22</span> <span class="tlaGNC">         136 :     [[nodiscard]] std::size_t rows() const noexcept { return board_.rows(); }</span></span>
-<span id="L23"><span class="lineNum">      23</span> <span class="tlaGNC">         155 :     [[nodiscard]] std::size_t cols() const noexcept { return board_.cols(); }</span></span>
-<span id="L24"><span class="lineNum">      24</span>              :     [[nodiscard]] const Piece* piece_at(std::size_t row, std::size_t col) const;</span>
-<span id="L25"><span class="lineNum">      25</span>              :     [[nodiscard]] std::string token_at(std::size_t row, std::size_t col) const;</span>
-<span id="L26"><span class="lineNum">      26</span>              :     [[nodiscard]] bool is_empty(std::size_t row, std::size_t col) const;</span>
-<span id="L27"><span class="lineNum">      27</span>              :     void place_piece_at(std::size_t row, std::size_t col, Piece piece);</span>
-<span id="L28"><span class="lineNum">      28</span>              :     void place_new_piece_at(std::size_t row, std::size_t col, PieceColor color, PieceKind kind);</span>
-<span id="L29"><span class="lineNum">      29</span>              : </span>
-<span id="L30"><span class="lineNum">      30</span> <span class="tlaGNC">           7 :     [[nodiscard]] std::int64_t clock_ms() const noexcept { return arbiter_.clock_ms(); }</span></span>
-<span id="L31"><span class="lineNum">      31</span> <span class="tlaGNC">          79 :     [[nodiscard]] bool has_selection() const noexcept { return selected_.has_value(); }</span></span>
-<span id="L32"><span class="lineNum">      32</span> <span class="tlaGNC">          97 :     [[nodiscard]] bool is_game_over() const noexcept { return game_over_; }</span></span>
-<span id="L33"><span class="lineNum">      33</span>              :     [[nodiscard]] bool same_board_layout_as(const GameState&amp; other) const noexcept;</span>
-<span id="L34"><span class="lineNum">      34</span>              : </span>
-<span id="L35"><span class="lineNum">      35</span>              :     [[nodiscard]] bool selection(std::size_t&amp; row, std::size_t&amp; col) const;</span>
-<span id="L36"><span class="lineNum">      36</span>              :     [[nodiscard]] bool is_in_bounds(std::size_t row, std::size_t col) const noexcept;</span>
-<span id="L37"><span class="lineNum">      37</span>              :     [[nodiscard]] bool is_piece(std::size_t row, std::size_t col) const;</span>
-<span id="L38"><span class="lineNum">      38</span>              :     [[nodiscard]] bool is_piece_moving(std::size_t row, std::size_t col) const;</span>
-<span id="L39"><span class="lineNum">      39</span>              :     [[nodiscard]] bool is_piece_jumping(std::size_t row, std::size_t col) const;</span>
-<span id="L40"><span class="lineNum">      40</span>              :     [[nodiscard]] bool is_selectable_piece(std::size_t row, std::size_t col) const;</span>
-<span id="L41"><span class="lineNum">      41</span>              :     [[nodiscard]] bool is_friendly_to_selection(std::size_t row, std::size_t col) const;</span>
-<span id="L42"><span class="lineNum">      42</span>              :     [[nodiscard]] bool is_legal_move(int start_row, int start_col, int end_row,</span>
-<span id="L43"><span class="lineNum">      43</span>              :                                      int end_col) const;</span>
-<span id="L44"><span class="lineNum">      44</span>              : </span>
-<span id="L45"><span class="lineNum">      45</span>              :     void add_clock(std::int64_t ms);</span>
-<span id="L46"><span class="lineNum">      46</span>              :     void settle_pending_moves();</span>
-<span id="L47"><span class="lineNum">      47</span>              :     void select(std::size_t row, std::size_t col);</span>
-<span id="L48"><span class="lineNum">      48</span>              :     void clear_selection();</span>
-<span id="L49"><span class="lineNum">      49</span>              :     void move_selected_to(std::size_t to_row, std::size_t to_col);</span>
-<span id="L50"><span class="lineNum">      50</span>              :     void jump_selected();</span>
-<span id="L51"><span class="lineNum">      51</span>              :     void jump_at(std::size_t row, std::size_t col);</span>
-<span id="L52"><span class="lineNum">      52</span>              :     void write_board(std::ostream&amp; out,</span>
-<span id="L53"><span class="lineNum">      53</span>              :                      const std::function&lt;void(std::ostream&amp;, const BoardModel&amp;)&gt;&amp; writer);</span>
-<span id="L54"><span class="lineNum">      54</span>              : </span>
-<span id="L55"><span class="lineNum">      55</span>              : private:</span>
-<span id="L56"><span class="lineNum">      56</span>              :     [[nodiscard]] bool can_move_selected_to(std::size_t from_row, std::size_t from_col,</span>
-<span id="L57"><span class="lineNum">      57</span>              :                                             std::size_t to_row, std::size_t to_col) const;</span>
-<span id="L58"><span class="lineNum">      58</span>              :     [[nodiscard]] std::int64_t compute_move_duration(std::size_t from_row, std::size_t from_col,</span>
-<span id="L59"><span class="lineNum">      59</span>              :                                                      std::size_t to_row, std::size_t to_col,</span>
-<span id="L60"><span class="lineNum">      60</span>              :                                                      bool is_capture) const noexcept;</span>
-<span id="L61"><span class="lineNum">      61</span>              : </span>
-<span id="L62"><span class="lineNum">      62</span>              :     BoardModel board_;</span>
-<span id="L63"><span class="lineNum">      63</span>              :     GameRules rules_;</span>
-<span id="L64"><span class="lineNum">      64</span>              :     RealTimeArbiter arbiter_;</span>
-<span id="L65"><span class="lineNum">      65</span>              :     std::optional&lt;std::pair&lt;std::size_t, std::size_t&gt;&gt; selected_;</span>
-<span id="L66"><span class="lineNum">      66</span>              :     bool game_over_ = false;</span>
-<span id="L67"><span class="lineNum">      67</span>              : };</span>
-<span id="L68"><span class="lineNum">      68</span>              : </span>
-<span id="L69"><span class="lineNum">      69</span>              : }  // namespace kfc</span>
+<span id="L16"><span class="lineNum">      16</span>              : class GameState;</span>
+<span id="L17"><span class="lineNum">      17</span>              : </span>
+<span id="L18"><span class="lineNum">      18</span>              : namespace test {</span>
+<span id="L19"><span class="lineNum">      19</span>              : void place_new_piece_at(GameState&amp; state, std::size_t row, std::size_t col, PieceColor color,</span>
+<span id="L20"><span class="lineNum">      20</span>              :                         PieceKind kind);</span>
+<span id="L21"><span class="lineNum">      21</span>              : }</span>
+<span id="L22"><span class="lineNum">      22</span>              : </span>
+<span id="L23"><span class="lineNum">      23</span>              : class GameState {</span>
+<span id="L24"><span class="lineNum">      24</span>              :     friend void test::place_new_piece_at(GameState&amp; state, std::size_t row, std::size_t col,</span>
+<span id="L25"><span class="lineNum">      25</span>              :                                          PieceColor color, PieceKind kind);</span>
+<span id="L26"><span class="lineNum">      26</span>              : </span>
+<span id="L27"><span class="lineNum">      27</span>              : public:</span>
+<span id="L28"><span class="lineNum">      28</span>              :     explicit GameState(BoardModel board);</span>
+<span id="L29"><span class="lineNum">      29</span>              :     GameState(BoardModel board, GameRules rules);</span>
+<span id="L30"><span class="lineNum">      30</span>              : </span>
+<span id="L31"><span class="lineNum">      31</span>              :     [[nodiscard]] const GameRules&amp; rules() const noexcept { return rules_; }</span>
+<span id="L32"><span class="lineNum">      32</span> <span class="tlaGNC">         149 :     [[nodiscard]] std::size_t rows() const noexcept { return board_.rows(); }</span></span>
+<span id="L33"><span class="lineNum">      33</span> <span class="tlaGNC">         167 :     [[nodiscard]] std::size_t cols() const noexcept { return board_.cols(); }</span></span>
+<span id="L34"><span class="lineNum">      34</span>              :     [[nodiscard]] std::string token_at(std::size_t row, std::size_t col) const;</span>
+<span id="L35"><span class="lineNum">      35</span>              : </span>
+<span id="L36"><span class="lineNum">      36</span> <span class="tlaGNC">           7 :     [[nodiscard]] std::int64_t clock_ms() const noexcept { return arbiter_.clock_ms(); }</span></span>
+<span id="L37"><span class="lineNum">      37</span> <span class="tlaGNC">          87 :     [[nodiscard]] bool has_selection() const noexcept { return selected_.has_value(); }</span></span>
+<span id="L38"><span class="lineNum">      38</span> <span class="tlaGNC">         104 :     [[nodiscard]] bool is_game_over() const noexcept { return game_over_; }</span></span>
+<span id="L39"><span class="lineNum">      39</span>              :     [[nodiscard]] bool same_board_layout_as(const GameState&amp; other) const noexcept;</span>
+<span id="L40"><span class="lineNum">      40</span>              : </span>
+<span id="L41"><span class="lineNum">      41</span>              :     [[nodiscard]] bool selection(std::size_t&amp; row, std::size_t&amp; col) const;</span>
+<span id="L42"><span class="lineNum">      42</span>              :     [[nodiscard]] bool is_in_bounds(std::size_t row, std::size_t col) const noexcept;</span>
+<span id="L43"><span class="lineNum">      43</span>              :     [[nodiscard]] bool is_piece(std::size_t row, std::size_t col) const;</span>
+<span id="L44"><span class="lineNum">      44</span>              :     [[nodiscard]] bool is_piece_moving(std::size_t row, std::size_t col) const;</span>
+<span id="L45"><span class="lineNum">      45</span>              :     [[nodiscard]] bool is_piece_jumping(std::size_t row, std::size_t col) const;</span>
+<span id="L46"><span class="lineNum">      46</span>              :     [[nodiscard]] bool is_selectable_piece(std::size_t row, std::size_t col) const;</span>
+<span id="L47"><span class="lineNum">      47</span>              :     [[nodiscard]] bool is_friendly_to_selection(std::size_t row, std::size_t col) const;</span>
+<span id="L48"><span class="lineNum">      48</span>              : </span>
+<span id="L49"><span class="lineNum">      49</span>              :     void add_clock(std::int64_t ms);</span>
+<span id="L50"><span class="lineNum">      50</span>              :     void settle_pending_moves();</span>
+<span id="L51"><span class="lineNum">      51</span>              :     void select(std::size_t row, std::size_t col);</span>
+<span id="L52"><span class="lineNum">      52</span>              :     void clear_selection();</span>
+<span id="L53"><span class="lineNum">      53</span>              :     void move_selected_to(std::size_t to_row, std::size_t to_col);</span>
+<span id="L54"><span class="lineNum">      54</span>              :     void jump_selected();</span>
+<span id="L55"><span class="lineNum">      55</span>              :     void jump_at(std::size_t row, std::size_t col);</span>
+<span id="L56"><span class="lineNum">      56</span>              :     void write_board(std::ostream&amp; out,</span>
+<span id="L57"><span class="lineNum">      57</span>              :                      const std::function&lt;void(std::ostream&amp;, const BoardModel&amp;)&gt;&amp; writer);</span>
+<span id="L58"><span class="lineNum">      58</span>              : </span>
+<span id="L59"><span class="lineNum">      59</span>              : private:</span>
+<span id="L60"><span class="lineNum">      60</span>              :     [[nodiscard]] bool is_legal_move(int start_row, int start_col, int end_row,</span>
+<span id="L61"><span class="lineNum">      61</span>              :                                      int end_col) const;</span>
+<span id="L62"><span class="lineNum">      62</span>              :     [[nodiscard]] bool can_move_selected_to(std::size_t from_row, std::size_t from_col,</span>
+<span id="L63"><span class="lineNum">      63</span>              :                                             std::size_t to_row, std::size_t to_col) const;</span>
+<span id="L64"><span class="lineNum">      64</span>              :     [[nodiscard]] std::int64_t compute_move_duration(std::size_t from_row, std::size_t from_col,</span>
+<span id="L65"><span class="lineNum">      65</span>              :                                                      std::size_t to_row, std::size_t to_col,</span>
+<span id="L66"><span class="lineNum">      66</span>              :                                                      bool is_capture) const noexcept;</span>
+<span id="L67"><span class="lineNum">      67</span>              : </span>
+<span id="L68"><span class="lineNum">      68</span>              :     BoardModel board_;</span>
+<span id="L69"><span class="lineNum">      69</span>              :     GameRules rules_;</span>
+<span id="L70"><span class="lineNum">      70</span>              :     RealTimeArbiter arbiter_;</span>
+<span id="L71"><span class="lineNum">      71</span>              :     std::optional&lt;std::pair&lt;std::size_t, std::size_t&gt;&gt; selected_;</span>
+<span id="L72"><span class="lineNum">      72</span>              :     bool game_over_ = false;</span>
+<span id="L73"><span class="lineNum">      73</span>              : };</span>
+<span id="L74"><span class="lineNum">      74</span>              : </span>
+<span id="L75"><span class="lineNum">      75</span>              : }  // namespace kfc</span>
         </pre>
               </td>
             </tr>
