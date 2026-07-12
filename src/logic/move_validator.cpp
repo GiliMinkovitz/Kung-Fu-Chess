@@ -65,13 +65,14 @@ namespace {
 
 [[nodiscard]] bool is_pawn_start_row(const BoardModel& board, PieceColor pawn_color,
                                      int start_row) noexcept {
-    if (board.rows() == 0) {
+    const int rows = static_cast<int>(board.rows());
+    if (rows < 4) {
         return false;
     }
     if (pawn_color == PieceColor::White) {
-        return start_row == static_cast<int>(board.rows()) - 1;
+        return start_row == rows - 2;
     }
-    return start_row == 0;
+    return start_row == rows - 4;
 }
 
 [[nodiscard]] bool is_pawn_move(const BoardModel& board, int start_row, int start_col, int end_row,

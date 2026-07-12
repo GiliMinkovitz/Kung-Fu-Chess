@@ -134,10 +134,10 @@ TEST_CASE("MoveValidatorTest - BlackPawnCannotMoveBackwardOrForwardCapture") {
 TEST_CASE("MoveValidatorTest - PawnDoubleMoveFromStartRow") {
     const kfc::BoardModel white_board = kfc::test::make_board({{".", ".", "."},
                                     {".", ".", "."},
-                                    {".", ".", "."},
-                                    {".", "wP", "."}});
-    CHECK(kfc::is_legal_move(white_board, kfc::PieceKind::Pawn, 3, 1, 1, 1));
-    CHECK_FALSE(kfc::is_legal_move(white_board, kfc::PieceKind::Pawn, 2, 1, 0, 1));
+                                    {".", "wP", "."},
+                                    {".", ".", "."}});
+    CHECK(kfc::is_legal_move(white_board, kfc::PieceKind::Pawn, 2, 1, 0, 1));
+    CHECK_FALSE(kfc::is_legal_move(white_board, kfc::PieceKind::Pawn, 3, 1, 1, 1));
 
     const kfc::BoardModel black_board = kfc::test::make_board({{".", "bP", "."},
                                     {".", ".", "."},
