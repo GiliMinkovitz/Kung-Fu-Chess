@@ -13,7 +13,17 @@
 
 namespace kfc {
 
+class GameState;
+
+namespace test {
+void place_new_piece_at(GameState& state, std::size_t row, std::size_t col, PieceColor color,
+                        PieceKind kind);
+}
+
 class GameState {
+    friend void test::place_new_piece_at(GameState& state, std::size_t row, std::size_t col,
+                                         PieceColor color, PieceKind kind);
+
 public:
     explicit GameState(BoardModel board);
     GameState(BoardModel board, GameRules rules);
@@ -21,11 +31,7 @@ public:
     [[nodiscard]] const GameRules& rules() const noexcept { return rules_; }
     [[nodiscard]] std::size_t rows() const noexcept { return board_.rows(); }
     [[nodiscard]] std::size_t cols() const noexcept { return board_.cols(); }
-    [[nodiscard]] const Piece* piece_at(std::size_t row, std::size_t col) const;
     [[nodiscard]] std::string token_at(std::size_t row, std::size_t col) const;
-    [[nodiscard]] bool is_empty(std::size_t row, std::size_t col) const;
-    void place_piece_at(std::size_t row, std::size_t col, Piece piece);
-    void place_new_piece_at(std::size_t row, std::size_t col, PieceColor color, PieceKind kind);
 
     [[nodiscard]] std::int64_t clock_ms() const noexcept { return arbiter_.clock_ms(); }
     [[nodiscard]] bool has_selection() const noexcept { return selected_.has_value(); }
@@ -39,8 +45,6 @@ public:
     [[nodiscard]] bool is_piece_jumping(std::size_t row, std::size_t col) const;
     [[nodiscard]] bool is_selectable_piece(std::size_t row, std::size_t col) const;
     [[nodiscard]] bool is_friendly_to_selection(std::size_t row, std::size_t col) const;
-    [[nodiscard]] bool is_legal_move(int start_row, int start_col, int end_row,
-                                     int end_col) const;
 
     void add_clock(std::int64_t ms);
     void settle_pending_moves();
@@ -53,6 +57,8 @@ public:
                      const std::function<void(std::ostream&, const BoardModel&)>& writer);
 
 private:
+    [[nodiscard]] bool is_legal_move(int start_row, int start_col, int end_row,
+                                     int end_col) const;
     [[nodiscard]] bool can_move_selected_to(std::size_t from_row, std::size_t from_col,
                                             std::size_t to_row, std::size_t to_col) const;
     [[nodiscard]] std::int64_t compute_move_duration(std::size_t from_row, std::size_t from_col,

@@ -1,42 +1,16 @@
 #include "game_state.h"
 
-#include "../core/piece_factory.h"
-
 #include <algorithm>
 
 namespace kfc {
-
-// --- Construction ---
 
 GameState::GameState(BoardModel board) : GameState(std::move(board), KungFuChessRules::standard()) {}
 
 GameState::GameState(BoardModel board, GameRules rules)
     : board_(std::move(board)), rules_(std::move(rules)) {}
 
-// --- Board accessors ---
-
-const Piece* GameState::piece_at(std::size_t row, std::size_t col) const {
-    return board_.piece_at(row, col);
-}
-
 std::string GameState::token_at(std::size_t row, std::size_t col) const {
     return board_.token_at(row, col);
-}
-
-bool GameState::is_empty(std::size_t row, std::size_t col) const {
-    return board_.is_empty(row, col);
-}
-
-void GameState::place_piece_at(std::size_t row, std::size_t col, Piece piece) {
-    board_.place_piece_at(row, col, std::move(piece));
-}
-
-void GameState::place_new_piece_at(std::size_t row, std::size_t col, PieceColor color,
-                                   PieceKind kind) {
-    PieceFactory factory(board_.next_piece_id());
-    board_.place_piece_at(row, col,
-                          factory.create(color, kind,
-                                         Position{static_cast<int>(row), static_cast<int>(col)}));
 }
 
 bool GameState::same_board_layout_as(const GameState& other) const noexcept {
@@ -44,7 +18,6 @@ bool GameState::same_board_layout_as(const GameState& other) const noexcept {
 }
 
 // --- Selection & piece queries ---
-
 bool GameState::selection(std::size_t& row, std::size_t& col) const {
     if (!selected_) {
         return false;

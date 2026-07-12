@@ -25,7 +25,6 @@ public:
     [[nodiscard]] const Piece* piece_at(std::size_t row, std::size_t col) const;
     [[nodiscard]] Piece* piece_at(std::size_t row, std::size_t col);
 
-    [[nodiscard]] const Piece& get_piece(Piece::Id id) const;
     [[nodiscard]] Piece& get_piece(Piece::Id id);
 
     void place_piece(Piece piece);
