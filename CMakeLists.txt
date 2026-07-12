@@ -154,8 +154,14 @@ if(ENABLE_COVERAGE)
             '/usr/*'
             '*/tests/*'
             '*/_deps/*'
+            '*/third_party/*'
             --output-file ${CMAKE_BINARY_DIR}/coverage.info
             --ignore-errors unused
+        COMMAND ${LCOV}
+            --extract ${CMAKE_BINARY_DIR}/coverage.info
+            '*/src/*'
+            --output-file ${CMAKE_BINARY_DIR}/coverage.info
+            --ignore-errors unused,unused
         COMMAND ${GENHTML}
             ${CMAKE_BINARY_DIR}/coverage.info
             --output-directory ${KFC_COVERAGE_REPORT_DIR}
