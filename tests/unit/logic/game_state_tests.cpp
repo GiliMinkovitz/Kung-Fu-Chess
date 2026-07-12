@@ -62,7 +62,7 @@ TEST_CASE("GameStateTest - MoveAbortedIfFriendlyOccupiesTargetBeforeArrival") {
     state.select(0, 0);
     state.move_selected_to(0, 2);
 
-    state.place_new_piece_at(0, 2, kfc::PieceColor::White, kfc::PieceKind::King);
+    kfc::test::place_new_piece_at(state, 0, 2, kfc::PieceColor::White, kfc::PieceKind::King);
 
     state.add_clock(2000);
 
@@ -186,4 +186,35 @@ TEST_CASE("GameStateTest - GameStateCaptureMoveUsesSingleCellDuration") {
     state.add_clock(1);
     CHECK_EQ(state.token_at(0, 0), ".");
     CHECK_EQ(state.token_at(0, 2), "wR");
+}
+
+TEST_CASE("GameStateTest - SelectionReturnsFalseWhenNone") {
+    kfc::GameState state(kfc::test::make_board({{"wK", ".", "bK"}}));
+    std::size_t row = 99;
+    std::size_t col = 99;
+    CHECK_FALSE(state.selection(row, col));
+}
+
+TEST_CASE("GameStateTest - FriendlySelectionRequiresOccupiedSelectedCell") {
+    kfc::GameState state(kfc::test::make_board({{"wK", ".", "wN"}}));
+    state.select(0, 1);
+    CHECK_FALSE(state.is_friendly_to_selection(0, 2));
+}
+
+TEST_CASE("GameStateTest - MoveSelectedToOutOfBoundsIgnored") {
+    kfc::GameState state(kfc::test::make_board({{"wR", ".", "."}}));
+    state.select(0, 0);
+    state.move_selected_to(99, 99);
+    CHECK(state.has_selection());
+    CHECK_EQ(state.token_at(0, 0), "wR");
+}
+
+TEST_CASE("GameStateTest - MoveSelectedToWhileMovingIgnored") {
+    kfc::GameState state(kfc::test::make_board({{"wR", ".", "."}}));
+    state.select(0, 0);
+    state.move_selected_to(0, 2);
+    state.select(0, 0);
+    state.move_selected_to(0, 1);
+    CHECK(state.is_piece_moving(0, 0));
+    CHECK_EQ(state.token_at(0, 0), "wR");
 }

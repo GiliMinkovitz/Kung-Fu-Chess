@@ -3,6 +3,7 @@
 #include "core/board_model.h"
 #include "core/piece.h"
 #include "core/piece_factory.h"
+#include "core/position.h"
 #include "logic/collision_resolver.h"
 #include "logic/game_state.h"
 #include "logic/move_scheduler.h"
@@ -72,6 +73,13 @@ inline ArrivingPieceInfo make_arriving_info(const BoardModel& board, std::size_t
 inline Piece make_piece(PieceColor color, PieceKind kind) {
     PieceFactory factory;
     return factory.create(color, kind, {0, 0});
+}
+
+inline void place_new_piece_at(GameState& state, std::size_t row, std::size_t col,
+                               PieceColor color, PieceKind kind) {
+    PieceFactory factory(state.board_.next_piece_id());
+    state.board_.place_piece_at(
+        row, col, factory.create(color, kind, Position{static_cast<int>(row), static_cast<int>(col)}));
 }
 
 }  // namespace kfc::test
