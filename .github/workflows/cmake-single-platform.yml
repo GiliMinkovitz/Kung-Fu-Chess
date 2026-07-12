@@ -37,3 +37,28 @@ jobs:
       # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
       run: ctest -C ${{env.BUILD_TYPE}}
 
+  coverage:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install LCOV
+      run: sudo apt-get update && sudo apt-get install -y lcov
+
+    - name: Configure CMake with coverage
+      run: cmake -B ${{github.workspace}}/build -DENABLE_COVERAGE=ON
+
+    - name: Build
+      run: cmake --build ${{github.workspace}}/build
+
+    - name: Generate coverage report
+      run: cmake --build ${{github.workspace}}/build --target coverage
+
+    - name: Upload coverage report
+      uses: actions/upload-artifact@v4
+      with:
+        name: coverage-report-${{ github.sha }}
+        path: coverage_report/
+        retention-days: 90
+
