@@ -1,9 +1,8 @@
 // Repository: https://github.com/GiliMinkovitz/Kung-Fu-Chess.git
 
-#include "core/game_config.h"
-#include "adapters/vpl_io.h"
-#include "adapters/command_processor.h"
-#include "logic/game_state.h"
+#include "engine/game_engine.h"
+#include "io/vpl_io.h"
+#include "model/game_config.h"
 
 #include <iostream>
 
@@ -17,15 +16,8 @@ int main() {
         return 0;
     }
 
-    kfc::GameState state(input.board);
-    kfc::CommandProcessor processor(state);
-
-    for (const std::string& command : input.commands) {
-        processor.execute(command, std::cout);
-        if (command == kfc::kPrintBoardCommand) {
-            std::cout << '\n';
-        }
-    }
+    kfc::GameEngine engine(input.board);
+    engine.execute_all(input.commands, std::cout);
 
     return 0;
 }

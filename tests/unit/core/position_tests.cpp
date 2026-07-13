@@ -1,4 +1,4 @@
-#include "core/position.h"
+#include "model/position.h"
 
 #include <doctest/doctest.h>
 #include <sstream>

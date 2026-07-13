@@ -1,11 +1,11 @@
 #include "rules_registry.h"
 
-#include "bishop_rules.h"
-#include "king_rules.h"
-#include "knight_rules.h"
-#include "pawn_rules.h"
-#include "queen_rules.h"
-#include "rook_rules.h"
+#include "piece_rules/bishop_rules.h"
+#include "piece_rules/king_rules.h"
+#include "piece_rules/knight_rules.h"
+#include "piece_rules/pawn_rules.h"
+#include "piece_rules/queen_rules.h"
+#include "piece_rules/rook_rules.h"
 
 #include <array>
 #include <cstddef>

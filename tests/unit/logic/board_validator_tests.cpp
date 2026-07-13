@@ -1,7 +1,7 @@
-#include "core/piece_token.h"
-#include "core/board_model.h"
-#include "logic/board_validator.h"
-#include "core/game_config.h"
+#include "model/piece_token.h"
+#include "model/board_model.h"
+#include "rules/board_validator.h"
+#include "model/game_config.h"
 #include "test_helpers.h"
 
 #include <doctest/doctest.h>

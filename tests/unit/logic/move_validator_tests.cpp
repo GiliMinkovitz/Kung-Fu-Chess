@@ -1,6 +1,6 @@
-#include "core/piece.h"
-#include "core/board_model.h"
-#include "logic/move_validator.h"
+#include "model/piece.h"
+#include "model/board_model.h"
+#include "rules/move_validator.h"
 #include "test_helpers.h"
 
 #include <doctest/doctest.h>

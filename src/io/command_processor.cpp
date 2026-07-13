@@ -1,7 +1,7 @@
 #include "command_processor.h"
 
 #include "board_writer.h"
-#include "../core/game_config.h"
+#include "../model/game_config.h"
 
 #include <sstream>
 #include <string>

@@ -1,5 +1,5 @@
-#include "core/board_model.h"
-#include "adapters/command_processor.h"
+#include "model/board_model.h"
+#include "io/command_processor.h"
 #include "logic/game_state.h"
 #include "test_helpers.h"
 

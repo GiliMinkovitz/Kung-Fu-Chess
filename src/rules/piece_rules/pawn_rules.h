@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../../core/board_model.h"
+#include "../../model/board_model.h"
 
 namespace kfc::piece_rules {
 

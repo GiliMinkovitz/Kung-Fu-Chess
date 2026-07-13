@@ -1,12 +1,12 @@
 #pragma once
 
-#include "core/board_model.h"
-#include "core/piece.h"
-#include "core/piece_factory.h"
-#include "core/position.h"
-#include "logic/collision_resolver.h"
+#include "model/board_model.h"
+#include "model/piece.h"
+#include "model/piece_factory.h"
+#include "model/position.h"
+#include "realtime/collision_resolver.h"
 #include "logic/game_state.h"
-#include "logic/move_scheduler.h"
+#include "realtime/move_scheduler.h"
 
 #include <cassert>
 #include <string>

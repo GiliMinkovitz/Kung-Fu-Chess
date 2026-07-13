@@ -1,6 +1,6 @@
 #include "pawn_rules.h"
 
-#include "../../core/piece.h"
+#include "../../model/piece.h"
 
 #include <cstdlib>
 

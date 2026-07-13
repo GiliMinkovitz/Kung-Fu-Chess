@@ -1,6 +1,6 @@
 #include "game_rules.h"
 
-#include "../core/game_config.h"
+#include "../model/game_config.h"
 #include "move_validator.h"
 
 namespace kfc {

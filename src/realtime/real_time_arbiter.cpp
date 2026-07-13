@@ -1,7 +1,7 @@
 #include "real_time_arbiter.h"
 
-#include "../core/board_model.h"
-#include "game_rules.h"
+#include "../model/board_model.h"
+#include "../rules/game_rules.h"
 
 namespace kfc {
 

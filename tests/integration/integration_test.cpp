@@ -1,6 +1,6 @@
-#include "adapters/board_writer.h"
-#include "adapters/command_processor.h"
-#include "core/board_model.h"
+#include "io/board_writer.h"
+#include "io/command_processor.h"
+#include "model/board_model.h"
 #include "logic/game_state.h"
 #include "test_helpers.h"
 

@@ -1,4 +1,4 @@
-#include "core/board_model.h"
+#include "model/board_model.h"
 #include "test_helpers.h"
 
 #include <doctest/doctest.h>

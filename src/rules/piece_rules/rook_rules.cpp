@@ -1,8 +1,6 @@
-#include "bishop_rules.h"
+#include "rook_rules.h"
 
-#include "../path_utils.h"
-
-#include <cstdlib>
+#include "../../logic/path_utils.h"
 
 namespace kfc::piece_rules {
 
@@ -23,11 +21,9 @@ namespace {
 
 }  // namespace
 
-bool is_bishop_move(const BoardModel& board, int start_row, int start_col, int end_row,
-                    int end_col) {
-    const int dr = end_row - start_row;
-    const int dc = end_col - start_col;
-    if (std::abs(dr) != std::abs(dc)) {
+bool is_rook_move(const BoardModel& board, int start_row, int start_col, int end_row,
+                  int end_col) {
+    if (start_row != end_row && start_col != end_col) {
         return false;
     }
     return is_path_clear(board, start_row, start_col, end_row, end_col);

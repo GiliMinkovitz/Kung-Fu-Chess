@@ -1,5 +1,5 @@
-#include "core/game_config.h"
-#include "logic/game_rules.h"
+#include "model/game_config.h"
+#include "rules/game_rules.h"
 #include "test_helpers.h"
 
 #include <doctest/doctest.h>

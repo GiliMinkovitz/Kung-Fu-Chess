@@ -1,6 +1,6 @@
 #include "move_validator.h"
 
-#include "piece_rules/rules_registry.h"
+#include "rules_registry.h"
 
 namespace kfc {
 

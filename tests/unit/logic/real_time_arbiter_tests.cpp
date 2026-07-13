@@ -1,8 +1,8 @@
-#include "core/board_model.h"
-#include "core/game_config.h"
-#include "core/piece_factory.h"
-#include "logic/game_rules.h"
-#include "logic/real_time_arbiter.h"
+#include "model/board_model.h"
+#include "model/game_config.h"
+#include "model/piece_factory.h"
+#include "rules/game_rules.h"
+#include "realtime/real_time_arbiter.h"
 #include "test_helpers.h"
 
 #include <doctest/doctest.h>

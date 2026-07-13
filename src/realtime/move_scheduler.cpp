@@ -1,8 +1,8 @@
 #include "move_scheduler.h"
 
-#include "../core/board_model.h"
+#include "../model/board_model.h"
 #include "collision_resolver.h"
-#include "game_rules.h"
+#include "../rules/game_rules.h"
 
 namespace kfc {
 

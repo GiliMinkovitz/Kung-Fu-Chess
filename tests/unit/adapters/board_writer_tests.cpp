@@ -1,5 +1,5 @@
-#include "core/board_model.h"
-#include "adapters/board_writer.h"
+#include "model/board_model.h"
+#include "io/board_writer.h"
 #include "test_helpers.h"
 
 #include <doctest/doctest.h>

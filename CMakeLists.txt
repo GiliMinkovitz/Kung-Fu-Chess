@@ -16,29 +16,30 @@ if(POLICY CMP0135)
 endif()
 
 set(KFC_SOURCES
-    src/core/piece.cpp
-    src/core/piece_factory.cpp
-    src/core/piece_token.cpp
-    src/core/position.cpp
-    src/core/board_model.cpp
-    src/logic/board_validator.cpp
-    src/adapters/board_writer.cpp
+    src/model/piece.cpp
+    src/model/piece_factory.cpp
+    src/model/piece_token.cpp
+    src/model/position.cpp
+    src/model/board_model.cpp
+    src/rules/board_validator.cpp
+    src/io/board_writer.cpp
     src/logic/path_utils.cpp
-    src/logic/piece_rules/bishop_rules.cpp
-    src/logic/piece_rules/king_rules.cpp
-    src/logic/piece_rules/knight_rules.cpp
-    src/logic/piece_rules/pawn_rules.cpp
-    src/logic/piece_rules/queen_rules.cpp
-    src/logic/piece_rules/rook_rules.cpp
-    src/logic/piece_rules/rules_registry.cpp
-    src/adapters/vpl_io.cpp
-    src/logic/game_rules.cpp
-    src/logic/move_scheduler.cpp
-    src/logic/collision_resolver.cpp
-    src/logic/real_time_arbiter.cpp
+    src/rules/piece_rules/bishop_rules.cpp
+    src/rules/piece_rules/king_rules.cpp
+    src/rules/piece_rules/knight_rules.cpp
+    src/rules/piece_rules/pawn_rules.cpp
+    src/rules/piece_rules/queen_rules.cpp
+    src/rules/piece_rules/rook_rules.cpp
+    src/rules/rules_registry.cpp
+    src/io/vpl_io.cpp
+    src/rules/game_rules.cpp
+    src/realtime/move_scheduler.cpp
+    src/realtime/collision_resolver.cpp
+    src/realtime/real_time_arbiter.cpp
     src/logic/game_state.cpp
-    src/adapters/command_processor.cpp
-    src/logic/move_validator.cpp
+    src/io/command_processor.cpp
+    src/rules/move_validator.cpp
+    src/engine/game_engine.cpp
 )
 
 add_executable(${PROJECT_NAME}
@@ -48,9 +49,12 @@ add_executable(${PROJECT_NAME}
 
 target_include_directories(${PROJECT_NAME} PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/src
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/core
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/model
     ${CMAKE_CURRENT_SOURCE_DIR}/src/logic
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/adapters
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/realtime
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/rules
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/io
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/engine
 )
 
 set(KFC_TEST_SOURCES

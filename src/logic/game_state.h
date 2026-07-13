@@ -1,8 +1,8 @@
 #pragma once
 
-#include "../core/board_model.h"
-#include "game_rules.h"
-#include "real_time_arbiter.h"
+#include "../model/board_model.h"
+#include "../rules/game_rules.h"
+#include "../realtime/real_time_arbiter.h"
 
 #include <cstdint>
 #include <functional>

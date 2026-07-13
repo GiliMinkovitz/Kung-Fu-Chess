@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../core/board_model.h"
-#include "game_rules.h"
+#include "../model/board_model.h"
+#include "../rules/game_rules.h"
 #include "move_scheduler.h"
 
 #include <utility>
