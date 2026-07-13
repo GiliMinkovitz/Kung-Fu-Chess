@@ -152,28 +152,12 @@ BoardModel BoardModel::from_token_grid(
 
     std::size_t row_index = 0;
     for (const std::initializer_list<const char*>& row : rows) {
-        std::vector<std::optional<Piece::Id>> cell_row;
-        cell_row.reserve(row.size());
-
-        std::size_t col_index = 0;
+        std::vector<std::string> tokens;
+        tokens.reserve(row.size());
         for (const char* token_cstr : row) {
-            const std::string token(token_cstr);
-            if (is_empty_token(token)) {
-                cell_row.push_back(std::nullopt);
-            } else {
-                const std::optional<PieceDescriptor> descriptor = descriptor_from_token(token);
-                assert(descriptor.has_value());
-                Piece piece = factory.create(
-                    descriptor->color, descriptor->kind,
-                    Position{static_cast<int>(row_index), static_cast<int>(col_index)});
-                const Piece::Id piece_id = piece.id;
-                board.store_piece(std::move(piece));
-                cell_row.push_back(piece_id);
-            }
-            ++col_index;
+            tokens.emplace_back(token_cstr);
         }
-
-        board.cells_.push_back(std::move(cell_row));
+        board.append_token_row(tokens, row_index, factory);
         ++row_index;
     }
 
