@@ -37,7 +37,7 @@
           </tr>
           <tr>
             <td class="headerItem">Test Date:</td>
-            <td class="headerValue">2026-07-13 14:29:52</td>
+            <td class="headerValue">2026-07-13 17:03:41</td>
             <td></td>
             <td class="headerItem">Functions:</td>
             <td class="headerCovTableEntryHi">100.0&nbsp;%</td>
@@ -105,10 +105,10 @@
 <span id="L43"><span class="lineNum">      43</span> <span class="tlaGNC">           1 :     return false;</span></span>
 <span id="L44"><span class="lineNum">      44</span>              : }</span>
 <span id="L45"><span class="lineNum">      45</span>              : </span>
-<span id="L46"><span class="lineNum">      46</span> <span class="tlaGNC">          39 : bool CollisionResolver::conflicts_with_opposite_color_move(</span></span>
+<span id="L46"><span class="lineNum">      46</span> <span class="tlaGNC">          40 : bool CollisionResolver::conflicts_with_opposite_color_move(</span></span>
 <span id="L47"><span class="lineNum">      47</span>              :     const std::vector&lt;PendingMove&gt;&amp; pending_moves, std::int64_t clock_ms,</span>
 <span id="L48"><span class="lineNum">      48</span>              :     PieceColor moving_color, const PendingMove&amp; proposed) {</span>
-<span id="L49"><span class="lineNum">      49</span> <span class="tlaGNC">          82 :     for (const PendingMove&amp; existing : pending_moves) {</span></span>
+<span id="L49"><span class="lineNum">      49</span> <span class="tlaGNC">          84 :     for (const PendingMove&amp; existing : pending_moves) {</span></span>
 <span id="L50"><span class="lineNum">      50</span> <span class="tlaGNC">           8 :         if (clock_ms &gt;= existing.arrival_time) {</span></span>
 <span id="L51"><span class="lineNum">      51</span> <span class="tlaGNC">           1 :             continue;</span></span>
 <span id="L52"><span class="lineNum">      52</span>              :         }</span>
@@ -119,13 +119,13 @@
 <span id="L57"><span class="lineNum">      57</span> <span class="tlaGNC">           4 :             return true;</span></span>
 <span id="L58"><span class="lineNum">      58</span>              :         }</span>
 <span id="L59"><span class="lineNum">      59</span>              :     }</span>
-<span id="L60"><span class="lineNum">      60</span> <span class="tlaGNC">          35 :     return false;</span></span>
+<span id="L60"><span class="lineNum">      60</span> <span class="tlaGNC">          36 :     return false;</span></span>
 <span id="L61"><span class="lineNum">      61</span>              : }</span>
 <span id="L62"><span class="lineNum">      62</span>              : </span>
-<span id="L63"><span class="lineNum">      63</span> <span class="tlaGNC">          39 : bool CollisionResolver::is_same_color_destination_claimed(</span></span>
+<span id="L63"><span class="lineNum">      63</span> <span class="tlaGNC">          40 : bool CollisionResolver::is_same_color_destination_claimed(</span></span>
 <span id="L64"><span class="lineNum">      64</span>              :     const std::vector&lt;PendingMove&gt;&amp; pending_moves, std::int64_t clock_ms, PieceColor moving_color,</span>
 <span id="L65"><span class="lineNum">      65</span>              :     const std::pair&lt;std::size_t, std::size_t&gt;&amp; end_pos) {</span>
-<span id="L66"><span class="lineNum">      66</span> <span class="tlaGNC">          83 :     for (const PendingMove&amp; existing : pending_moves) {</span></span>
+<span id="L66"><span class="lineNum">      66</span> <span class="tlaGNC">          85 :     for (const PendingMove&amp; existing : pending_moves) {</span></span>
 <span id="L67"><span class="lineNum">      67</span> <span class="tlaGNC">           8 :         if (clock_ms &gt;= existing.arrival_time) {</span></span>
 <span id="L68"><span class="lineNum">      68</span> <span class="tlaGNC">           1 :             continue;</span></span>
 <span id="L69"><span class="lineNum">      69</span>              :         }</span>
@@ -136,7 +136,7 @@
 <span id="L74"><span class="lineNum">      74</span> <span class="tlaGNC">           3 :             return true;</span></span>
 <span id="L75"><span class="lineNum">      75</span>              :         }</span>
 <span id="L76"><span class="lineNum">      76</span>              :     }</span>
-<span id="L77"><span class="lineNum">      77</span> <span class="tlaGNC">          36 :     return false;</span></span>
+<span id="L77"><span class="lineNum">      77</span> <span class="tlaGNC">          37 :     return false;</span></span>
 <span id="L78"><span class="lineNum">      78</span>              : }</span>
 <span id="L79"><span class="lineNum">      79</span>              : </span>
 <span id="L80"><span class="lineNum">      80</span> <span class="tlaGNC">          31 : bool CollisionResolver::check_for_jump_capture(</span></span>

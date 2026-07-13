@@ -37,7 +37,7 @@
           </tr>
           <tr>
             <td class="headerItem">Test Date:</td>
-            <td class="headerValue">2026-07-13 14:29:52</td>
+            <td class="headerValue">2026-07-13 17:03:41</td>
             <td></td>
             <td class="headerItem">Functions:</td>
             <td class="headerCovTableEntryHi">100.0&nbsp;%</td>
@@ -77,21 +77,21 @@
 <span id="L15"><span class="lineNum">      15</span>              : </span>
 <span id="L16"><span class="lineNum">      16</span>              : }  // namespace</span>
 <span id="L17"><span class="lineNum">      17</span>              : </span>
-<span id="L18"><span class="lineNum">      18</span> <span class="tlaGNC">          72 : void for_each_cell_on_path(int start_row, int start_col, int end_row, int end_col,</span></span>
+<span id="L18"><span class="lineNum">      18</span> <span class="tlaGNC">          73 : void for_each_cell_on_path(int start_row, int start_col, int end_row, int end_col,</span></span>
 <span id="L19"><span class="lineNum">      19</span>              :                            const std::function&lt;void(int row, int col)&gt;&amp; visitor) {</span>
-<span id="L20"><span class="lineNum">      20</span> <span class="tlaGNC">          72 :     const int dr = end_row - start_row;</span></span>
-<span id="L21"><span class="lineNum">      21</span> <span class="tlaGNC">          72 :     const int dc = end_col - start_col;</span></span>
-<span id="L22"><span class="lineNum">      22</span> <span class="tlaGNC">          72 :     const int step_r = (dr == 0) ? 0 : (dr &gt; 0 ? 1 : -1);</span></span>
-<span id="L23"><span class="lineNum">      23</span> <span class="tlaGNC">          72 :     const int step_c = (dc == 0) ? 0 : (dc &gt; 0 ? 1 : -1);</span></span>
+<span id="L20"><span class="lineNum">      20</span> <span class="tlaGNC">          73 :     const int dr = end_row - start_row;</span></span>
+<span id="L21"><span class="lineNum">      21</span> <span class="tlaGNC">          73 :     const int dc = end_col - start_col;</span></span>
+<span id="L22"><span class="lineNum">      22</span> <span class="tlaGNC">          73 :     const int step_r = (dr == 0) ? 0 : (dr &gt; 0 ? 1 : -1);</span></span>
+<span id="L23"><span class="lineNum">      23</span> <span class="tlaGNC">          73 :     const int step_c = (dc == 0) ? 0 : (dc &gt; 0 ? 1 : -1);</span></span>
 <span id="L24"><span class="lineNum">      24</span>              : </span>
-<span id="L25"><span class="lineNum">      25</span> <span class="tlaGNC">          72 :     int row = start_row + step_r;</span></span>
-<span id="L26"><span class="lineNum">      26</span> <span class="tlaGNC">          72 :     int col = start_col + step_c;</span></span>
-<span id="L27"><span class="lineNum">      27</span> <span class="tlaGNC">         124 :     while (row != end_row || col != end_col) {</span></span>
-<span id="L28"><span class="lineNum">      28</span> <span class="tlaGNC">          52 :         visitor(row, col);</span></span>
-<span id="L29"><span class="lineNum">      29</span> <span class="tlaGNC">          52 :         row += step_r;</span></span>
-<span id="L30"><span class="lineNum">      30</span> <span class="tlaGNC">          52 :         col += step_c;</span></span>
+<span id="L25"><span class="lineNum">      25</span> <span class="tlaGNC">          73 :     int row = start_row + step_r;</span></span>
+<span id="L26"><span class="lineNum">      26</span> <span class="tlaGNC">          73 :     int col = start_col + step_c;</span></span>
+<span id="L27"><span class="lineNum">      27</span> <span class="tlaGNC">         126 :     while (row != end_row || col != end_col) {</span></span>
+<span id="L28"><span class="lineNum">      28</span> <span class="tlaGNC">          53 :         visitor(row, col);</span></span>
+<span id="L29"><span class="lineNum">      29</span> <span class="tlaGNC">          53 :         row += step_r;</span></span>
+<span id="L30"><span class="lineNum">      30</span> <span class="tlaGNC">          53 :         col += step_c;</span></span>
 <span id="L31"><span class="lineNum">      31</span>              :     }</span>
-<span id="L32"><span class="lineNum">      32</span> <span class="tlaGNC">          72 : }</span></span>
+<span id="L32"><span class="lineNum">      32</span> <span class="tlaGNC">          73 : }</span></span>
 <span id="L33"><span class="lineNum">      33</span>              : </span>
 <span id="L34"><span class="lineNum">      34</span> <span class="tlaGNC">          19 : bool paths_share_cell(const Cell&amp; a_start, const Cell&amp; a_end, const Cell&amp; b_start,</span></span>
 <span id="L35"><span class="lineNum">      35</span>              :                       const Cell&amp; b_end) {</span>
