@@ -24,6 +24,13 @@ set(KFC_SOURCES
     src/logic/board_validator.cpp
     src/adapters/board_writer.cpp
     src/logic/path_utils.cpp
+    src/logic/piece_rules/bishop_rules.cpp
+    src/logic/piece_rules/king_rules.cpp
+    src/logic/piece_rules/knight_rules.cpp
+    src/logic/piece_rules/pawn_rules.cpp
+    src/logic/piece_rules/queen_rules.cpp
+    src/logic/piece_rules/rook_rules.cpp
+    src/logic/piece_rules/rules_registry.cpp
     src/adapters/vpl_io.cpp
     src/logic/game_rules.cpp
     src/logic/move_scheduler.cpp
