@@ -1,7 +1,7 @@
 build/
 out/
 .vs/
-.vscode/.cache/
+.vscode
 *.exe
 *.obj
 *.o
