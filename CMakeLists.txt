@@ -150,10 +150,40 @@ if(ENABLE_COVERAGE)
     find_program(LCOV lcov REQUIRED)
     find_program(GENHTML genhtml REQUIRED)
 
-    set(KFC_COVERAGE_SCRIPT "${CMAKE_SOURCE_DIR}/scripts/run_coverage.sh")
+    set(KFC_COVERAGE_REPORT_DIR "${CMAKE_SOURCE_DIR}/coverage_report")
 
     add_custom_target(coverage
-        COMMAND bash "${KFC_COVERAGE_SCRIPT}" "${CMAKE_BINARY_DIR}" "${CMAKE_SOURCE_DIR}"
+        COMMAND ${CMAKE_COMMAND} --build ${CMAKE_BINARY_DIR} --target KungFuChessTests
+        COMMAND ${CMAKE_COMMAND} -E rm -rf "${KFC_COVERAGE_REPORT_DIR}" "${CMAKE_BINARY_DIR}/coverage.info"
+        COMMAND bash -c "find '${CMAKE_BINARY_DIR}' -name '*.gcda' -delete"
+        COMMAND ${LCOV} --directory ${CMAKE_BINARY_DIR} --zerocounters
+        COMMAND ${CMAKE_COMMAND} -E copy "$<TARGET_FILE:KungFuChessTests>" /tmp/KungFuChessTests_cov
+        COMMAND chmod +x /tmp/KungFuChessTests_cov
+        COMMAND /tmp/KungFuChessTests_cov
+        COMMAND ${CMAKE_COMMAND} -E rm -f /tmp/KungFuChessTests_cov
+        COMMAND ${LCOV}
+            --directory ${CMAKE_BINARY_DIR}
+            --capture
+            --output-file ${CMAKE_BINARY_DIR}/coverage.info
+            --ignore-errors source
+            --rc geninfo_unexecuted_blocks=1
+        COMMAND ${LCOV}
+            --remove ${CMAKE_BINARY_DIR}/coverage.info
+            '/usr/*'
+            '*/tests/*'
+            '*/_deps/*'
+            '*/third_party/*'
+            --output-file ${CMAKE_BINARY_DIR}/coverage.info
+            --ignore-errors unused,inconsistent
+        COMMAND ${LCOV}
+            --extract ${CMAKE_BINARY_DIR}/coverage.info
+            '*/src/*'
+            --output-file ${CMAKE_BINARY_DIR}/coverage.info
+            --ignore-errors unused,inconsistent
+        COMMAND ${GENHTML}
+            ${CMAKE_BINARY_DIR}/coverage.info
+            --output-directory ${KFC_COVERAGE_REPORT_DIR}
+            --ignore-errors source
         WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
         USES_TERMINAL
         COMMENT "Generating LCOV HTML coverage report in coverage_report/"
