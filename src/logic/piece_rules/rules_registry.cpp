@@ -22,7 +22,7 @@ namespace {
     return is_knight_move(dr, dc);
 }
 
-constexpr std::size_t kPieceKindCount = 6;
+constexpr std::size_t kPieceKindCount = static_cast<std::size_t>(PieceKind::Count);
 
 const std::array<PieceRuleEntry, kPieceKindCount> kRules = {{
     {is_king_move, true},           // PieceKind::King

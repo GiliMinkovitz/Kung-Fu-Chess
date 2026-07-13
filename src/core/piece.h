@@ -8,7 +8,7 @@ namespace kfc {
 
 enum class PieceColor { White, Black };
 
-enum class PieceKind { King, Queen, Rook, Bishop, Knight, Pawn };
+enum class PieceKind { King, Queen, Rook, Bishop, Knight, Pawn, Count };
 
 enum class PieceState { Idle, Moving, Captured };
 

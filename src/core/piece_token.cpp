@@ -63,6 +63,8 @@ char kind_to_char(PieceKind kind) noexcept {
             return kKnightType;
         case PieceKind::Pawn:
             return kPawnType;
+        case PieceKind::Count:
+            break;
     }
     return kPawnType;
 }
