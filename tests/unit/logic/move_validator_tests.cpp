@@ -169,9 +169,26 @@ TEST_CASE("MoveValidatorTest - BishopDiagonalMove") {
     CHECK_FALSE(kfc::is_legal_move(board, kfc::PieceKind::Bishop, 1, 1, 2, 1));
 }
 
+TEST_CASE("MoveValidatorTest - BishopLongDiagonalMove") {
+    const kfc::BoardModel board = kfc::test::make_board({{".", ".", ".", ".", "."},
+                                                         {".", ".", ".", ".", "."},
+                                                         {".", ".", "wB", ".", "."},
+                                                         {".", ".", ".", ".", "."},
+                                                         {".", ".", ".", ".", "."}});
+    CHECK(kfc::is_legal_move(board, kfc::PieceKind::Bishop, 2, 2, 0, 0));
+    CHECK(kfc::is_legal_move(board, kfc::PieceKind::Bishop, 2, 2, 4, 4));
+}
+
 TEST_CASE("MoveValidatorTest - BishopBlockedByPiece") {
-    const kfc::BoardModel board = kfc::test::make_board({{"wP", ".", "."}, {".", "wB", "."}, {".", ".", "."}});
-    CHECK_FALSE(kfc::is_legal_move(board, kfc::PieceKind::Bishop, 1, 1, 0, 0));
+    const kfc::BoardModel blocked_path = kfc::test::make_board({{".", ".", ".", ".", "."},
+                                                                {".", "wP", ".", ".", "."},
+                                                                {".", ".", "wB", ".", "."},
+                                                                {".", ".", ".", ".", "."},
+                                                                {".", ".", ".", ".", "."}});
+    CHECK_FALSE(kfc::is_legal_move(blocked_path, kfc::PieceKind::Bishop, 2, 2, 0, 0));
+
+    const kfc::BoardModel blocked_dest = kfc::test::make_board({{"wP", ".", "."}, {".", "wB", "."}, {".", ".", "."}});
+    CHECK_FALSE(kfc::is_legal_move(blocked_dest, kfc::PieceKind::Bishop, 1, 1, 0, 0));
 }
 
 TEST_CASE("MoveValidatorTest - BishopCapturesEnemy") {
