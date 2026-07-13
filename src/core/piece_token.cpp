@@ -2,7 +2,31 @@
 
 #include "game_config.h"
 
+#include <algorithm>
+#include <array>
+#include <cstddef>
+
 namespace kfc {
+
+namespace {
+
+struct PieceKindMapping {
+    PieceKind kind;
+    char character;
+};
+
+constexpr std::size_t kPlayablePieceKindCount = static_cast<std::size_t>(PieceKind::Count);
+
+constexpr std::array<PieceKindMapping, kPlayablePieceKindCount> kPieceKindMappings = {{
+    {PieceKind::King, kKingType},
+    {PieceKind::Queen, kQueenType},
+    {PieceKind::Rook, kRookType},
+    {PieceKind::Bishop, kBishopType},
+    {PieceKind::Knight, kKnightType},
+    {PieceKind::Pawn, kPawnType},
+}};
+
+}  // namespace
 
 bool is_empty_token(const std::string& token) noexcept {
     return token.size() == 1 && token[0] == kEmptyToken;
@@ -50,23 +74,12 @@ char color_to_char(PieceColor color) noexcept {
 }
 
 char kind_to_char(PieceKind kind) noexcept {
-    switch (kind) {
-        case PieceKind::King:
-            return kKingType;
-        case PieceKind::Queen:
-            return kQueenType;
-        case PieceKind::Rook:
-            return kRookType;
-        case PieceKind::Bishop:
-            return kBishopType;
-        case PieceKind::Knight:
-            return kKnightType;
-        case PieceKind::Pawn:
-            return kPawnType;
-        case PieceKind::Count:
-            break;
+    const auto it = std::find_if(kPieceKindMappings.begin(), kPieceKindMappings.end(),
+                                 [kind](const PieceKindMapping& entry) { return entry.kind == kind; });
+    if (it == kPieceKindMappings.end()) {
+        return kPawnType;
     }
-    return kPawnType;
+    return it->character;
 }
 
 std::optional<PieceColor> color_from_char(char color) noexcept {
@@ -79,23 +92,15 @@ std::optional<PieceColor> color_from_char(char color) noexcept {
     return std::nullopt;
 }
 
-std::optional<PieceKind> kind_from_char(char kind) noexcept {
-    switch (kind) {
-        case kKingType:
-            return PieceKind::King;
-        case kQueenType:
-            return PieceKind::Queen;
-        case kRookType:
-            return PieceKind::Rook;
-        case kBishopType:
-            return PieceKind::Bishop;
-        case kKnightType:
-            return PieceKind::Knight;
-        case kPawnType:
-            return PieceKind::Pawn;
-        default:
-            return std::nullopt;
+std::optional<PieceKind> kind_from_char(char character) noexcept {
+    const auto it = std::find_if(kPieceKindMappings.begin(), kPieceKindMappings.end(),
+                                 [character](const PieceKindMapping& entry) {
+                                     return entry.character == character;
+                                 });
+    if (it == kPieceKindMappings.end()) {
+        return std::nullopt;
     }
+    return it->kind;
 }
 
 }  // namespace kfc
