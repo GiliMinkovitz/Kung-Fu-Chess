@@ -13,7 +13,12 @@
 
 namespace kfc {
 
+namespace test {
+struct GameStateTestAccess;
+}
+
 class GameState {
+    friend struct test::GameStateTestAccess;
 public:
     explicit GameState(BoardModel board);
     GameState(BoardModel board, GameRules rules);

@@ -11,7 +11,12 @@
 
 namespace kfc {
 
+namespace test {
+struct BoardModelTestAccess;
+}
+
 class BoardModel {
+    friend struct test::BoardModelTestAccess;
 public:
     [[nodiscard]] std::size_t rows() const noexcept { return cells_.size(); }
     [[nodiscard]] std::size_t cols() const noexcept {

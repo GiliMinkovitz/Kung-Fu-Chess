@@ -14,6 +14,28 @@
 
 namespace kfc::test {
 
+struct BoardModelTestAccess {
+    static void set_cell_piece_id(BoardModel& board, std::size_t row, std::size_t col,
+                                  Piece::Id id) {
+        board.cells_[row][col] = id;
+    }
+
+    static const Piece* find_piece_by_id(const BoardModel& board, Piece::Id id) {
+        return board.find_piece_by_id(id);
+    }
+
+    static Piece* find_piece_by_id(BoardModel& board, Piece::Id id) {
+        return board.find_piece_by_id(id);
+    }
+};
+
+struct GameStateTestAccess {
+    static bool is_legal_move(const GameState& state, int start_row, int start_col, int end_row,
+                              int end_col) {
+        return state.is_legal_move(start_row, start_col, end_row, end_col);
+    }
+};
+
 inline BoardModel make_board(std::initializer_list<std::initializer_list<const char*>> rows) {
     return BoardModel::from_token_grid(rows);
 }
