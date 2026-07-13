@@ -154,6 +154,35 @@ TEST_CASE("GameStateTest - GameStateFriendlySelectionRequiresSelection") {
     CHECK_FALSE(state.is_friendly_to_selection(0, 1));
 }
 
+TEST_CASE("GameStateTest - FriendlySelectionReturnsTrueForSameColor") {
+    kfc::GameState state(kfc::test::make_board({{"wK", "wN", "bK"}}));
+    state.select(0, 0);
+    CHECK(state.is_friendly_to_selection(0, 1));
+    CHECK_FALSE(state.is_friendly_to_selection(0, 2));
+}
+
+TEST_CASE("GameStateTest - IsLegalMoveFromEmptySquare") {
+    const kfc::GameState state(kfc::test::make_board({{"wK", ".", "bK"}}));
+    CHECK_FALSE(kfc::test::GameStateTestAccess::is_legal_move(state, 0, 1, 0, 2));
+}
+
+TEST_CASE("GameStateTest - MoveSelectedFromEmptyCellIgnored") {
+    kfc::GameState state(kfc::test::make_board({{"wK", ".", "bK"}}));
+    state.select(0, 1);
+    state.move_selected_to(0, 2);
+    CHECK(state.has_selection());
+    CHECK_EQ(state.token_at(0, 1), ".");
+    CHECK_EQ(state.token_at(0, 2), "bK");
+}
+
+TEST_CASE("GameStateTest - JumpAtStaleCellIdIgnored") {
+    kfc::BoardModel board = kfc::test::make_board({{"."}});
+    kfc::test::BoardModelTestAccess::set_cell_piece_id(board, 0, 0, 999);
+    kfc::GameState state(std::move(board));
+    state.jump_at(0, 0);
+    CHECK_FALSE(state.is_piece_jumping(0, 0));
+}
+
 TEST_CASE("GameStateTest - GameStateSamekfc::test::BoardLayoutAs") {
     const kfc::GameState left(kfc::test::make_board({{"wK", ".", "bK"}}));
     const kfc::GameState right(kfc::test::make_board({{"wK", ".", "bK"}}));

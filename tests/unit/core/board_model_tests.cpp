@@ -71,11 +71,37 @@ TEST_CASE("BoardModelTest - PlacePieceInvalidIdThrows") {
     CHECK_THROWS_AS(board.place_piece(std::move(invalid)), std::invalid_argument);
 }
 
-TEST_CASE("BoardModelTest - FindPieceByIdReturnsNullForInvalidId") {
+TEST_CASE("BoardModelTest - ClearCellRemovesPieceReference") {
     kfc::BoardModel board = kfc::test::make_board({{"wK"}});
     CHECK(board.piece_at(0, 0) != nullptr);
     board.clear_cell(0, 0);
     CHECK(board.piece_at(0, 0) == nullptr);
+}
+
+TEST_CASE("BoardModelTest - FromTokenGridEmpty") {
+    const kfc::BoardModel board = kfc::BoardModel::from_token_grid({});
+    CHECK_EQ(board.rows(), 0);
+    CHECK_FALSE(board.is_valid());
+}
+
+TEST_CASE("BoardModelTest - FindPieceByIdReturnsNullForInvalidId") {
+    const kfc::BoardModel board = kfc::test::make_board({{"wK"}});
+    CHECK(kfc::test::BoardModelTestAccess::find_piece_by_id(board, kfc::Piece::kInvalidId) ==
+          nullptr);
+    CHECK(kfc::test::BoardModelTestAccess::find_piece_by_id(board, 999) == nullptr);
+
+    kfc::BoardModel mutable_board = kfc::test::make_board({{"wK"}});
+    CHECK(kfc::test::BoardModelTestAccess::find_piece_by_id(mutable_board, 999) == nullptr);
+}
+
+TEST_CASE("BoardModelTest - PieceAtStaleCellIdReturnsNull") {
+    kfc::BoardModel board = kfc::test::make_board({{"wK", "."}});
+    kfc::test::BoardModelTestAccess::set_cell_piece_id(board, 0, 1, 999);
+    CHECK_FALSE(board.is_empty(0, 1));
+    CHECK(board.piece_at(0, 1) == nullptr);
+
+    const kfc::BoardModel& const_board = board;
+    CHECK(const_board.piece_at(0, 1) == nullptr);
 }
 
 TEST_CASE("BoardModelTest - InvalidZeroWidthRow") {
