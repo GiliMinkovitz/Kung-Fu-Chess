@@ -58,19 +58,19 @@ target_include_directories(${PROJECT_NAME} PUBLIC
 )
 
 set(KFC_TEST_SOURCES
-    tests/unit/core/board_model_tests.cpp
-    tests/unit/core/piece_tests.cpp
-    tests/unit/core/position_tests.cpp
-    tests/unit/logic/board_validator_tests.cpp
+    tests/unit/model/board_model_tests.cpp
+    tests/unit/model/piece_tests.cpp
+    tests/unit/model/position_tests.cpp
+    tests/unit/rules/board_validator_tests.cpp
     tests/unit/logic/path_utils_tests.cpp
-    tests/unit/logic/move_validator_tests.cpp
-    tests/unit/logic/collision_resolver_tests.cpp
+    tests/unit/rules/move_validator_tests.cpp
+    tests/unit/realtime/collision_resolver_tests.cpp
     tests/unit/logic/game_state_tests.cpp
-    tests/unit/logic/real_time_arbiter_tests.cpp
-    tests/unit/logic/game_rules_tests.cpp
-    tests/unit/adapters/board_writer_tests.cpp
-    tests/unit/adapters/command_processor_tests.cpp
-    tests/unit/adapters/vpl_io_tests.cpp
+    tests/unit/realtime/real_time_arbiter_tests.cpp
+    tests/unit/rules/game_rules_tests.cpp
+    tests/unit/io/board_writer_tests.cpp
+    tests/unit/io/command_processor_tests.cpp
+    tests/unit/io/vpl_io_tests.cpp
     tests/integration/integration_test.cpp
 )
 
