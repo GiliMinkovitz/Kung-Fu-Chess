@@ -161,7 +161,8 @@ BoardModel BoardModel::from_token_grid(
         ++row_index;
     }
 
-    return board;
+    const BoardModel copy = board;
+    return copy;
 }
 
 Piece* BoardModel::find_piece_by_id(Piece::Id id) {

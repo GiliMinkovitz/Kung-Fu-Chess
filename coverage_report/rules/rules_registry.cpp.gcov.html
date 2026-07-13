@@ -32,17 +32,17 @@
             <td></td>
             <td class="headerItem">Lines:</td>
             <td class="headerCovTableEntryHi">100.0&nbsp;%</td>
-            <td class="headerCovTableEntry">9</td>
-            <td class="headerCovTableEntry">9</td>
+            <td class="headerCovTableEntry">5</td>
+            <td class="headerCovTableEntry">5</td>
           </tr>
           <tr>
             <td class="headerItem">Test Date:</td>
-            <td class="headerValue">2026-07-13 21:07:34</td>
+            <td class="headerValue">2026-07-14 01:32:57</td>
             <td></td>
             <td class="headerItem">Functions:</td>
             <td class="headerCovTableEntryHi">100.0&nbsp;%</td>
-            <td class="headerCovTableEntry">2</td>
-            <td class="headerCovTableEntry">2</td>
+            <td class="headerCovTableEntry">1</td>
+            <td class="headerCovTableEntry">1</td>
           </tr>
                   <tr><td><img src="../glass.png" width=3 height=3 alt=""></td></tr>
                 </table>
@@ -76,36 +76,28 @@
 <span id="L14"><span class="lineNum">      14</span>              : </span>
 <span id="L15"><span class="lineNum">      15</span>              : namespace {</span>
 <span id="L16"><span class="lineNum">      16</span>              : </span>
-<span id="L17"><span class="lineNum">      17</span> <span class="tlaGNC">           7 : [[nodiscard]] bool validate_knight_move(const BoardModel&amp; board, int start_row, int start_col,</span></span>
-<span id="L18"><span class="lineNum">      18</span>              :                                         int end_row, int end_col) {</span>
-<span id="L19"><span class="lineNum">      19</span>              :     (void)board;</span>
-<span id="L20"><span class="lineNum">      20</span> <span class="tlaGNC">           7 :     const int dr = end_row - start_row;</span></span>
-<span id="L21"><span class="lineNum">      21</span> <span class="tlaGNC">           7 :     const int dc = end_col - start_col;</span></span>
-<span id="L22"><span class="lineNum">      22</span> <span class="tlaGNC">           7 :     return is_knight_move(dr, dc);</span></span>
-<span id="L23"><span class="lineNum">      23</span>              : }</span>
-<span id="L24"><span class="lineNum">      24</span>              : </span>
-<span id="L25"><span class="lineNum">      25</span>              : constexpr std::size_t kPieceKindCount = static_cast&lt;std::size_t&gt;(PieceKind::Count);</span>
-<span id="L26"><span class="lineNum">      26</span>              : </span>
-<span id="L27"><span class="lineNum">      27</span>              : const std::array&lt;PieceRuleEntry, kPieceKindCount&gt; kRules = {{</span>
-<span id="L28"><span class="lineNum">      28</span>              :     {is_king_move, true},           // PieceKind::King</span>
-<span id="L29"><span class="lineNum">      29</span>              :     {is_queen_move, true},          // PieceKind::Queen</span>
-<span id="L30"><span class="lineNum">      30</span>              :     {is_rook_move, true},           // PieceKind::Rook</span>
-<span id="L31"><span class="lineNum">      31</span>              :     {is_bishop_move, true},         // PieceKind::Bishop</span>
-<span id="L32"><span class="lineNum">      32</span>              :     {validate_knight_move, true},   // PieceKind::Knight</span>
-<span id="L33"><span class="lineNum">      33</span>              :     {is_pawn_move, false},          // PieceKind::Pawn</span>
-<span id="L34"><span class="lineNum">      34</span>              : }};</span>
-<span id="L35"><span class="lineNum">      35</span>              : </span>
-<span id="L36"><span class="lineNum">      36</span>              : }  // namespace</span>
+<span id="L17"><span class="lineNum">      17</span>              : constexpr std::size_t kPieceKindCount = static_cast&lt;std::size_t&gt;(PieceKind::Count);</span>
+<span id="L18"><span class="lineNum">      18</span>              : </span>
+<span id="L19"><span class="lineNum">      19</span>              : const std::array&lt;PieceRuleEntry, kPieceKindCount&gt; kRules = {{</span>
+<span id="L20"><span class="lineNum">      20</span>              :     {is_king_move, true},           // PieceKind::King</span>
+<span id="L21"><span class="lineNum">      21</span>              :     {is_queen_move, true},          // PieceKind::Queen</span>
+<span id="L22"><span class="lineNum">      22</span>              :     {is_rook_move, true},           // PieceKind::Rook</span>
+<span id="L23"><span class="lineNum">      23</span>              :     {is_bishop_move, true},         // PieceKind::Bishop</span>
+<span id="L24"><span class="lineNum">      24</span>              :     {validate_knight_move, true},   // PieceKind::Knight</span>
+<span id="L25"><span class="lineNum">      25</span>              :     {is_pawn_move, false},          // PieceKind::Pawn</span>
+<span id="L26"><span class="lineNum">      26</span>              : }};</span>
+<span id="L27"><span class="lineNum">      27</span>              : </span>
+<span id="L28"><span class="lineNum">      28</span>              : }  // namespace</span>
+<span id="L29"><span class="lineNum">      29</span>              : </span>
+<span id="L30"><span class="lineNum">      30</span> <span class="tlaGNC">         134 : PieceRuleEntry get_rule_entry(PieceKind kind) noexcept {</span></span>
+<span id="L31"><span class="lineNum">      31</span> <span class="tlaGNC">         134 :     const auto index = static_cast&lt;std::size_t&gt;(kind);</span></span>
+<span id="L32"><span class="lineNum">      32</span> <span class="tlaGNC">         134 :     if (index &gt;= kRules.size()) {</span></span>
+<span id="L33"><span class="lineNum">      33</span> <span class="tlaGNC">           1 :         return {};</span></span>
+<span id="L34"><span class="lineNum">      34</span>              :     }</span>
+<span id="L35"><span class="lineNum">      35</span> <span class="tlaGNC">         133 :     return kRules[index];</span></span>
+<span id="L36"><span class="lineNum">      36</span>              : }</span>
 <span id="L37"><span class="lineNum">      37</span>              : </span>
-<span id="L38"><span class="lineNum">      38</span> <span class="tlaGNC">         132 : PieceRuleEntry get_rule_entry(PieceKind kind) noexcept {</span></span>
-<span id="L39"><span class="lineNum">      39</span> <span class="tlaGNC">         132 :     const auto index = static_cast&lt;std::size_t&gt;(kind);</span></span>
-<span id="L40"><span class="lineNum">      40</span> <span class="tlaGNC">         132 :     if (index &gt;= kRules.size()) {</span></span>
-<span id="L41"><span class="lineNum">      41</span> <span class="tlaGNC">           1 :         return {};</span></span>
-<span id="L42"><span class="lineNum">      42</span>              :     }</span>
-<span id="L43"><span class="lineNum">      43</span> <span class="tlaGNC">         131 :     return kRules[index];</span></span>
-<span id="L44"><span class="lineNum">      44</span>              : }</span>
-<span id="L45"><span class="lineNum">      45</span>              : </span>
-<span id="L46"><span class="lineNum">      46</span>              : }  // namespace kfc::piece_rules</span>
+<span id="L38"><span class="lineNum">      38</span>              : }  // namespace kfc::piece_rules</span>
         </pre>
               </td>
             </tr>

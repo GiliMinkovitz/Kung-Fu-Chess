@@ -459,9 +459,28 @@ TEST_CASE("CommandProcessorTest - FriendlyClickSameCellWhileMovingIgnored") {
     processor.execute("click 50 50", sink);
     processor.execute("click 250 50", sink);
     CHECK(state.is_piece_moving(0, 0));
+    CHECK_FALSE(state.has_selection());
+
+    state.select(0, 0);
     processor.execute("click 50 50", sink);
     CHECK(state.is_piece_moving(0, 0));
     CHECK_FALSE(state.is_piece_jumping(0, 0));
+}
+
+TEST_CASE("CommandProcessorTest - FriendlyClickSameCellWhileJumpingIgnored") {
+    kfc::GameState state(kfc::test::make_board({{"wK", ".", "bK"}}));
+    kfc::CommandProcessor processor(state);
+    std::ostringstream sink;
+
+    processor.execute("click 50 50", sink);
+    processor.execute("click 50 50", sink);
+    REQUIRE(state.is_piece_jumping(0, 0));
+    CHECK_FALSE(state.has_selection());
+
+    state.select(0, 0);
+    processor.execute("click 50 50", sink);
+    CHECK(state.is_piece_jumping(0, 0));
+    CHECK(state.has_selection());
 }
 
 TEST_CASE("CommandProcessorTest - CommandProcessorJumpOutsideGrid") {

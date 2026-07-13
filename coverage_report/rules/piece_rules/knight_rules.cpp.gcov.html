@@ -32,17 +32,17 @@
             <td></td>
             <td class="headerItem">Lines:</td>
             <td class="headerCovTableEntryHi">100.0&nbsp;%</td>
-            <td class="headerCovTableEntry">4</td>
-            <td class="headerCovTableEntry">4</td>
+            <td class="headerCovTableEntry">8</td>
+            <td class="headerCovTableEntry">8</td>
           </tr>
           <tr>
             <td class="headerItem">Test Date:</td>
-            <td class="headerValue">2026-07-13 21:07:34</td>
+            <td class="headerValue">2026-07-14 01:32:57</td>
             <td></td>
             <td class="headerItem">Functions:</td>
             <td class="headerCovTableEntryHi">100.0&nbsp;%</td>
-            <td class="headerCovTableEntry">1</td>
-            <td class="headerCovTableEntry">1</td>
+            <td class="headerCovTableEntry">2</td>
+            <td class="headerCovTableEntry">2</td>
           </tr>
                   <tr><td><img src="../../glass.png" width=3 height=3 alt=""></td></tr>
                 </table>
@@ -66,13 +66,25 @@
 <span id="L4"><span class="lineNum">       4</span>              : </span>
 <span id="L5"><span class="lineNum">       5</span>              : namespace kfc::piece_rules {</span>
 <span id="L6"><span class="lineNum">       6</span>              : </span>
-<span id="L7"><span class="lineNum">       7</span> <span class="tlaGNC">           7 : bool is_knight_move(int dr, int dc) noexcept {</span></span>
-<span id="L8"><span class="lineNum">       8</span> <span class="tlaGNC">           7 :     const int adr = std::abs(dr);</span></span>
-<span id="L9"><span class="lineNum">       9</span> <span class="tlaGNC">           7 :     const int adc = std::abs(dc);</span></span>
-<span id="L10"><span class="lineNum">      10</span> <span class="tlaGNC">           7 :     return (adr == 2 &amp;&amp; adc == 1) || (adr == 1 &amp;&amp; adc == 2);</span></span>
-<span id="L11"><span class="lineNum">      11</span>              : }</span>
-<span id="L12"><span class="lineNum">      12</span>              : </span>
-<span id="L13"><span class="lineNum">      13</span>              : }  // namespace kfc::piece_rules</span>
+<span id="L7"><span class="lineNum">       7</span>              : namespace {</span>
+<span id="L8"><span class="lineNum">       8</span>              : </span>
+<span id="L9"><span class="lineNum">       9</span> <span class="tlaGNC">           7 : [[nodiscard]] bool is_knight_move(int dr, int dc) noexcept {</span></span>
+<span id="L10"><span class="lineNum">      10</span> <span class="tlaGNC">           7 :     const int adr = std::abs(dr);</span></span>
+<span id="L11"><span class="lineNum">      11</span> <span class="tlaGNC">           7 :     const int adc = std::abs(dc);</span></span>
+<span id="L12"><span class="lineNum">      12</span> <span class="tlaGNC">           7 :     return (adr == 2 &amp;&amp; adc == 1) || (adr == 1 &amp;&amp; adc == 2);</span></span>
+<span id="L13"><span class="lineNum">      13</span>              : }</span>
+<span id="L14"><span class="lineNum">      14</span>              : </span>
+<span id="L15"><span class="lineNum">      15</span>              : }  // namespace</span>
+<span id="L16"><span class="lineNum">      16</span>              : </span>
+<span id="L17"><span class="lineNum">      17</span> <span class="tlaGNC">           7 : bool validate_knight_move(const BoardModel&amp; board, int start_row, int start_col, int end_row,</span></span>
+<span id="L18"><span class="lineNum">      18</span>              :                           int end_col) {</span>
+<span id="L19"><span class="lineNum">      19</span>              :     (void)board;</span>
+<span id="L20"><span class="lineNum">      20</span> <span class="tlaGNC">           7 :     const int dr = end_row - start_row;</span></span>
+<span id="L21"><span class="lineNum">      21</span> <span class="tlaGNC">           7 :     const int dc = end_col - start_col;</span></span>
+<span id="L22"><span class="lineNum">      22</span> <span class="tlaGNC">           7 :     return is_knight_move(dr, dc);</span></span>
+<span id="L23"><span class="lineNum">      23</span>              : }</span>
+<span id="L24"><span class="lineNum">      24</span>              : </span>
+<span id="L25"><span class="lineNum">      25</span>              : }  // namespace kfc::piece_rules</span>
         </pre>
               </td>
             </tr>

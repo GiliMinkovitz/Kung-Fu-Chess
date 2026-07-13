@@ -84,6 +84,16 @@ TEST_CASE("BoardModelTest - FromTokenGridEmpty") {
     CHECK_FALSE(board.is_valid());
 }
 
+TEST_CASE("BoardModelTest - FromTokenGridNonEmpty") {
+    const kfc::BoardModel board =
+        kfc::BoardModel::from_token_grid({{"wK", ".", "bK"}, {".", "wN", "."}});
+    CHECK(board.is_valid());
+    CHECK_EQ(board.rows(), 2);
+    CHECK_EQ(board.cols(), 3);
+    CHECK_EQ(board.token_at(0, 0), "wK");
+    CHECK_EQ(board.token_at(1, 1), "wN");
+}
+
 TEST_CASE("BoardModelTest - FindPieceByIdReturnsNullForInvalidId") {
     const kfc::BoardModel board = kfc::test::make_board({{"wK"}});
     CHECK(kfc::test::BoardModelTestAccess::find_piece_by_id(board, kfc::Piece::kInvalidId) ==

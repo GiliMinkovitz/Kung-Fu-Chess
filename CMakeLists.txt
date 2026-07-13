@@ -71,6 +71,7 @@ set(KFC_TEST_SOURCES
     tests/unit/io/board_writer_tests.cpp
     tests/unit/io/command_processor_tests.cpp
     tests/unit/io/vpl_io_tests.cpp
+    tests/unit/engine/game_engine_tests.cpp
     tests/integration/integration_test.cpp
 )
 
@@ -142,45 +143,19 @@ if(ENABLE_COVERAGE)
     endif()
 
     foreach(_kfc_target IN ITEMS ${PROJECT_NAME} KungFuChessTests)
-        target_compile_options(${_kfc_target} PRIVATE --coverage)
+        target_compile_options(${_kfc_target} PRIVATE --coverage -O0 -fno-elide-constructors)
         target_link_options(${_kfc_target} PRIVATE --coverage)
     endforeach()
 
     find_program(LCOV lcov REQUIRED)
     find_program(GENHTML genhtml REQUIRED)
 
-    set(KFC_COVERAGE_REPORT_DIR "${CMAKE_SOURCE_DIR}/coverage_report")
+    set(KFC_COVERAGE_SCRIPT "${CMAKE_SOURCE_DIR}/scripts/run_coverage.sh")
 
     add_custom_target(coverage
-        COMMAND bash -c "rm -rf '${KFC_COVERAGE_REPORT_DIR}' '${CMAKE_BINARY_DIR}/coverage.info'"
-        COMMAND bash -c "find '${CMAKE_BINARY_DIR}' -name '*.gcda' -delete"
-        COMMAND ${LCOV} --directory ${CMAKE_BINARY_DIR} --zerocounters
-        COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure
-        COMMAND ${LCOV}
-            --directory ${CMAKE_BINARY_DIR}
-            --capture
-            --output-file ${CMAKE_BINARY_DIR}/coverage.info
-            --ignore-errors source
-            --rc geninfo_unexecuted_blocks=1
-        COMMAND ${LCOV}
-            --remove ${CMAKE_BINARY_DIR}/coverage.info
-            '/usr/*'
-            '*/tests/*'
-            '*/_deps/*'
-            '*/third_party/*'
-            --output-file ${CMAKE_BINARY_DIR}/coverage.info
-            --ignore-errors unused,inconsistent
-        COMMAND ${LCOV}
-            --extract ${CMAKE_BINARY_DIR}/coverage.info
-            '*/src/*'
-            --output-file ${CMAKE_BINARY_DIR}/coverage.info
-            --ignore-errors unused,unused,inconsistent
-        COMMAND ${GENHTML}
-            ${CMAKE_BINARY_DIR}/coverage.info
-            --output-directory ${KFC_COVERAGE_REPORT_DIR}
-            --ignore-errors source
+        COMMAND bash "${KFC_COVERAGE_SCRIPT}" "${CMAKE_BINARY_DIR}" "${CMAKE_SOURCE_DIR}"
         WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
-        DEPENDS KungFuChessTests
+        USES_TERMINAL
         COMMENT "Generating LCOV HTML coverage report in coverage_report/"
     )
 endif()

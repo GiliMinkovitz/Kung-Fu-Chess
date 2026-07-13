@@ -37,7 +37,7 @@
           </tr>
           <tr>
             <td class="headerItem">Test Date:</td>
-            <td class="headerValue">2026-07-13 21:07:34</td>
+            <td class="headerValue">2026-07-14 01:32:57</td>
             <td></td>
             <td class="headerItem">Functions:</td>
             <td class="headerCovTableEntryHi">100.0&nbsp;%</td>
@@ -66,19 +66,19 @@
 <span id="L4"><span class="lineNum">       4</span>              : </span>
 <span id="L5"><span class="lineNum">       5</span>              : namespace kfc {</span>
 <span id="L6"><span class="lineNum">       6</span>              : </span>
-<span id="L7"><span class="lineNum">       7</span> <span class="tlaGNC">          24 : void write_board(std::ostream&amp; out, const BoardModel&amp; board) {</span></span>
-<span id="L8"><span class="lineNum">       8</span> <span class="tlaGNC">          64 :     for (std::size_t row = 0; row &lt; board.rows(); ++row) {</span></span>
-<span id="L9"><span class="lineNum">       9</span> <span class="tlaGNC">         166 :         for (std::size_t col = 0; col &lt; board.cols(); ++col) {</span></span>
-<span id="L10"><span class="lineNum">      10</span> <span class="tlaGNC">         126 :             if (col &gt; 0) {</span></span>
-<span id="L11"><span class="lineNum">      11</span> <span class="tlaGNC">          86 :                 out &lt;&lt; ' ';</span></span>
+<span id="L7"><span class="lineNum">       7</span> <span class="tlaGNC">          26 : void write_board(std::ostream&amp; out, const BoardModel&amp; board) {</span></span>
+<span id="L8"><span class="lineNum">       8</span> <span class="tlaGNC">          69 :     for (std::size_t row = 0; row &lt; board.rows(); ++row) {</span></span>
+<span id="L9"><span class="lineNum">       9</span> <span class="tlaGNC">         178 :         for (std::size_t col = 0; col &lt; board.cols(); ++col) {</span></span>
+<span id="L10"><span class="lineNum">      10</span> <span class="tlaGNC">         135 :             if (col &gt; 0) {</span></span>
+<span id="L11"><span class="lineNum">      11</span> <span class="tlaGNC">          92 :                 out &lt;&lt; ' ';</span></span>
 <span id="L12"><span class="lineNum">      12</span>              :             }</span>
-<span id="L13"><span class="lineNum">      13</span> <span class="tlaGNC">         126 :             out &lt;&lt; board.token_at(row, col);</span></span>
+<span id="L13"><span class="lineNum">      13</span> <span class="tlaGNC">         135 :             out &lt;&lt; board.token_at(row, col);</span></span>
 <span id="L14"><span class="lineNum">      14</span>              :         }</span>
-<span id="L15"><span class="lineNum">      15</span> <span class="tlaGNC">          40 :         if (row + 1 &lt; board.rows()) {</span></span>
-<span id="L16"><span class="lineNum">      16</span> <span class="tlaGNC">          17 :             out &lt;&lt; '\n';</span></span>
+<span id="L15"><span class="lineNum">      15</span> <span class="tlaGNC">          43 :         if (row + 1 &lt; board.rows()) {</span></span>
+<span id="L16"><span class="lineNum">      16</span> <span class="tlaGNC">          18 :             out &lt;&lt; '\n';</span></span>
 <span id="L17"><span class="lineNum">      17</span>              :         }</span>
 <span id="L18"><span class="lineNum">      18</span>              :     }</span>
-<span id="L19"><span class="lineNum">      19</span> <span class="tlaGNC">          24 : }</span></span>
+<span id="L19"><span class="lineNum">      19</span> <span class="tlaGNC">          26 : }</span></span>
 <span id="L20"><span class="lineNum">      20</span>              : </span>
 <span id="L21"><span class="lineNum">      21</span>              : }  // namespace kfc</span>
         </pre>
