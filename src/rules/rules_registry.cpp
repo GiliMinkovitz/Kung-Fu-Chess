@@ -14,14 +14,6 @@ namespace kfc::piece_rules {
 
 namespace {
 
-[[nodiscard]] bool validate_knight_move(const BoardModel& board, int start_row, int start_col,
-                                        int end_row, int end_col) {
-    (void)board;
-    const int dr = end_row - start_row;
-    const int dc = end_col - start_col;
-    return is_knight_move(dr, dc);
-}
-
 constexpr std::size_t kPieceKindCount = static_cast<std::size_t>(PieceKind::Count);
 
 const std::array<PieceRuleEntry, kPieceKindCount> kRules = {{
