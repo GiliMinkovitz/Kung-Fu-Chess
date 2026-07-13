@@ -149,6 +149,7 @@ if(ENABLE_COVERAGE)
 
     add_custom_target(coverage
         COMMAND bash -c "rm -rf '${KFC_COVERAGE_REPORT_DIR}' '${CMAKE_BINARY_DIR}/coverage.info'"
+        COMMAND bash -c "find '${CMAKE_BINARY_DIR}' -name '*.gcda' -delete"
         COMMAND ${LCOV} --directory ${CMAKE_BINARY_DIR} --zerocounters
         COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure
         COMMAND ${LCOV}
@@ -156,6 +157,7 @@ if(ENABLE_COVERAGE)
             --capture
             --output-file ${CMAKE_BINARY_DIR}/coverage.info
             --ignore-errors source
+            --rc geninfo_unexecuted_blocks=1
         COMMAND ${LCOV}
             --remove ${CMAKE_BINARY_DIR}/coverage.info
             '/usr/*'
@@ -163,12 +165,12 @@ if(ENABLE_COVERAGE)
             '*/_deps/*'
             '*/third_party/*'
             --output-file ${CMAKE_BINARY_DIR}/coverage.info
-            --ignore-errors unused
+            --ignore-errors unused,inconsistent
         COMMAND ${LCOV}
             --extract ${CMAKE_BINARY_DIR}/coverage.info
             '*/src/*'
             --output-file ${CMAKE_BINARY_DIR}/coverage.info
-            --ignore-errors unused,unused
+            --ignore-errors unused,unused,inconsistent
         COMMAND ${GENHTML}
             ${CMAKE_BINARY_DIR}/coverage.info
             --output-directory ${KFC_COVERAGE_REPORT_DIR}
