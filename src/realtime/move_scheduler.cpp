@@ -78,6 +78,43 @@ void MoveScheduler::schedule_jump(JumpState jump) {
     active_jumps_.push_back(std::move(jump));
 }
 
+AnimationSnapshot MoveScheduler::animations_at(std::int64_t clock_ms) const {
+    AnimationSnapshot snapshot;
+
+    for (const PendingMove& move : pending_moves_) {
+        if (clock_ms >= move.arrival_time) {
+            continue;
+        }
+
+        const auto [from_row, from_col] = move.start_pos;
+        const auto [to_row, to_col] = move.end_pos;
+        snapshot.moves.push_back({
+            move.piece_id,
+            from_row,
+            from_col,
+            to_row,
+            to_col,
+            compute_animation_progress(clock_ms, move.start_time, move.arrival_time),
+        });
+    }
+
+    for (const JumpState& jump : active_jumps_) {
+        if (clock_ms >= jump.arrival_time) {
+            continue;
+        }
+
+        const auto [row, col] = jump.cell;
+        snapshot.jumps.push_back({
+            jump.piece_id,
+            row,
+            col,
+            compute_animation_progress(clock_ms, jump.start_time, jump.arrival_time),
+        });
+    }
+
+    return snapshot;
+}
+
 void MoveScheduler::expire_jumps(uint64_t current_time_ms) {
     const auto clock_ms = static_cast<std::int64_t>(current_time_ms);
     std::vector<JumpState> still_jumping;

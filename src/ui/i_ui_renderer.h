@@ -26,6 +26,13 @@ struct ActiveMoveView {
     float progress = 0.0f;
 };
 
+struct ActiveJumpView {
+    Piece::Id piece_id = Piece::kInvalidId;
+    std::size_t row = 0;
+    std::size_t col = 0;
+    float progress = 0.0f;
+};
+
 struct BoardViewModel {
     std::size_t rows = 0;
     std::size_t cols = 0;
@@ -34,6 +41,7 @@ struct BoardViewModel {
     std::optional<std::pair<std::size_t, std::size_t>> selection;
     std::vector<CellView> cells;
     std::vector<ActiveMoveView> active_moves;
+    std::vector<ActiveJumpView> active_jumps;
 };
 
 class IUiRenderer {

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../model/board_model.h"
+#include "../realtime/render_snapshot.h"
 #include "../rules/game_rules.h"
 #include "../realtime/real_time_arbiter.h"
 
@@ -40,6 +41,7 @@ public:
     [[nodiscard]] bool is_piece_jumping(std::size_t row, std::size_t col) const;
     [[nodiscard]] bool is_selectable_piece(std::size_t row, std::size_t col) const;
     [[nodiscard]] bool is_friendly_to_selection(std::size_t row, std::size_t col) const;
+    [[nodiscard]] AnimationSnapshot animations_for_render() const;
 
     void add_clock(std::int64_t ms);
     void settle_pending_moves();

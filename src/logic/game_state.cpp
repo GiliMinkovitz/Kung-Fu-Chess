@@ -50,6 +50,10 @@ bool GameState::is_selectable_piece(std::size_t row, std::size_t col) const {
     return is_piece(row, col) && !is_piece_moving(row, col) && !is_piece_jumping(row, col);
 }
 
+AnimationSnapshot GameState::animations_for_render() const {
+    return arbiter_.animations_for_render();
+}
+
 bool GameState::is_friendly_to_selection(std::size_t row, std::size_t col) const {
     if (!selected_ || !is_selectable_piece(row, col)) {
         return false;

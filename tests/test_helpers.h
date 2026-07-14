@@ -74,14 +74,14 @@ inline PendingMove make_pending_move(const BoardModel& board, std::size_t row, s
                                      std::int64_t arrival_time) {
     const Piece* piece = board.piece_at(row, col);
     assert(piece != nullptr);
-    return PendingMove{piece->id, piece->color, {row, col}, end_pos, arrival_time};
+    return PendingMove{piece->id, piece->color, {row, col}, end_pos, 0, arrival_time};
 }
 
 inline JumpState make_jump_state(const BoardModel& board, std::size_t row, std::size_t col,
                                  std::int64_t arrival_time) {
     const Piece* piece = board.piece_at(row, col);
     assert(piece != nullptr);
-    return JumpState{piece->id, piece->color, {row, col}, arrival_time};
+    return JumpState{piece->id, piece->color, {row, col}, 0, arrival_time};
 }
 
 inline ArrivingPieceInfo make_arriving_info(const BoardModel& board, std::size_t start_row,

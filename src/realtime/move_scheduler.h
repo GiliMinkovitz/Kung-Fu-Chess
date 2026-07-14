@@ -2,6 +2,8 @@
 
 #include "../model/piece.h"
 
+#include "render_snapshot.h"
+
 #include <cstdint>
 #include <functional>
 #include <utility>
@@ -14,6 +16,7 @@ struct PendingMove {
     PieceColor color = PieceColor::White;
     std::pair<std::size_t, std::size_t> start_pos;
     std::pair<std::size_t, std::size_t> end_pos;
+    std::int64_t start_time = 0;
     std::int64_t arrival_time = 0;
 };
 
@@ -21,6 +24,7 @@ struct JumpState {
     Piece::Id piece_id = Piece::kInvalidId;
     PieceColor color = PieceColor::White;
     std::pair<std::size_t, std::size_t> cell;
+    std::int64_t start_time = 0;
     std::int64_t arrival_time = 0;
 };
 
@@ -52,6 +56,8 @@ public:
     void schedule_move(PendingMove move);
     void schedule_jump(JumpState jump);
     void expire_jumps(uint64_t current_time_ms);
+
+    [[nodiscard]] AnimationSnapshot animations_at(std::int64_t clock_ms) const;
 
 private:
     std::vector<PendingMove> pending_moves_;

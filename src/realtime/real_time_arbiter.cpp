@@ -89,6 +89,7 @@ bool RealTimeArbiter::would_conflict_with_opposite_color_move(
         moving_color,
         start_pos,
         end_pos,
+        clock_ms_,
         clock_ms_ + move_duration_ms,
     };
     return scheduler_.conflicts_with_opposite_color_move(static_cast<uint64_t>(clock_ms_),
@@ -104,6 +105,7 @@ void RealTimeArbiter::request_move(Piece::Id piece_id, PieceColor color,
         color,
         start_pos,
         end_pos,
+        clock_ms_,
         clock_ms_ + move_duration_ms,
     });
 }
@@ -115,8 +117,13 @@ void RealTimeArbiter::request_jump(Piece::Id piece_id, PieceColor color,
         piece_id,
         color,
         cell,
+        clock_ms_,
         clock_ms_ + jump_duration_ms,
     });
+}
+
+AnimationSnapshot RealTimeArbiter::animations_for_render() const {
+    return scheduler_.animations_at(clock_ms_);
 }
 
 }  // namespace kfc

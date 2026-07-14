@@ -3,6 +3,7 @@
 #include "../model/piece.h"
 #include "collision_resolver.h"
 #include "move_scheduler.h"
+#include "render_snapshot.h"
 
 #include <cstdint>
 #include <utility>
@@ -35,6 +36,8 @@ public:
     void request_jump(Piece::Id piece_id, PieceColor color,
                       const std::pair<std::size_t, std::size_t>& cell,
                       std::int64_t jump_duration_ms);
+
+    [[nodiscard]] AnimationSnapshot animations_for_render() const;
 
 private:
     MoveScheduler scheduler_;

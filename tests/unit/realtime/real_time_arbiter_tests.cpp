@@ -3,6 +3,7 @@
 #include "model/piece_factory.h"
 #include "rules/game_rules.h"
 #include "realtime/real_time_arbiter.h"
+#include "realtime/render_snapshot.h"
 #include "test_helpers.h"
 
 #include <doctest/doctest.h>
@@ -117,4 +118,61 @@ TEST_CASE("RealTimeArbiterTest - SameColorDestinationClaimed") {
 
     CHECK(arbiter.is_same_color_destination_claimed(kfc::PieceColor::White, {0, 2}));
     CHECK_FALSE(arbiter.is_same_color_destination_claimed(kfc::PieceColor::Black, {0, 2}));
+}
+
+TEST_CASE("RealTimeArbiterTest - AnimationsForRenderTracksMoveProgress") {
+    kfc::BoardModel board = kfc::test::make_board({{"wR", ".", "."}});
+    kfc::RealTimeArbiter arbiter;
+    kfc::GameRules rules = kfc::KungFuChessRules::standard();
+    bool game_over = false;
+    const auto piece_id = piece_id_at(board, 0, 0);
+
+    arbiter.request_move(piece_id, kfc::PieceColor::White, {0, 0}, {0, 2},
+                         2 * kfc::kMoveDurationMs);
+    arbiter.update_time(kfc::kMoveDurationMs, board, rules, game_over);
+
+    const kfc::AnimationSnapshot snapshot = arbiter.animations_for_render();
+    REQUIRE(snapshot.moves.size() == 1);
+    CHECK_EQ(snapshot.moves[0].piece_id, piece_id);
+    CHECK_EQ(snapshot.moves[0].from_row, 0);
+    CHECK_EQ(snapshot.moves[0].from_col, 0);
+    CHECK_EQ(snapshot.moves[0].to_row, 0);
+    CHECK_EQ(snapshot.moves[0].to_col, 2);
+    CHECK(snapshot.moves[0].progress == doctest::Approx(0.5f));
+    CHECK(snapshot.jumps.empty());
+}
+
+TEST_CASE("RealTimeArbiterTest - AnimationsForRenderTracksJumpProgress") {
+    kfc::BoardModel board = kfc::test::make_board({{"wR", ".", "."}});
+    kfc::RealTimeArbiter arbiter;
+    kfc::GameRules rules = kfc::KungFuChessRules::standard();
+    bool game_over = false;
+    const auto piece_id = piece_id_at(board, 0, 0);
+
+    arbiter.request_jump(piece_id, kfc::PieceColor::White, {0, 0}, kfc::kJumpDurationMs);
+    arbiter.update_time(kfc::kJumpDurationMs / 2, board, rules, game_over);
+
+    const kfc::AnimationSnapshot snapshot = arbiter.animations_for_render();
+    REQUIRE(snapshot.jumps.size() == 1);
+    CHECK_EQ(snapshot.jumps[0].piece_id, piece_id);
+    CHECK_EQ(snapshot.jumps[0].row, 0);
+    CHECK_EQ(snapshot.jumps[0].col, 0);
+    CHECK(snapshot.jumps[0].progress == doctest::Approx(0.5f));
+    CHECK(snapshot.moves.empty());
+}
+
+TEST_CASE("RealTimeArbiterTest - AnimationsForRenderEmptyAfterArrival") {
+    kfc::BoardModel board = kfc::test::make_board({{"wR", ".", "."}});
+    kfc::RealTimeArbiter arbiter;
+    kfc::GameRules rules = kfc::KungFuChessRules::standard();
+    bool game_over = false;
+    const auto piece_id = piece_id_at(board, 0, 0);
+
+    board.get_piece(piece_id).state = kfc::PieceState::Moving;
+    arbiter.request_move(piece_id, kfc::PieceColor::White, {0, 0}, {0, 2}, kfc::kMoveDurationMs);
+    arbiter.update_time(kfc::kMoveDurationMs, board, rules, game_over);
+
+    const kfc::AnimationSnapshot snapshot = arbiter.animations_for_render();
+    CHECK(snapshot.moves.empty());
+    CHECK(snapshot.jumps.empty());
 }
