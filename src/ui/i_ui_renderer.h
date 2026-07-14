@@ -1,5 +1,6 @@
 #pragma once
 
+#include "i_ui_input_sink.h"
 #include "../model/game_config.h"
 #include "../realtime/render_snapshot.h"
 
@@ -11,6 +12,10 @@
 #include <vector>
 
 namespace kfc {
+
+struct UiFrameResult {
+    bool should_continue = true;
+};
 
 struct BoardViewModel {
     std::size_t rows = 0;
@@ -75,7 +80,8 @@ class IUiRenderer {
 public:
     virtual ~IUiRenderer() = default;
     virtual void init(std::size_t rows, std::size_t cols, int cell_pixel_size) = 0;
-    virtual void render(const BoardViewModel& view) = 0;
+    virtual void attach_input_sink(IUiInputSink* sink) = 0;
+    virtual UiFrameResult present(const BoardViewModel& view) = 0;
     virtual void shutdown() = 0;
 };
 

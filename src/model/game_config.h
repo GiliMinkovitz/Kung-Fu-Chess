@@ -18,6 +18,7 @@ inline constexpr char kPawnType = 'P';
 inline constexpr std::int64_t kMoveDurationMs = 1000;
 inline constexpr std::int64_t kJumpDurationMs = 1000;
 inline constexpr int kCellPixelSize = 100;
+inline constexpr std::int64_t kTargetFrameMs = 16;
 
 inline constexpr const char* kBoardSectionHeader = "Board:";
 inline constexpr const char* kCommandsSectionHeader = "Commands:";

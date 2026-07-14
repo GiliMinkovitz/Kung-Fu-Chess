@@ -10,12 +10,13 @@ UiController::UiController(GameState& state, std::unique_ptr<IUiRenderer> render
       processor_(state_, kCellPixelSize),
       renderer_(std::move(renderer)),
       cell_pixel_size_(kCellPixelSize) {
+    renderer_->attach_input_sink(this);
     renderer_->init(state_.rows(), state_.cols(), cell_pixel_size_);
 }
 
-void UiController::tick(std::int64_t delta_ms) {
+UiFrameResult UiController::frame(std::int64_t delta_ms) {
     state_.add_clock(delta_ms);
-    renderer_->render(BoardViewBuilder::build(state_));
+    return renderer_->present(BoardViewBuilder::build(state_));
 }
 
 void UiController::on_pixel_click(int x, int y) {
