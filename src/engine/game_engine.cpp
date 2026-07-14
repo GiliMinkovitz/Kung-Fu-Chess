@@ -10,9 +10,6 @@ GameEngine::GameEngine(BoardModel board) : state_(std::move(board)), processor_(
 
 void GameEngine::execute(const std::string& command, std::ostream& out) {
     processor_.execute(command, out);
-    if (command == kPrintBoardCommand) {
-        out << '\n';
-    }
 }
 
 void GameEngine::execute_all(const std::vector<std::string>& commands, std::ostream& out) {

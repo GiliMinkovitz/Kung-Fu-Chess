@@ -64,7 +64,7 @@ TEST_CASE("CommandProcessorTest - CommandProcessorPrintBoard") {
 
     std::ostringstream output;
     processor.execute("print board", output);
-    CHECK_EQ(output.str(), "wK . bK");
+    CHECK_EQ(output.str(), "wK . bK\n");
 }
 
 TEST_CASE("CommandProcessorTest - CommandProcessorCapture") {
@@ -112,7 +112,7 @@ TEST_CASE("CommandProcessorTest - PendingMovePrintBeforeArrival") {
 
     std::ostringstream output;
     processor.execute("print board", output);
-    CHECK_EQ(output.str(), "wK . bK\n. . .");
+    CHECK_EQ(output.str(), "wK . bK\n. . .\n");
 }
 
 TEST_CASE("CommandProcessorTest - PendingMovePrintAfterArrival") {
@@ -127,7 +127,7 @@ TEST_CASE("CommandProcessorTest - PendingMovePrintAfterArrival") {
 
     std::ostringstream output;
     processor.execute("print board", output);
-    CHECK_EQ(output.str(), ". . bK\n. wK .");
+    CHECK_EQ(output.str(), ". . bK\n. wK .\n");
 }
 
 TEST_CASE("CommandProcessorTest - TwoCellMoveBeforeAndAfterArrival") {
@@ -142,13 +142,13 @@ TEST_CASE("CommandProcessorTest - TwoCellMoveBeforeAndAfterArrival") {
 
     std::ostringstream first_print;
     processor.execute("print board", first_print);
-    CHECK_EQ(first_print.str(), "wR . .");
+    CHECK_EQ(first_print.str(), "wR . .\n");
 
     processor.execute("wait 1000", sink);
 
     std::ostringstream second_print;
     processor.execute("print board", second_print);
-    CHECK_EQ(second_print.str(), ". . wR");
+    CHECK_EQ(second_print.str(), ". . wR\n");
 }
 
 TEST_CASE("CommandProcessorTest - ClickOnMovingPieceDoesNotSelectOrRedirect") {
@@ -169,7 +169,7 @@ TEST_CASE("CommandProcessorTest - ClickOnMovingPieceDoesNotSelectOrRedirect") {
 
     std::ostringstream output;
     processor.execute("print board", output);
-    CHECK_EQ(output.str(), ". . wR");
+    CHECK_EQ(output.str(), ". . wR\n");
 }
 
 TEST_CASE("CommandProcessorTest - PieceCanMoveImmediatelyAfterSettle") {
@@ -191,7 +191,7 @@ TEST_CASE("CommandProcessorTest - PieceCanMoveImmediatelyAfterSettle") {
 
     std::ostringstream output;
     processor.execute("print board", output);
-    CHECK_EQ(output.str(), ". . wR .");
+    CHECK_EQ(output.str(), ". . wR .\n");
 }
 
 TEST_CASE("CommandProcessorTest - OppositeColorsDoNotMoveConcurrentlyInCommonRoute") {
@@ -208,7 +208,7 @@ TEST_CASE("CommandProcessorTest - OppositeColorsDoNotMoveConcurrentlyInCommonRou
 
     std::ostringstream output;
     processor.execute("print board", output);
-    CHECK_EQ(output.str(), ". . wR\n. . .\nbR . .");
+    CHECK_EQ(output.str(), ". . wR\n. . .\nbR . .\n");
 }
 
 TEST_CASE("CommandProcessorTest - OppositeColorsCanMoveOnDisjointRoutes") {
@@ -225,7 +225,7 @@ TEST_CASE("CommandProcessorTest - OppositeColorsCanMoveOnDisjointRoutes") {
 
     std::ostringstream output;
     processor.execute("print board", output);
-    CHECK_EQ(output.str(), ". wR . .\n. . . .\n. . . bR");
+    CHECK_EQ(output.str(), ". wR . .\n. . . .\n. . . bR\n");
 }
 
 TEST_CASE("CommandProcessorTest - MovingPieceIgnoresRedirect") {
@@ -243,7 +243,7 @@ TEST_CASE("CommandProcessorTest - MovingPieceIgnoresRedirect") {
 
     std::ostringstream output;
     processor.execute("print board", output);
-    CHECK_EQ(output.str(), ". . wR");
+    CHECK_EQ(output.str(), ". . wR\n");
 }
 
 TEST_CASE("CommandProcessorTest - RejectsMoveForPieceAlreadyInPendingMove") {
@@ -269,7 +269,7 @@ TEST_CASE("CommandProcessorTest - RejectsMoveForPieceAlreadyInPendingMove") {
 
     std::ostringstream output;
     processor.execute("print board", output);
-    CHECK_EQ(output.str(), ". . wR");
+    CHECK_EQ(output.str(), ". . wR\n");
 }
 
 TEST_CASE("CommandProcessorTest - RejectsTwoSameColorMovesToSameSquare") {
@@ -286,7 +286,7 @@ TEST_CASE("CommandProcessorTest - RejectsTwoSameColorMovesToSameSquare") {
 
     std::ostringstream output;
     processor.execute("print board", output);
-    CHECK_EQ(output.str(), ". . wR .\n. . . .\n. . . wN");
+    CHECK_EQ(output.str(), ". . wR .\n. . . .\n. . . wN\n");
 }
 
 TEST_CASE("CommandProcessorTest - KingCaptureSetsGameOver") {
@@ -346,7 +346,7 @@ TEST_CASE("CommandProcessorTest - PrintBoardAfterKingCapture") {
 
     std::ostringstream output;
     processor.execute("print board", output);
-    CHECK_EQ(output.str(), ". . wR");
+    CHECK_EQ(output.str(), ". . wR\n");
 }
 
 TEST_CASE("CommandProcessorTest - JumpCommandAirbornePieceCapturesArrivingEnemy") {
@@ -362,7 +362,7 @@ TEST_CASE("CommandProcessorTest - JumpCommandAirbornePieceCapturesArrivingEnemy"
 
     std::ostringstream output;
     processor.execute("print board", output);
-    CHECK_EQ(output.str(), ". . .\nwK . .\n. . .");
+    CHECK_EQ(output.str(), ". . .\nwK . .\n. . .\n");
 }
 
 TEST_CASE("CommandProcessorTest - CommandProcessorWaitWithoutMs") {
@@ -398,7 +398,7 @@ TEST_CASE("CommandProcessorTest - JumpCommandTooLateDoesNotSavePiece") {
 
     std::ostringstream output;
     processor.execute("print board", output);
-    CHECK_EQ(output.str(), ". . .\nbR . .\n. . .");
+    CHECK_EQ(output.str(), ". . .\nbR . .\n. . .\n");
 }
 
 TEST_CASE("CommandProcessorTest - CommandProcessorClickWithoutCoords") {

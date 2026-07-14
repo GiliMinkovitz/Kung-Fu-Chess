@@ -43,6 +43,7 @@ void CommandProcessor::execute(const std::string& command, std::ostream& out) {
 
     if (verb == "print" && command == kPrintBoardCommand) {
         handle_print_board(out);
+        out << '\n';
     }
 }
 

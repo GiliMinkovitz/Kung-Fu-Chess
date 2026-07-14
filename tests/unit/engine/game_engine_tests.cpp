@@ -1,4 +1,5 @@
 #include "engine/game_engine.h"
+#include "io/command_processor.h"
 #include "test_helpers.h"
 
 #include <doctest/doctest.h>
@@ -6,15 +7,23 @@
 #include <string>
 #include <vector>
 
-TEST_CASE("GameEngineTest - ExecutePrintBoardAddsNewline") {
-    kfc::GameEngine engine(kfc::test::make_board({{"wK", ".", "bK"}}));
-    std::ostringstream out;
+TEST_CASE("GameEngineTest - ExecutePrintBoardDelegatesToCommandProcessor") {
+    const kfc::BoardModel board = kfc::test::make_board({{"wK", ".", "bK"}});
+    kfc::GameEngine engine(board);
+    kfc::GameState reference_state(board);
+    kfc::CommandProcessor reference_processor(reference_state);
 
-    engine.execute("print board", out);
-    CHECK_EQ(out.str(), "wK . bK\n");
+    std::ostringstream engine_out;
+    std::ostringstream processor_out;
+
+    engine.execute("print board", engine_out);
+    reference_processor.execute("print board", processor_out);
+
+    CHECK_EQ(engine_out.str(), processor_out.str());
+    CHECK_EQ(engine_out.str(), "wK . bK\n");
 }
 
-TEST_CASE("GameEngineTest - ExecuteNonPrintCommandDoesNotAddNewline") {
+TEST_CASE("GameEngineTest - ExecuteNonPrintCommandWritesNothingToStream") {
     kfc::GameEngine engine(kfc::test::make_board({{"wK", ".", "bK"}}));
     std::ostringstream out;
 
