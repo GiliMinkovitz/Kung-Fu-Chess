@@ -3,6 +3,7 @@ project(KungFuChess VERSION 0.1.0 LANGUAGES CXX)
 
 message(STATUS "Source directory is: ${CMAKE_SOURCE_DIR}")
 file(GLOB_RECURSE ALL_FILES "${CMAKE_SOURCE_DIR}/src/*")
+file(GLOB UI_SOURCES "${CMAKE_SOURCE_DIR}/third_party/CTD26/*.cpp")
 message(STATUS "Found files: ${ALL_FILES}")
 
 set(CMAKE_CXX_STANDARD 17)
@@ -55,6 +56,7 @@ target_include_directories(${PROJECT_NAME} PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/src/rules
     ${CMAKE_CURRENT_SOURCE_DIR}/src/io
     ${CMAKE_CURRENT_SOURCE_DIR}/src/engine
+    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/CTD26
 )
 
 set(KFC_TEST_SOURCES
@@ -76,8 +78,10 @@ set(KFC_TEST_SOURCES
 )
 
 add_executable(KungFuChessTests
+    src/main.cpp
     ${KFC_TEST_SOURCES}
     ${KFC_SOURCES}
+    ${UI_SOURCES}
 )
 
 target_include_directories(KungFuChessTests PRIVATE
