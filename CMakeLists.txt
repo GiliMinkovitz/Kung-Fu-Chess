@@ -78,7 +78,6 @@ set(KFC_TEST_SOURCES
 )
 
 add_executable(KungFuChessTests
-    src/main.cpp
     ${KFC_TEST_SOURCES}
     ${KFC_SOURCES}
     ${UI_SOURCES}
