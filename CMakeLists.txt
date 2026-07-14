@@ -3,7 +3,6 @@ project(KungFuChess VERSION 0.1.0 LANGUAGES CXX)
 
 message(STATUS "Source directory is: ${CMAKE_SOURCE_DIR}")
 file(GLOB_RECURSE ALL_FILES "${CMAKE_SOURCE_DIR}/src/*")
-file(GLOB UI_SOURCES "${CMAKE_SOURCE_DIR}/third_party/CTD26/*.cpp")
 message(STATUS "Found files: ${ALL_FILES}")
 
 set(CMAKE_CXX_STANDARD 17)
@@ -19,8 +18,14 @@ endif()
 set(KFC_UI_SOURCES
     src/ui/board_view_builder.cpp
     src/ui/ui_controller.cpp
-    src/ui/ctd26_renderer.cpp
 )
+
+set(KFC_GUI_SOURCES
+    src/ui/ctd26_renderer.cpp
+    third_party/CTD26/cpp/src/img.cpp
+)
+
+set(KFC_CTD26_INCLUDE_DIR "${CMAKE_SOURCE_DIR}/third_party/CTD26/cpp/src")
 
 set(KFC_SOURCES
     src/model/piece.cpp
@@ -53,7 +58,6 @@ set(KFC_SOURCES
 add_executable(${PROJECT_NAME}
     src/main.cpp
     ${KFC_SOURCES}
-    ${UI_SOURCES}
 )
 
 target_include_directories(${PROJECT_NAME} PUBLIC
@@ -65,8 +69,62 @@ target_include_directories(${PROJECT_NAME} PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/src/io
     ${CMAKE_CURRENT_SOURCE_DIR}/src/engine
     ${CMAKE_CURRENT_SOURCE_DIR}/src/ui
-    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/CTD26
 )
+
+# ---------------------------------------------------------------------------
+# Windows GUI (OpenCV + CTD26)
+# ---------------------------------------------------------------------------
+
+option(KFC_BUILD_GUI "Build KungFuChessGui with OpenCV/CTD26 (Windows only)" OFF)
+
+set(KFC_OPENCV_DIR "${CMAKE_SOURCE_DIR}/third_party/CTD26/cpp/OpenCV_451")
+if(WIN32 AND EXISTS "${KFC_OPENCV_DIR}/include/opencv2/opencv.hpp")
+    set(KFC_BUILD_GUI ON CACHE BOOL "Build KungFuChessGui with OpenCV/CTD26 (Windows only)" FORCE)
+endif()
+
+if(KFC_BUILD_GUI)
+    if(NOT WIN32)
+        message(FATAL_ERROR "KFC_BUILD_GUI requires Windows and the vendored OpenCV_451 bundle.")
+    endif()
+
+    set(KFC_OPENCV_INCLUDE_DIR "${KFC_OPENCV_DIR}/include")
+    set(KFC_OPENCV_LIB_DIR "${KFC_OPENCV_DIR}/bin")
+
+    add_executable(KungFuChessGui
+        src/main_gui.cpp
+        ${KFC_SOURCES}
+        ${KFC_GUI_SOURCES}
+    )
+
+    target_include_directories(KungFuChessGui PRIVATE
+        ${CMAKE_SOURCE_DIR}/src
+        ${KFC_CTD26_INCLUDE_DIR}
+        ${KFC_OPENCV_INCLUDE_DIR}
+    )
+
+    target_link_directories(KungFuChessGui PRIVATE ${KFC_OPENCV_LIB_DIR})
+    target_link_libraries(KungFuChessGui PRIVATE
+        $<$<CONFIG:Debug>:${KFC_OPENCV_LIB_DIR}/opencv_world451d.lib>
+        $<$<NOT:$<CONFIG:Debug>>:${KFC_OPENCV_LIB_DIR}/opencv_world451.lib>
+    )
+
+    add_custom_command(TARGET KungFuChessGui POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        $<$<CONFIG:Debug>:${KFC_OPENCV_LIB_DIR}/opencv_world451d.dll>
+        $<$<NOT:$<CONFIG:Debug>>:${KFC_OPENCV_LIB_DIR}/opencv_world451.dll>
+        $<TARGET_FILE_DIR:KungFuChessGui>
+    )
+
+    if(MSVC)
+        target_compile_options(KungFuChessGui PRIVATE /W4 /permissive-)
+    else()
+        target_compile_options(KungFuChessGui PRIVATE -Wall -Wextra -Wpedantic)
+    endif()
+
+    message(STATUS "KungFuChessGui enabled (OpenCV at ${KFC_OPENCV_DIR})")
+else()
+    message(STATUS "KungFuChessGui disabled (OpenCV not found at ${KFC_OPENCV_DIR})")
+endif()
 
 set(KFC_TEST_SOURCES
     tests/unit/model/board_model_tests.cpp
@@ -89,7 +147,6 @@ set(KFC_TEST_SOURCES
 add_executable(KungFuChessTests
     ${KFC_TEST_SOURCES}
     ${KFC_SOURCES}
-    ${UI_SOURCES}
 )
 
 target_include_directories(KungFuChessTests PRIVATE
