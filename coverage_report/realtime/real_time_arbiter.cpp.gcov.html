@@ -37,7 +37,7 @@
           </tr>
           <tr>
             <td class="headerItem">Test Date:</td>
-            <td class="headerValue">2026-07-14 01:45:10</td>
+            <td class="headerValue">2026-07-14 09:20:55</td>
             <td></td>
             <td class="headerItem">Functions:</td>
             <td class="headerCovTableEntryHi">100.0&nbsp;%</td>
@@ -92,10 +92,10 @@
 <span id="L30"><span class="lineNum">      30</span> <span class="tlaGNC">          41 :     settle_pending_moves(board, rules, game_over);</span></span>
 <span id="L31"><span class="lineNum">      31</span> <span class="tlaGNC">          41 : }</span></span>
 <span id="L32"><span class="lineNum">      32</span>              : </span>
-<span id="L33"><span class="lineNum">      33</span> <span class="tlaGNC">          64 : void RealTimeArbiter::settle_pending_moves(BoardModel&amp; board, const GameRules&amp; rules,</span></span>
+<span id="L33"><span class="lineNum">      33</span> <span class="tlaGNC">          65 : void RealTimeArbiter::settle_pending_moves(BoardModel&amp; board, const GameRules&amp; rules,</span></span>
 <span id="L34"><span class="lineNum">      34</span>              :                                            bool&amp; game_over) {</span>
-<span id="L35"><span class="lineNum">      35</span> <span class="tlaGNC">          64 :     const uint64_t current_time_ms = static_cast&lt;uint64_t&gt;(clock_ms_);</span></span>
-<span id="L36"><span class="lineNum">      36</span> <span class="tlaGNC">          64 :     scheduler_.for_each_pending_due(current_time_ms, [this, &amp;board, &amp;rules, &amp;game_over,</span></span>
+<span id="L35"><span class="lineNum">      35</span> <span class="tlaGNC">          65 :     const uint64_t current_time_ms = static_cast&lt;uint64_t&gt;(clock_ms_);</span></span>
+<span id="L36"><span class="lineNum">      36</span> <span class="tlaGNC">          65 :     scheduler_.for_each_pending_due(current_time_ms, [this, &amp;board, &amp;rules, &amp;game_over,</span></span>
 <span id="L37"><span class="lineNum">      37</span>              :                                                       current_time_ms](const PendingMove&amp; move) {</span>
 <span id="L38"><span class="lineNum">      38</span> <span class="tlaGNC">          31 :         if (!can_settle_move(board, rules, move)) {</span></span>
 <span id="L39"><span class="lineNum">      39</span> <span class="tlaGNC">           2 :             return;</span></span>
@@ -125,8 +125,8 @@
 <span id="L63"><span class="lineNum">      63</span>              :         }</span>
 <span id="L64"><span class="lineNum">      64</span>              :     });</span>
 <span id="L65"><span class="lineNum">      65</span>              : </span>
-<span id="L66"><span class="lineNum">      66</span> <span class="tlaGNC">          64 :     scheduler_.expire_jumps(current_time_ms);</span></span>
-<span id="L67"><span class="lineNum">      67</span> <span class="tlaGNC">          64 : }</span></span>
+<span id="L66"><span class="lineNum">      66</span> <span class="tlaGNC">          65 :     scheduler_.expire_jumps(current_time_ms);</span></span>
+<span id="L67"><span class="lineNum">      67</span> <span class="tlaGNC">          65 : }</span></span>
 <span id="L68"><span class="lineNum">      68</span>              : </span>
 <span id="L69"><span class="lineNum">      69</span> <span class="tlaGNC">         157 : bool RealTimeArbiter::is_piece_moving(std::size_t row, std::size_t col) const {</span></span>
 <span id="L70"><span class="lineNum">      70</span> <span class="tlaGNC">         157 :     return scheduler_.is_piece_moving(static_cast&lt;uint64_t&gt;(clock_ms_), row, col);</span></span>

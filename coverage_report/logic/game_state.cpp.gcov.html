@@ -37,7 +37,7 @@
           </tr>
           <tr>
             <td class="headerItem">Test Date:</td>
-            <td class="headerValue">2026-07-14 01:45:10</td>
+            <td class="headerValue">2026-07-14 09:20:55</td>
             <td></td>
             <td class="headerItem">Functions:</td>
             <td class="headerCovTableEntryHi">100.0&nbsp;%</td>
@@ -66,10 +66,10 @@
 <span id="L4"><span class="lineNum">       4</span>              : </span>
 <span id="L5"><span class="lineNum">       5</span>              : namespace kfc {</span>
 <span id="L6"><span class="lineNum">       6</span>              : </span>
-<span id="L7"><span class="lineNum">       7</span> <span class="tlaGNC">         132 : GameState::GameState(BoardModel board) : GameState(std::move(board), KungFuChessRules::standard()) {}</span></span>
+<span id="L7"><span class="lineNum">       7</span> <span class="tlaGNC">         134 : GameState::GameState(BoardModel board) : GameState(std::move(board), KungFuChessRules::standard()) {}</span></span>
 <span id="L8"><span class="lineNum">       8</span>              : </span>
-<span id="L9"><span class="lineNum">       9</span> <span class="tlaGNC">          67 : GameState::GameState(BoardModel board, GameRules rules)</span></span>
-<span id="L10"><span class="lineNum">      10</span> <span class="tlaGNC">         201 :     : board_(std::move(board)), rules_(std::move(rules)) {}</span></span>
+<span id="L9"><span class="lineNum">       9</span> <span class="tlaGNC">          68 : GameState::GameState(BoardModel board, GameRules rules)</span></span>
+<span id="L10"><span class="lineNum">      10</span> <span class="tlaGNC">         204 :     : board_(std::move(board)), rules_(std::move(rules)) {}</span></span>
 <span id="L11"><span class="lineNum">      11</span>              : </span>
 <span id="L12"><span class="lineNum">      12</span> <span class="tlaGNC">          51 : std::string GameState::token_at(std::size_t row, std::size_t col) const {</span></span>
 <span id="L13"><span class="lineNum">      13</span> <span class="tlaGNC">          51 :     return board_.token_at(row, col);</span></span>
@@ -140,9 +140,9 @@
 <span id="L78"><span class="lineNum">      78</span> <span class="tlaGNC">          37 :     arbiter_.update_time(ms, board_, rules_, game_over_);</span></span>
 <span id="L79"><span class="lineNum">      79</span> <span class="tlaGNC">          37 : }</span></span>
 <span id="L80"><span class="lineNum">      80</span>              : </span>
-<span id="L81"><span class="lineNum">      81</span> <span class="tlaGNC">          23 : void GameState::settle_pending_moves() {</span></span>
-<span id="L82"><span class="lineNum">      82</span> <span class="tlaGNC">          23 :     arbiter_.settle_pending_moves(board_, rules_, game_over_);</span></span>
-<span id="L83"><span class="lineNum">      83</span> <span class="tlaGNC">          23 : }</span></span>
+<span id="L81"><span class="lineNum">      81</span> <span class="tlaGNC">          24 : void GameState::settle_pending_moves() {</span></span>
+<span id="L82"><span class="lineNum">      82</span> <span class="tlaGNC">          24 :     arbiter_.settle_pending_moves(board_, rules_, game_over_);</span></span>
+<span id="L83"><span class="lineNum">      83</span> <span class="tlaGNC">          24 : }</span></span>
 <span id="L84"><span class="lineNum">      84</span>              : </span>
 <span id="L85"><span class="lineNum">      85</span>              : // --- Selection actions ---</span>
 <span id="L86"><span class="lineNum">      86</span>              : </span>
@@ -254,11 +254,11 @@
 <span id="L192"><span class="lineNum">     192</span>              : </span>
 <span id="L193"><span class="lineNum">     193</span>              : // --- Output ---</span>
 <span id="L194"><span class="lineNum">     194</span>              : </span>
-<span id="L195"><span class="lineNum">     195</span> <span class="tlaGNC">          23 : void GameState::write_board(</span></span>
+<span id="L195"><span class="lineNum">     195</span> <span class="tlaGNC">          24 : void GameState::write_board(</span></span>
 <span id="L196"><span class="lineNum">     196</span>              :     std::ostream&amp; out, const std::function&lt;void(std::ostream&amp;, const BoardModel&amp;)&gt;&amp; writer) {</span>
-<span id="L197"><span class="lineNum">     197</span> <span class="tlaGNC">          23 :     settle_pending_moves();</span></span>
-<span id="L198"><span class="lineNum">     198</span> <span class="tlaGNC">          23 :     writer(out, board_);</span></span>
-<span id="L199"><span class="lineNum">     199</span> <span class="tlaGNC">          23 : }</span></span>
+<span id="L197"><span class="lineNum">     197</span> <span class="tlaGNC">          24 :     settle_pending_moves();</span></span>
+<span id="L198"><span class="lineNum">     198</span> <span class="tlaGNC">          24 :     writer(out, board_);</span></span>
+<span id="L199"><span class="lineNum">     199</span> <span class="tlaGNC">          24 : }</span></span>
 <span id="L200"><span class="lineNum">     200</span>              : </span>
 <span id="L201"><span class="lineNum">     201</span>              : }  // namespace kfc</span>
         </pre>

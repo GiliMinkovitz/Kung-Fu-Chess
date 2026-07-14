@@ -37,7 +37,7 @@
           </tr>
           <tr>
             <td class="headerItem">Test Date:</td>
-            <td class="headerValue">2026-07-14 01:45:10</td>
+            <td class="headerValue">2026-07-14 09:20:55</td>
             <td></td>
             <td class="headerItem">Functions:</td>
             <td class="headerCovTableEntryHi">100.0&nbsp;%</td>
@@ -121,27 +121,27 @@
 <span id="L59"><span class="lineNum">      59</span> <span class="tlaGNC">         232 :     return PieceDescriptor{*color, *kind};</span></span>
 <span id="L60"><span class="lineNum">      60</span>              : }</span>
 <span id="L61"><span class="lineNum">      61</span>              : </span>
-<span id="L62"><span class="lineNum">      62</span> <span class="tlaGNC">         101 : std::string to_token(PieceColor color, PieceKind kind) {</span></span>
-<span id="L63"><span class="lineNum">      63</span> <span class="tlaGNC">         303 :     return std::string{color_to_char(color), kind_to_char(kind)};</span></span>
+<span id="L62"><span class="lineNum">      62</span> <span class="tlaGNC">         103 : std::string to_token(PieceColor color, PieceKind kind) {</span></span>
+<span id="L63"><span class="lineNum">      63</span> <span class="tlaGNC">         309 :     return std::string{color_to_char(color), kind_to_char(kind)};</span></span>
 <span id="L64"><span class="lineNum">      64</span>              : }</span>
 <span id="L65"><span class="lineNum">      65</span>              : </span>
-<span id="L66"><span class="lineNum">      66</span> <span class="tlaGNC">         102 : char color_to_char(PieceColor color) noexcept {</span></span>
-<span id="L67"><span class="lineNum">      67</span> <span class="tlaGNC">         102 :     switch (color) {</span></span>
-<span id="L68"><span class="lineNum">      68</span> <span class="tlaGNC">          71 :         case PieceColor::White:</span></span>
-<span id="L69"><span class="lineNum">      69</span> <span class="tlaGNC">          71 :             return kWhiteColor;</span></span>
-<span id="L70"><span class="lineNum">      70</span> <span class="tlaGNC">          30 :         case PieceColor::Black:</span></span>
-<span id="L71"><span class="lineNum">      71</span> <span class="tlaGNC">          30 :             return kBlackColor;</span></span>
+<span id="L66"><span class="lineNum">      66</span> <span class="tlaGNC">         104 : char color_to_char(PieceColor color) noexcept {</span></span>
+<span id="L67"><span class="lineNum">      67</span> <span class="tlaGNC">         104 :     switch (color) {</span></span>
+<span id="L68"><span class="lineNum">      68</span> <span class="tlaGNC">          72 :         case PieceColor::White:</span></span>
+<span id="L69"><span class="lineNum">      69</span> <span class="tlaGNC">          72 :             return kWhiteColor;</span></span>
+<span id="L70"><span class="lineNum">      70</span> <span class="tlaGNC">          31 :         case PieceColor::Black:</span></span>
+<span id="L71"><span class="lineNum">      71</span> <span class="tlaGNC">          31 :             return kBlackColor;</span></span>
 <span id="L72"><span class="lineNum">      72</span>              :     }</span>
 <span id="L73"><span class="lineNum">      73</span> <span class="tlaGNC">           1 :     return kWhiteColor;</span></span>
 <span id="L74"><span class="lineNum">      74</span>              : }</span>
 <span id="L75"><span class="lineNum">      75</span>              : </span>
-<span id="L76"><span class="lineNum">      76</span> <span class="tlaGNC">         102 : char kind_to_char(PieceKind kind) noexcept {</span></span>
-<span id="L77"><span class="lineNum">      77</span> <span class="tlaGNC">         102 :     const auto it = std::find_if(kPieceKindMappings.begin(), kPieceKindMappings.end(),</span></span>
-<span id="L78"><span class="lineNum">      78</span> <span class="tlaGNC">         232 :                                  [kind](const PieceKindMapping&amp; entry) { return entry.kind == kind; });</span></span>
-<span id="L79"><span class="lineNum">      79</span> <span class="tlaGNC">         102 :     if (it == kPieceKindMappings.end()) {</span></span>
+<span id="L76"><span class="lineNum">      76</span> <span class="tlaGNC">         104 : char kind_to_char(PieceKind kind) noexcept {</span></span>
+<span id="L77"><span class="lineNum">      77</span> <span class="tlaGNC">         104 :     const auto it = std::find_if(kPieceKindMappings.begin(), kPieceKindMappings.end(),</span></span>
+<span id="L78"><span class="lineNum">      78</span> <span class="tlaGNC">         234 :                                  [kind](const PieceKindMapping&amp; entry) { return entry.kind == kind; });</span></span>
+<span id="L79"><span class="lineNum">      79</span> <span class="tlaGNC">         104 :     if (it == kPieceKindMappings.end()) {</span></span>
 <span id="L80"><span class="lineNum">      80</span> <span class="tlaGNC">           1 :         return kPawnType;</span></span>
 <span id="L81"><span class="lineNum">      81</span>              :     }</span>
-<span id="L82"><span class="lineNum">      82</span> <span class="tlaGNC">         101 :     return it-&gt;character;</span></span>
+<span id="L82"><span class="lineNum">      82</span> <span class="tlaGNC">         103 :     return it-&gt;character;</span></span>
 <span id="L83"><span class="lineNum">      83</span>              : }</span>
 <span id="L84"><span class="lineNum">      84</span>              : </span>
 <span id="L85"><span class="lineNum">      85</span> <span class="tlaGNC">         489 : std::optional&lt;PieceColor&gt; color_from_char(char color) noexcept {</span></span>
