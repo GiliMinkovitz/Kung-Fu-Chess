@@ -103,18 +103,18 @@ void Ctd26Renderer::render(const BoardViewModel& view) {
                 impl_->frame->rectangle(x, y, cell_size_, cell_size_, cv::Scalar(0, 220, 255), 3);
             }
 
-            if (is_jumping_cell(view, row, col)) {
-                const float jump_progress = jump_progress_at(view, row, col);
+            if (board_view_is_jumping_cell(view, row, col)) {
+                const float jump_progress = board_view_jump_progress_at(view, row, col);
                 const int lift =
                     static_cast<int>(std::sin(jump_progress * 3.14159265f) * cell_size_ * 0.25f);
                 impl_->frame->rectangle(x, y - lift, cell_size_, cell_size_, cv::Scalar(0, 180, 255), 2);
             }
 
-            if (is_move_origin(view, row, col)) {
+            if (board_view_is_move_origin(view, row, col)) {
                 continue;
             }
 
-            const std::string token = token_at(view, row, col);
+            const std::string token = board_view_token_at(view, row, col);
             if (token.empty() || token == std::string(1, kEmptyToken)) {
                 continue;
             }
@@ -125,8 +125,8 @@ void Ctd26Renderer::render(const BoardViewModel& view) {
         }
     }
 
-    for (const ActiveMoveView& move : view.active_moves) {
-        const std::string token = token_at(view, move.from_row, move.from_col);
+    for (const ActiveMoveSnapshot& move : view.animations.moves) {
+        const std::string token = board_view_token_at(view, move.from_row, move.from_col);
         if (token.empty() || token == std::string(1, kEmptyToken)) {
             continue;
         }
@@ -166,46 +166,6 @@ void Ctd26Renderer::attach_controller(UiController* controller) {
 
 bool Ctd26Renderer::poll_events() {
     return Img::poll_key(1) != 27;
-}
-
-std::string Ctd26Renderer::token_at(const BoardViewModel& view, std::size_t row,
-                                    std::size_t col) const {
-    for (const CellView& cell : view.cells) {
-        if (cell.row == row && cell.col == col) {
-            return cell.token;
-        }
-    }
-    return std::string(1, kEmptyToken);
-}
-
-bool Ctd26Renderer::is_move_origin(const BoardViewModel& view, std::size_t row,
-                                   std::size_t col) const {
-    for (const ActiveMoveView& move : view.active_moves) {
-        if (move.from_row == row && move.from_col == col) {
-            return true;
-        }
-    }
-    return false;
-}
-
-bool Ctd26Renderer::is_jumping_cell(const BoardViewModel& view, std::size_t row,
-                                    std::size_t col) const {
-    for (const ActiveJumpView& jump : view.active_jumps) {
-        if (jump.row == row && jump.col == col) {
-            return true;
-        }
-    }
-    return false;
-}
-
-float Ctd26Renderer::jump_progress_at(const BoardViewModel& view, std::size_t row,
-                                      std::size_t col) const {
-    for (const ActiveJumpView& jump : view.active_jumps) {
-        if (jump.row == row && jump.col == col) {
-            return jump.progress;
-        }
-    }
-    return 0.0f;
 }
 
 }  // namespace kfc

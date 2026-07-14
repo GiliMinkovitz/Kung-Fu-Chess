@@ -8,7 +8,8 @@
 
 namespace kfc {
 
-CommandProcessor::CommandProcessor(GameState& state) : state_(state) {}
+CommandProcessor::CommandProcessor(GameState& state, int cell_pixel_size)
+    : state_(state), cell_pixel_size_(cell_pixel_size) {}
 
 void CommandProcessor::execute(const std::string& command, std::ostream& out) {
     std::istringstream stream(command);
@@ -19,7 +20,7 @@ void CommandProcessor::execute(const std::string& command, std::ostream& out) {
         int x = 0;
         int y = 0;
         if (stream >> x >> y) {
-            handle_click(x, y);
+            handle_pixel_click(x, y);
         }
         return;
     }
@@ -28,7 +29,7 @@ void CommandProcessor::execute(const std::string& command, std::ostream& out) {
         int x = 0;
         int y = 0;
         if (stream >> x >> y) {
-            handle_jump(x, y);
+            handle_pixel_jump(x, y);
         }
         return;
     }
@@ -45,6 +46,14 @@ void CommandProcessor::execute(const std::string& command, std::ostream& out) {
         handle_print_board(out);
         out << '\n';
     }
+}
+
+void CommandProcessor::handle_pixel_click(int x, int y) {
+    handle_click(x, y);
+}
+
+void CommandProcessor::handle_pixel_jump(int x, int y) {
+    handle_jump(x, y);
 }
 
 void CommandProcessor::handle_click(int x, int y) {
@@ -143,8 +152,8 @@ bool CommandProcessor::pixel_to_cell(int x, int y, std::size_t& row, std::size_t
         return false;
     }
 
-    col = static_cast<std::size_t>(x) / static_cast<std::size_t>(kCellPixelSize);
-    row = static_cast<std::size_t>(y) / static_cast<std::size_t>(kCellPixelSize);
+    col = static_cast<std::size_t>(x) / static_cast<std::size_t>(cell_pixel_size_);
+    row = static_cast<std::size_t>(y) / static_cast<std::size_t>(cell_pixel_size_);
     return col < state_.cols() && row < state_.rows();
 }
 

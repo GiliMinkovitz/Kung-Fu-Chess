@@ -28,15 +28,6 @@ public:
     [[nodiscard]] UiController* controller_for_events() noexcept { return controller_; }
 
 private:
-    [[nodiscard]] std::string token_at(const BoardViewModel& view, std::size_t row,
-                                       std::size_t col) const;
-    [[nodiscard]] bool is_move_origin(const BoardViewModel& view, std::size_t row,
-                                      std::size_t col) const;
-    [[nodiscard]] bool is_jumping_cell(const BoardViewModel& view, std::size_t row,
-                                       std::size_t col) const;
-    [[nodiscard]] float jump_progress_at(const BoardViewModel& view, std::size_t row,
-                                         std::size_t col) const;
-
     std::size_t rows_ = 0;
     std::size_t cols_ = 0;
     int cell_size_ = 0;
