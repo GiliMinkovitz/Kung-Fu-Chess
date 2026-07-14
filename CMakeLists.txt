@@ -16,6 +16,12 @@ if(POLICY CMP0135)
     cmake_policy(SET CMP0135 NEW)
 endif()
 
+set(KFC_UI_SOURCES
+    src/ui/board_view_builder.cpp
+    src/ui/ui_controller.cpp
+    src/ui/ctd26_renderer.cpp
+)
+
 set(KFC_SOURCES
     src/model/piece.cpp
     src/model/piece_factory.cpp
@@ -41,11 +47,13 @@ set(KFC_SOURCES
     src/io/command_processor.cpp
     src/rules/move_validator.cpp
     src/engine/game_engine.cpp
+    ${KFC_UI_SOURCES}
 )
 
 add_executable(${PROJECT_NAME}
     src/main.cpp
     ${KFC_SOURCES}
+    ${UI_SOURCES}
 )
 
 target_include_directories(${PROJECT_NAME} PUBLIC
@@ -56,6 +64,7 @@ target_include_directories(${PROJECT_NAME} PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/src/rules
     ${CMAKE_CURRENT_SOURCE_DIR}/src/io
     ${CMAKE_CURRENT_SOURCE_DIR}/src/engine
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/ui
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/CTD26
 )
 
