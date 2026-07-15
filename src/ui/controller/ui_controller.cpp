@@ -1,7 +1,7 @@
-#include "ui_controller.h"
+#include "ui/controller/ui_controller.h"
 
-#include "board_view_builder.h"
-#include "ui_window_config.h"
+#include "ui/layout/ui_window_config.h"
+#include "ui/view/board_view_builder.h"
 
 namespace kfc {
 

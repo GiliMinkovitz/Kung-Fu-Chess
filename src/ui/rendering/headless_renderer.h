@@ -1,7 +1,7 @@
 #pragma once
 
-#include "board_layout_calculator.h"
-#include "i_ui_renderer.h"
+#include "ui/layout/board_layout_calculator.h"
+#include "ui/rendering/i_ui_renderer.h"
 
 namespace kfc {
 

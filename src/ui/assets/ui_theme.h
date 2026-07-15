@@ -10,8 +10,6 @@ struct UiColor {
 
 struct UiTheme {
     UiColor frame_background{30, 30, 30};
-    UiColor light_cell{220, 220, 220};
-    UiColor dark_cell{100, 100, 100};
     UiColor selection_border{255, 220, 0};
     UiColor jump_border{255, 180, 0};
     UiColor white_token{20, 20, 20};

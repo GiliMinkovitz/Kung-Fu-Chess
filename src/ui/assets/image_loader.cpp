@@ -1,4 +1,4 @@
-#include "image_loader.h"
+#include "ui/assets/image_loader.h"
 
 namespace kfc {
 

@@ -16,17 +16,17 @@ if(POLICY CMP0135)
 endif()
 
 set(KFC_UI_SOURCES
-    src/ui/asset_paths.cpp
-    src/ui/board_layout_calculator.cpp
-    src/ui/board_view_model.cpp
-    src/ui/board_view_builder.cpp
-    src/ui/headless_renderer.cpp
-    src/ui/ui_controller.cpp
+    src/ui/assets/asset_paths.cpp
+    src/ui/layout/board_layout_calculator.cpp
+    src/ui/view/board_view_model.cpp
+    src/ui/view/board_view_builder.cpp
+    src/ui/rendering/headless_renderer.cpp
+    src/ui/controller/ui_controller.cpp
 )
 
 set(KFC_GUI_SOURCES
-    src/ui/ctd26_renderer.cpp
-    src/ui/image_loader.cpp
+    src/ui/rendering/ctd26_renderer.cpp
+    src/ui/assets/image_loader.cpp
     third_party/CTD26/cpp/src/img.cpp
 )
 

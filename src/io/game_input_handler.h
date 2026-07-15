@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../logic/game_state.h"
-#include "../ui/board_layout.h"
+#include "ui/layout/board_layout.h"
 
 #include <iosfwd>
 #include <string>

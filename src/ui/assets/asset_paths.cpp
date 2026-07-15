@@ -1,6 +1,6 @@
-#include "asset_paths.h"
+#include "ui/assets/asset_paths.h"
 
-#include "../model/piece_token.h"
+#include "model/piece_token.h"
 
 #include <string>
 

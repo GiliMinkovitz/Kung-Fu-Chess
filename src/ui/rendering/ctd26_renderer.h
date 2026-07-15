@@ -1,10 +1,10 @@
 #pragma once
 
-#include "board_layout.h"
-#include "board_layout_calculator.h"
-#include "i_ui_renderer.h"
-#include "theme_config.h"
-#include "ui_theme.h"
+#include "ui/assets/theme_config.h"
+#include "ui/assets/ui_theme.h"
+#include "ui/layout/board_layout.h"
+#include "ui/layout/board_layout_calculator.h"
+#include "ui/rendering/i_ui_renderer.h"
 
 #include <memory>
 namespace kfc {

@@ -1,9 +1,9 @@
-#include "ctd26_renderer.h"
+#include "ui/rendering/ctd26_renderer.h"
 
-#include "asset_paths.h"
-#include "image_loader.h"
-#include "i_ui_input_sink.h"
-#include "../model/piece_token.h"
+#include "ui/assets/asset_paths.h"
+#include "ui/assets/image_loader.h"
+#include "ui/rendering/i_ui_input_sink.h"
+#include "model/piece_token.h"
 
 #include <img.hpp>
 

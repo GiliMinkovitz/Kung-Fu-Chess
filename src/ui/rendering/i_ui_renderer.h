@@ -1,8 +1,8 @@
 #pragma once
 
-#include "board_layout.h"
-#include "board_view_model.h"
-#include "i_ui_input_sink.h"
+#include "ui/layout/board_layout.h"
+#include "ui/view/board_view_model.h"
+#include "ui/rendering/i_ui_input_sink.h"
 
 #include <cstddef>
 

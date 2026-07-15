@@ -1,4 +1,4 @@
-#include "ui/board_layout_calculator.h"
+#include "ui/layout/board_layout_calculator.h"
 
 #include <doctest/doctest.h>
 

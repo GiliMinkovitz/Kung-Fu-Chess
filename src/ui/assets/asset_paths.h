@@ -1,8 +1,8 @@
 #pragma once
 
-#include "theme_config.h"
+#include "ui/assets/theme_config.h"
 
-#include "../model/piece.h"
+#include "model/piece.h"
 
 #include <filesystem>
 

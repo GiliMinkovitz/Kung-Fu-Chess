@@ -1,4 +1,4 @@
-#include "board_view_model.h"
+#include "ui/view/board_view_model.h"
 
 namespace kfc {
 

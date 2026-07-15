@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../model/piece.h"
-#include "../realtime/render_snapshot.h"
+#include "model/piece.h"
+#include "realtime/render_snapshot.h"
 
 #include <cstddef>
 #include <cstdint>

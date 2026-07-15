@@ -2,8 +2,8 @@
 
 #include "board_writer.h"
 #include "../model/game_config.h"
-#include "../ui/board_layout_calculator.h"
-#include "../ui/ui_window_config.h"
+#include "ui/layout/board_layout_calculator.h"
+#include "ui/layout/ui_window_config.h"
 
 #include <sstream>
 #include <string>

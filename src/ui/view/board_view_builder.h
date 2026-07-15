@@ -1,7 +1,7 @@
 #pragma once
 
-#include "board_view_model.h"
-#include "../logic/game_state.h"
+#include "ui/view/board_view_model.h"
+#include "logic/game_state.h"
 
 namespace kfc {
 

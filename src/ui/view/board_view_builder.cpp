@@ -1,6 +1,6 @@
-#include "board_view_builder.h"
+#include "ui/view/board_view_builder.h"
 
-#include "../model/piece_token.h"
+#include "model/piece_token.h"
 
 namespace kfc {
 

@@ -3,8 +3,8 @@
 #include "engine/game_engine.h"
 #include "model/board_model.h"
 #include "model/game_config.h"
-#include "ui/ctd26_renderer.h"
-#include "ui/ui_controller.h"
+#include "ui/rendering/ctd26_renderer.h"
+#include "ui/controller/ui_controller.h"
 
 #include <chrono>
 #include <iostream>

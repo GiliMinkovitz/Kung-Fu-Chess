@@ -1,7 +1,7 @@
 #include "logic/game_state.h"
 #include "model/game_config.h"
 #include "test_helpers.h"
-#include "ui/board_view_builder.h"
+#include "ui/view/board_view_builder.h"
 
 #include <doctest/doctest.h>
 

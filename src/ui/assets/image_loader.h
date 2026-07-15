@@ -1,6 +1,6 @@
 #pragma once
 
-#include "asset_paths.h"
+#include "ui/assets/asset_paths.h"
 
 #include <img.hpp>
 

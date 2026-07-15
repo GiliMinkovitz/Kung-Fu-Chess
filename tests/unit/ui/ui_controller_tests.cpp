@@ -1,8 +1,8 @@
 #include "logic/game_state.h"
 #include "test_helpers.h"
-#include "ui/headless_renderer.h"
-#include "ui/ui_controller.h"
-#include "ui/ui_window_config.h"
+#include "ui/rendering/headless_renderer.h"
+#include "ui/controller/ui_controller.h"
+#include "ui/layout/ui_window_config.h"
 
 #include <doctest/doctest.h>
 #include <memory>

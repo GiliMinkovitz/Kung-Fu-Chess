@@ -1,9 +1,9 @@
 #pragma once
 
-#include "i_ui_input_sink.h"
-#include "i_ui_renderer.h"
-#include "../io/game_input_handler.h"
-#include "../logic/game_state.h"
+#include "ui/rendering/i_ui_input_sink.h"
+#include "ui/rendering/i_ui_renderer.h"
+#include "io/game_input_handler.h"
+#include "logic/game_state.h"
 
 #include <cstdint>
 #include <memory>
