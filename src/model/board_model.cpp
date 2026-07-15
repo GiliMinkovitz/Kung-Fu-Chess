@@ -18,6 +18,13 @@ namespace {
     return pieces[id - 1];
 }
 
+[[nodiscard]] const Piece& piece_at_index(const std::vector<Piece>& pieces, Piece::Id id) {
+    if (id == Piece::kInvalidId || id > pieces.size()) {
+        throw std::out_of_range("invalid piece id");
+    }
+    return pieces[id - 1];
+}
+
 }  // namespace
 
 bool BoardModel::is_in_bounds(std::size_t row, std::size_t col) const noexcept {
@@ -80,6 +87,10 @@ Piece* BoardModel::piece_at(std::size_t row, std::size_t col) {
 }
 
 Piece& BoardModel::get_piece(Piece::Id id) {
+    return piece_at_index(pieces_, id);
+}
+
+const Piece& BoardModel::get_piece(Piece::Id id) const {
     return piece_at_index(pieces_, id);
 }
 

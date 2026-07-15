@@ -31,6 +31,7 @@ public:
     [[nodiscard]] Piece* piece_at(std::size_t row, std::size_t col);
 
     [[nodiscard]] Piece& get_piece(Piece::Id id);
+    [[nodiscard]] const Piece& get_piece(Piece::Id id) const;
 
     void place_piece(Piece piece);
     void place_piece_at(std::size_t row, std::size_t col, Piece piece);

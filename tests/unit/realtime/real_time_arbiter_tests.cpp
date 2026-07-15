@@ -97,20 +97,22 @@ TEST_CASE("RealTimeArbiterTest - MoveAbortedIfFriendlyOccupiesTargetBeforeArriva
 }
 
 TEST_CASE("RealTimeArbiterTest - WouldConflictWithOppositeColorMove") {
-    kfc::BoardModel board = kfc::test::make_board({{".", ".", "."}});
+    kfc::BoardModel board = kfc::test::make_board({{"wR", ".", "bR"}});
     kfc::RealTimeArbiter arbiter;
     kfc::GameRules rules = kfc::KungFuChessRules::standard();
     bool game_over = false;
+    const auto white_id = piece_id_at(board, 0, 0);
+    const auto black_id = piece_id_at(board, 0, 2);
 
-    arbiter.request_move(2, kfc::PieceColor::Black, {0, 2}, {0, 0}, kfc::kMoveDurationMs);
+    arbiter.request_move(black_id, kfc::PieceColor::Black, {0, 2}, {0, 0}, kfc::kMoveDurationMs);
 
-    CHECK(arbiter.would_conflict_with_opposite_color_move(kfc::PieceColor::White, 1, {0, 0}, {0, 2},
-                                                          kfc::kMoveDurationMs));
+    CHECK(arbiter.would_conflict_with_opposite_color_move(kfc::PieceColor::White, white_id, {0, 0},
+                                                          {0, 2}, kfc::kMoveDurationMs));
 
     arbiter.update_time(kfc::kMoveDurationMs, board, rules, game_over);
 
     CHECK_FALSE(arbiter.would_conflict_with_opposite_color_move(
-        kfc::PieceColor::White, 1, {0, 0}, {0, 2}, kfc::kMoveDurationMs));
+        kfc::PieceColor::White, white_id, {0, 0}, {0, 2}, kfc::kMoveDurationMs));
 }
 
 TEST_CASE("RealTimeArbiterTest - SameColorDestinationClaimed") {
