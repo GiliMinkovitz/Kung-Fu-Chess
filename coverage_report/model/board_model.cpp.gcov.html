@@ -32,12 +32,12 @@
             <td></td>
             <td class="headerItem">Lines:</td>
             <td class="headerCovTableEntryHi">100.0&nbsp;%</td>
-            <td class="headerCovTableEntry">124</td>
-            <td class="headerCovTableEntry">124</td>
+            <td class="headerCovTableEntry">125</td>
+            <td class="headerCovTableEntry">125</td>
           </tr>
           <tr>
             <td class="headerItem">Test Date:</td>
-            <td class="headerValue">2026-07-15 17:51:09</td>
+            <td class="headerValue">2026-07-15 23:48:12</td>
             <td></td>
             <td class="headerItem">Functions:</td>
             <td class="headerCovTableEntryHi">100.0&nbsp;%</td>
@@ -211,7 +211,7 @@
 <span id="L149"><span class="lineNum">     149</span> <span class="tlaGNC">         543 :             cell_row.push_back(std::nullopt);</span></span>
 <span id="L150"><span class="lineNum">     150</span>              :         } else {</span>
 <span id="L151"><span class="lineNum">     151</span> <span class="tlaGNC">         273 :             const std::optional&lt;PieceDescriptor&gt; descriptor = descriptor_from_token(token);</span></span>
-<span id="L152"><span class="lineNum">     152</span>              :             assert(descriptor.has_value());</span>
+<span id="L152"><span class="lineNum">     152</span> <span class="tlaGNC">         273 :             assert(descriptor.has_value());</span></span>
 <span id="L153"><span class="lineNum">     153</span> <span class="tlaGNC">         546 :             Piece piece = factory.create(</span></span>
 <span id="L154"><span class="lineNum">     154</span> <span class="tlaGNC">         273 :                 descriptor-&gt;color, descriptor-&gt;kind,</span></span>
 <span id="L155"><span class="lineNum">     155</span>              :                 Position{static_cast&lt;int&gt;(row_index), static_cast&lt;int&gt;(col_index)});</span>
