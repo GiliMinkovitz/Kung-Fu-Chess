@@ -16,6 +16,7 @@ if(POLICY CMP0135)
 endif()
 
 set(KFC_UI_SOURCES
+    src/ui/asset_paths.cpp
     src/ui/board_view_model.cpp
     src/ui/board_view_builder.cpp
     src/ui/headless_renderer.cpp
@@ -24,6 +25,7 @@ set(KFC_UI_SOURCES
 
 set(KFC_GUI_SOURCES
     src/ui/ctd26_renderer.cpp
+    src/ui/image_loader.cpp
     third_party/CTD26/cpp/src/img.cpp
 )
 
