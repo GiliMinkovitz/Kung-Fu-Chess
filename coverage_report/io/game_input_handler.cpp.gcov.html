@@ -4,7 +4,7 @@
 
 <head>
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-  <title>LCOV - coverage.info - io/command_processor.cpp</title>
+  <title>LCOV - coverage.info - io/game_input_handler.cpp</title>
   <link rel="stylesheet" type="text/css" href="../gcov.css">
 </head>
 
@@ -19,7 +19,7 @@
                 <table cellpadding=1 border=0 width="100%">
           <tr>
             <td width="10%" class="headerItem">Current view:</td>
-            <td width="10%" class="headerValue"><a href="../index.html" title="Click to go to top-level">top level</a> - <a href="index.html" title="Click to go to directory io">io</a> - command_processor.cpp<span style="font-size: 80%;"> (source / <a href="command_processor.cpp.func-c.html" title="Click to go to function table">functions</a>)</span></td>
+            <td width="10%" class="headerValue"><a href="../index.html" title="Click to go to top-level">top level</a> - <a href="index.html" title="Click to go to directory io">io</a> - game_input_handler.cpp<span style="font-size: 80%;"> (source / <a href="game_input_handler.cpp.func-c.html" title="Click to go to function table">functions</a>)</span></td>
             <td width="5%"></td>
             <td width="5%"></td>
             <td width="5%" class="headerCovTableHead">Coverage</td>
@@ -37,7 +37,7 @@
           </tr>
           <tr>
             <td class="headerItem">Test Date:</td>
-            <td class="headerValue">2026-07-15 14:24:53</td>
+            <td class="headerValue">2026-07-15 17:51:09</td>
             <td></td>
             <td class="headerItem">Functions:</td>
             <td class="headerCovTableEntryHi">100.0&nbsp;%</td>
@@ -60,7 +60,7 @@
               <td>
 <pre class="sourceHeading">            Line data    Source code</pre>
 <pre class="source">
-<span id="L1"><span class="lineNum">       1</span>              : #include &quot;command_processor.h&quot;</span>
+<span id="L1"><span class="lineNum">       1</span>              : #include &quot;game_input_handler.h&quot;</span>
 <span id="L2"><span class="lineNum">       2</span>              : </span>
 <span id="L3"><span class="lineNum">       3</span>              : #include &quot;board_writer.h&quot;</span>
 <span id="L4"><span class="lineNum">       4</span>              : #include &quot;../model/game_config.h&quot;</span>
@@ -70,10 +70,10 @@
 <span id="L8"><span class="lineNum">       8</span>              : </span>
 <span id="L9"><span class="lineNum">       9</span>              : namespace kfc {</span>
 <span id="L10"><span class="lineNum">      10</span>              : </span>
-<span id="L11"><span class="lineNum">      11</span> <span class="tlaGNC">          47 : CommandProcessor::CommandProcessor(GameState&amp; state, int cell_pixel_size)</span></span>
+<span id="L11"><span class="lineNum">      11</span> <span class="tlaGNC">          47 : GameInputHandler::GameInputHandler(GameState&amp; state, int cell_pixel_size)</span></span>
 <span id="L12"><span class="lineNum">      12</span> <span class="tlaGNC">          47 :     : state_(state), cell_pixel_size_(cell_pixel_size) {}</span></span>
 <span id="L13"><span class="lineNum">      13</span>              : </span>
-<span id="L14"><span class="lineNum">      14</span> <span class="tlaGNC">         133 : void CommandProcessor::execute(const std::string&amp; command, std::ostream&amp; out) {</span></span>
+<span id="L14"><span class="lineNum">      14</span> <span class="tlaGNC">         133 : void GameInputHandler::execute(const std::string&amp; command, std::ostream&amp; out) {</span></span>
 <span id="L15"><span class="lineNum">      15</span> <span class="tlaGNC">         133 :     std::istringstream stream(command);</span></span>
 <span id="L16"><span class="lineNum">      16</span> <span class="tlaGNC">         133 :     std::string verb;</span></span>
 <span id="L17"><span class="lineNum">      17</span> <span class="tlaGNC">         133 :     stream &gt;&gt; verb;</span></span>
@@ -110,16 +110,16 @@
 <span id="L48"><span class="lineNum">      48</span>              :     }</span>
 <span id="L49"><span class="lineNum">      49</span> <span class="tlaGNC">         245 : }</span></span>
 <span id="L50"><span class="lineNum">      50</span>              : </span>
-<span id="L51"><span class="lineNum">      51</span> <span class="tlaGNC">          80 : void CommandProcessor::handle_pixel_click(int x, int y) {</span></span>
+<span id="L51"><span class="lineNum">      51</span> <span class="tlaGNC">          80 : void GameInputHandler::handle_pixel_click(int x, int y) {</span></span>
 <span id="L52"><span class="lineNum">      52</span> <span class="tlaGNC">          80 :     handle_click(x, y);</span></span>
 <span id="L53"><span class="lineNum">      53</span> <span class="tlaGNC">          80 : }</span></span>
 <span id="L54"><span class="lineNum">      54</span>              : </span>
-<span id="L55"><span class="lineNum">      55</span> <span class="tlaGNC">           5 : void CommandProcessor::handle_pixel_jump(int x, int y) {</span></span>
+<span id="L55"><span class="lineNum">      55</span> <span class="tlaGNC">           5 : void GameInputHandler::handle_pixel_jump(int x, int y) {</span></span>
 <span id="L56"><span class="lineNum">      56</span> <span class="tlaGNC">           5 :     handle_jump(x, y);</span></span>
 <span id="L57"><span class="lineNum">      57</span> <span class="tlaGNC">           5 : }</span></span>
 <span id="L58"><span class="lineNum">      58</span>              : </span>
 <span id="L59"><span class="lineNum">      59</span>              : // Click state machine: no selection -&gt; select; friendly -&gt; re-select or jump; else move.</span>
-<span id="L60"><span class="lineNum">      60</span> <span class="tlaGNC">          80 : void CommandProcessor::handle_click(int x, int y) {</span></span>
+<span id="L60"><span class="lineNum">      60</span> <span class="tlaGNC">          80 : void GameInputHandler::handle_click(int x, int y) {</span></span>
 <span id="L61"><span class="lineNum">      61</span> <span class="tlaGNC">          80 :     if (state_.is_game_over()) {</span></span>
 <span id="L62"><span class="lineNum">      62</span> <span class="tlaGNC">          49 :         return;</span></span>
 <span id="L63"><span class="lineNum">      63</span>              :     }</span>
@@ -143,13 +143,13 @@
 <span id="L81"><span class="lineNum">      81</span> <span class="tlaGNC">          31 :     handle_move_attempt(row, col);</span></span>
 <span id="L82"><span class="lineNum">      82</span>              : }</span>
 <span id="L83"><span class="lineNum">      83</span>              : </span>
-<span id="L84"><span class="lineNum">      84</span> <span class="tlaGNC">          40 : void CommandProcessor::handle_select(std::size_t row, std::size_t col) {</span></span>
+<span id="L84"><span class="lineNum">      84</span> <span class="tlaGNC">          40 : void GameInputHandler::handle_select(std::size_t row, std::size_t col) {</span></span>
 <span id="L85"><span class="lineNum">      85</span> <span class="tlaGNC">          40 :     if (state_.is_selectable_piece(row, col)) {</span></span>
 <span id="L86"><span class="lineNum">      86</span> <span class="tlaGNC">          33 :         state_.select(row, col);</span></span>
 <span id="L87"><span class="lineNum">      87</span>              :     }</span>
 <span id="L88"><span class="lineNum">      88</span> <span class="tlaGNC">          40 : }</span></span>
 <span id="L89"><span class="lineNum">      89</span>              : </span>
-<span id="L90"><span class="lineNum">      90</span> <span class="tlaGNC">           3 : void CommandProcessor::handle_friendly_click(std::size_t row, std::size_t col) {</span></span>
+<span id="L90"><span class="lineNum">      90</span> <span class="tlaGNC">           3 : void GameInputHandler::handle_friendly_click(std::size_t row, std::size_t col) {</span></span>
 <span id="L91"><span class="lineNum">      91</span> <span class="tlaGNC">           3 :     std::size_t from_row = 0;</span></span>
 <span id="L92"><span class="lineNum">      92</span> <span class="tlaGNC">           3 :     std::size_t from_col = 0;</span></span>
 <span id="L93"><span class="lineNum">      93</span>              :     // Clicking the already-selected friendly piece triggers a jump, not a re-select.</span>
@@ -164,7 +164,7 @@
 <span id="L102"><span class="lineNum">     102</span> <span class="tlaGNC">           1 :     state_.select(row, col);</span></span>
 <span id="L103"><span class="lineNum">     103</span>              : }</span>
 <span id="L104"><span class="lineNum">     104</span>              : </span>
-<span id="L105"><span class="lineNum">     105</span> <span class="tlaGNC">          31 : void CommandProcessor::handle_move_attempt(std::size_t row, std::size_t col) {</span></span>
+<span id="L105"><span class="lineNum">     105</span> <span class="tlaGNC">          31 : void GameInputHandler::handle_move_attempt(std::size_t row, std::size_t col) {</span></span>
 <span id="L106"><span class="lineNum">     106</span> <span class="tlaGNC">          31 :     std::size_t from_row = 0;</span></span>
 <span id="L107"><span class="lineNum">     107</span> <span class="tlaGNC">          31 :     std::size_t from_col = 0;</span></span>
 <span id="L108"><span class="lineNum">     108</span> <span class="tlaGNC">          31 :     state_.selection(from_row, from_col);</span></span>
@@ -176,7 +176,7 @@
 <span id="L114"><span class="lineNum">     114</span> <span class="tlaGNC">          28 :     state_.move_selected_to(row, col);</span></span>
 <span id="L115"><span class="lineNum">     115</span>              : }</span>
 <span id="L116"><span class="lineNum">     116</span>              : </span>
-<span id="L117"><span class="lineNum">     117</span> <span class="tlaGNC">           5 : void CommandProcessor::handle_jump(int x, int y) {</span></span>
+<span id="L117"><span class="lineNum">     117</span> <span class="tlaGNC">           5 : void GameInputHandler::handle_jump(int x, int y) {</span></span>
 <span id="L118"><span class="lineNum">     118</span> <span class="tlaGNC">           5 :     if (state_.is_game_over()) {</span></span>
 <span id="L119"><span class="lineNum">     119</span> <span class="tlaGNC">           3 :         return;</span></span>
 <span id="L120"><span class="lineNum">     120</span>              :     }</span>
@@ -195,7 +195,7 @@
 <span id="L133"><span class="lineNum">     133</span> <span class="tlaGNC">           2 :     state_.clear_selection();</span></span>
 <span id="L134"><span class="lineNum">     134</span>              : }</span>
 <span id="L135"><span class="lineNum">     135</span>              : </span>
-<span id="L136"><span class="lineNum">     136</span> <span class="tlaGNC">          25 : void CommandProcessor::handle_wait(std::int64_t ms) {</span></span>
+<span id="L136"><span class="lineNum">     136</span> <span class="tlaGNC">          25 : void GameInputHandler::handle_wait(std::int64_t ms) {</span></span>
 <span id="L137"><span class="lineNum">     137</span> <span class="tlaGNC">          25 :     if (state_.is_game_over()) {</span></span>
 <span id="L138"><span class="lineNum">     138</span> <span class="tlaGNC">           1 :         return;</span></span>
 <span id="L139"><span class="lineNum">     139</span>              :     }</span>
@@ -203,11 +203,11 @@
 <span id="L141"><span class="lineNum">     141</span> <span class="tlaGNC">          24 :     state_.add_clock(ms);</span></span>
 <span id="L142"><span class="lineNum">     142</span>              : }</span>
 <span id="L143"><span class="lineNum">     143</span>              : </span>
-<span id="L144"><span class="lineNum">     144</span> <span class="tlaGNC">          18 : void CommandProcessor::handle_print_board(std::ostream&amp; out) {</span></span>
+<span id="L144"><span class="lineNum">     144</span> <span class="tlaGNC">          18 : void GameInputHandler::handle_print_board(std::ostream&amp; out) {</span></span>
 <span id="L145"><span class="lineNum">     145</span> <span class="tlaGNC">          18 :     state_.write_board(out, kfc::write_board);</span></span>
 <span id="L146"><span class="lineNum">     146</span> <span class="tlaGNC">          18 : }</span></span>
 <span id="L147"><span class="lineNum">     147</span>              : </span>
-<span id="L148"><span class="lineNum">     148</span> <span class="tlaGNC">          81 : bool CommandProcessor::pixel_to_cell(int x, int y, std::size_t&amp; row, std::size_t&amp; col) const {</span></span>
+<span id="L148"><span class="lineNum">     148</span> <span class="tlaGNC">          81 : bool GameInputHandler::pixel_to_cell(int x, int y, std::size_t&amp; row, std::size_t&amp; col) const {</span></span>
 <span id="L149"><span class="lineNum">     149</span> <span class="tlaGNC">          81 :     if (x &lt; 0 || y &lt; 0) {</span></span>
 <span id="L150"><span class="lineNum">     150</span> <span class="tlaGNC">           1 :         return false;</span></span>
 <span id="L151"><span class="lineNum">     151</span>              :     }</span>

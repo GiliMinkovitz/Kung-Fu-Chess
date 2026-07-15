@@ -37,7 +37,7 @@
           </tr>
           <tr>
             <td class="headerItem">Test Date:</td>
-            <td class="headerValue">2026-07-15 14:24:53</td>
+            <td class="headerValue">2026-07-15 17:51:09</td>
             <td></td>
             <td class="headerItem">Functions:</td>
             <td class="headerCovTableEntryHi">100.0&nbsp;%</td>
@@ -62,7 +62,7 @@
 <pre class="source">
 <span id="L1"><span class="lineNum">       1</span>              : #pragma once</span>
 <span id="L2"><span class="lineNum">       2</span>              : </span>
-<span id="L3"><span class="lineNum">       3</span>              : #include &quot;io/command_processor.h&quot;</span>
+<span id="L3"><span class="lineNum">       3</span>              : #include &quot;io/game_input_handler.h&quot;</span>
 <span id="L4"><span class="lineNum">       4</span>              : #include &quot;logic/game_state.h&quot;</span>
 <span id="L5"><span class="lineNum">       5</span>              : </span>
 <span id="L6"><span class="lineNum">       6</span>              : #include &lt;iosfwd&gt;</span>
@@ -71,7 +71,7 @@
 <span id="L9"><span class="lineNum">       9</span>              : </span>
 <span id="L10"><span class="lineNum">      10</span>              : namespace kfc {</span>
 <span id="L11"><span class="lineNum">      11</span>              : </span>
-<span id="L12"><span class="lineNum">      12</span>              : // CLI/VPL application shell: owns one GameState and wires it to a CommandProcessor.</span>
+<span id="L12"><span class="lineNum">      12</span>              : // CLI/VPL application shell: owns one GameState and wires it to a GameInputHandler.</span>
 <span id="L13"><span class="lineNum">      13</span>              : // Provides the stable entry point used by main.cpp; does not parse VPL input or</span>
 <span id="L14"><span class="lineNum">      14</span>              : // implement game rules. GUI code may bypass this class and use GameState directly.</span>
 <span id="L15"><span class="lineNum">      15</span>              : class GameEngine {</span>
@@ -86,7 +86,7 @@
 <span id="L24"><span class="lineNum">      24</span>              : </span>
 <span id="L25"><span class="lineNum">      25</span>              : private:</span>
 <span id="L26"><span class="lineNum">      26</span>              :     GameState state_;</span>
-<span id="L27"><span class="lineNum">      27</span>              :     CommandProcessor processor_;</span>
+<span id="L27"><span class="lineNum">      27</span>              :     GameInputHandler processor_;</span>
 <span id="L28"><span class="lineNum">      28</span>              : };</span>
 <span id="L29"><span class="lineNum">      29</span>              : </span>
 <span id="L30"><span class="lineNum">      30</span>              : }  // namespace kfc</span>
