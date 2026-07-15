@@ -1,8 +1,8 @@
 #include "logic/game_state.h"
-#include "model/game_config.h"
 #include "test_helpers.h"
 #include "ui/headless_renderer.h"
 #include "ui/ui_controller.h"
+#include "ui/ui_window_config.h"
 
 #include <doctest/doctest.h>
 #include <memory>
@@ -17,7 +17,9 @@ TEST_CASE("UiControllerTest - InitializesHeadlessRenderer") {
     CHECK(renderer_ptr->initialized());
     CHECK_EQ(renderer_ptr->rows(), 1u);
     CHECK_EQ(renderer_ptr->cols(), 3u);
-    CHECK_EQ(renderer_ptr->cell_pixel_size(), kfc::kCellPixelSize);
+    const kfc::UiWindowDimensions window = kfc::default_initial_window_size(1u, 3u);
+    CHECK_EQ(renderer_ptr->window_width(), window.width);
+    CHECK_EQ(renderer_ptr->window_height(), window.height);
     CHECK_EQ(renderer_ptr->input_sink(), &controller);
 }
 

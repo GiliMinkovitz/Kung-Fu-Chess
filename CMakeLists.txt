@@ -17,6 +17,7 @@ endif()
 
 set(KFC_UI_SOURCES
     src/ui/asset_paths.cpp
+    src/ui/board_layout_calculator.cpp
     src/ui/board_view_model.cpp
     src/ui/board_view_builder.cpp
     src/ui/headless_renderer.cpp
@@ -146,6 +147,7 @@ set(KFC_TEST_SOURCES
     tests/unit/io/game_input_handler_tests.cpp
     tests/unit/io/vpl_io_tests.cpp
     tests/unit/engine/game_engine_tests.cpp
+    tests/unit/ui/board_layout_calculator_tests.cpp
     tests/unit/ui/board_view_builder_tests.cpp
     tests/unit/ui/ui_controller_tests.cpp
     tests/integration/integration_test.cpp

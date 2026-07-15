@@ -2,14 +2,33 @@
 
 #include "board_writer.h"
 #include "../model/game_config.h"
+#include "../ui/board_layout_calculator.h"
+#include "../ui/ui_window_config.h"
 
 #include <sstream>
 #include <string>
 
 namespace kfc {
 
-GameInputHandler::GameInputHandler(GameState& state, int cell_pixel_size)
-    : state_(state), cell_pixel_size_(cell_pixel_size) {}
+GameInputHandler::GameInputHandler(GameState& state) : state_(state) {
+    bootstrap_default_layout();
+}
+
+void GameInputHandler::set_board_layout(BoardLayout layout) {
+    layout_ = layout;
+}
+
+void GameInputHandler::bootstrap_default_layout() {
+    if (state_.rows() == 0 || state_.cols() == 0) {
+        layout_ = {};
+        return;
+    }
+
+    const BoardLayoutCalculator calculator;
+    const UiWindowDimensions window = default_initial_window_size(state_.rows(), state_.cols());
+    layout_ = calculator.calculate(window.width, window.height, static_cast<int>(state_.cols()),
+                                   static_cast<int>(state_.rows()));
+}
 
 void GameInputHandler::execute(const std::string& command, std::ostream& out) {
     std::istringstream stream(command);
@@ -146,17 +165,11 @@ void GameInputHandler::handle_print_board(std::ostream& out) {
 }
 
 bool GameInputHandler::pixel_to_cell(int x, int y, std::size_t& row, std::size_t& col) const {
-    if (x < 0 || y < 0) {
-        return false;
-    }
-
     if (state_.rows() == 0 || state_.cols() == 0) {
         return false;
     }
 
-    col = static_cast<std::size_t>(x) / static_cast<std::size_t>(cell_pixel_size_);
-    row = static_cast<std::size_t>(y) / static_cast<std::size_t>(cell_pixel_size_);
-    return col < state_.cols() && row < state_.rows();
+    return layout_.try_pixel_to_cell(x, y, state_.cols(), state_.rows(), row, col);
 }
 
 }  // namespace kfc

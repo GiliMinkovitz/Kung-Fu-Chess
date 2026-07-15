@@ -28,10 +28,11 @@ public:
     void shutdown();
 
 private:
+    void sync_input_layout();
+
     GameState& state_;
     GameInputHandler processor_;
     std::unique_ptr<IUiRenderer> renderer_;
-    int cell_pixel_size_ = 0;
 };
 
 }  // namespace kfc

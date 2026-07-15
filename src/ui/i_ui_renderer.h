@@ -1,5 +1,6 @@
 #pragma once
 
+#include "board_layout.h"
 #include "board_view_model.h"
 #include "i_ui_input_sink.h"
 
@@ -14,8 +15,9 @@ struct UiFrameResult {
 class IUiRenderer {
 public:
     virtual ~IUiRenderer() = default;
-    virtual void init(std::size_t rows, std::size_t cols, int cell_pixel_size) = 0;
+    virtual void init(int window_width, int window_height, std::size_t rows, std::size_t cols) = 0;
     virtual void attach_input_sink(IUiInputSink* sink) = 0;
+    [[nodiscard]] virtual BoardLayout board_layout() const = 0;
     virtual UiFrameResult present(const BoardViewModel& view) = 0;
     virtual void shutdown() = 0;
 };

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../logic/game_state.h"
-#include "../model/game_config.h"
+#include "../ui/board_layout.h"
 
 #include <iosfwd>
 #include <string>
@@ -13,16 +13,19 @@ namespace kfc {
 // validate moves or mutate the board directly.
 class GameInputHandler {
 public:
-    explicit GameInputHandler(GameState& state, int cell_pixel_size = kCellPixelSize);
+    explicit GameInputHandler(GameState& state);
 
+    void set_board_layout(BoardLayout layout);
     void execute(const std::string& command, std::ostream& out);
     // Shared entry points used by both VPL parsing and the GUI (UiController).
     void handle_pixel_click(int x, int y);
     void handle_pixel_jump(int x, int y);
 
 private:
+    void bootstrap_default_layout();
+
     GameState& state_;
-    int cell_pixel_size_ = kCellPixelSize;
+    BoardLayout layout_{};
 
     void handle_click(int x, int y);
     void handle_select(std::size_t row, std::size_t col);

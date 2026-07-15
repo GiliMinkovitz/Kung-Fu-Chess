@@ -2,15 +2,22 @@
 
 namespace kfc {
 
-void HeadlessRenderer::init(std::size_t rows, std::size_t cols, int cell_pixel_size) {
+void HeadlessRenderer::init(int window_width, int window_height, std::size_t rows, std::size_t cols) {
     rows_ = rows;
     cols_ = cols;
-    cell_pixel_size_ = cell_pixel_size;
+    window_width_ = window_width;
+    window_height_ = window_height;
+    layout_ = layout_calculator_.calculate(window_width_, window_height_, static_cast<int>(cols),
+                                           static_cast<int>(rows));
     initialized_ = true;
 }
 
 void HeadlessRenderer::attach_input_sink(IUiInputSink* sink) {
     input_sink_ = sink;
+}
+
+BoardLayout HeadlessRenderer::board_layout() const {
+    return layout_;
 }
 
 UiFrameResult HeadlessRenderer::present(const BoardViewModel& view) {

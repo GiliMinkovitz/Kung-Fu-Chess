@@ -1,22 +1,26 @@
 #include "ui_controller.h"
 
 #include "board_view_builder.h"
-#include "../model/game_config.h"
+#include "ui_window_config.h"
 
 namespace kfc {
 
 UiController::UiController(GameState& state, std::unique_ptr<IUiRenderer> renderer)
-    : state_(state),
-      processor_(state_, kCellPixelSize),
-      renderer_(std::move(renderer)),
-      cell_pixel_size_(kCellPixelSize) {
+    : state_(state), processor_(state_), renderer_(std::move(renderer)) {
     renderer_->attach_input_sink(this);
-    renderer_->init(state_.rows(), state_.cols(), cell_pixel_size_);
+    const UiWindowDimensions window = default_initial_window_size(state_.rows(), state_.cols());
+    renderer_->init(window.width, window.height, state_.rows(), state_.cols());
+    sync_input_layout();
 }
 
 UiFrameResult UiController::frame(std::int64_t delta_ms) {
+    sync_input_layout();
     state_.add_clock(delta_ms);
     return renderer_->present(BoardViewBuilder::build(state_));
+}
+
+void UiController::sync_input_layout() {
+    processor_.set_board_layout(renderer_->board_layout());
 }
 
 void UiController::on_pixel_click(int x, int y) {
