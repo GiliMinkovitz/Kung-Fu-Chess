@@ -1,6 +1,6 @@
 #pragma once
 
-#include "i_ui_renderer.h"
+#include "board_view_model.h"
 #include "../logic/game_state.h"
 
 namespace kfc {
