@@ -58,6 +58,9 @@ bool BoardModel::is_empty(std::size_t row, std::size_t col) const {
 }
 
 const Piece* BoardModel::piece_at(std::size_t row, std::size_t col) const {
+    if (!is_in_bounds(row, col)) {
+        return nullptr;
+    }
     const std::optional<Piece::Id>& id = cells_[row][col];
     if (!id.has_value()) {
         return nullptr;
@@ -66,6 +69,9 @@ const Piece* BoardModel::piece_at(std::size_t row, std::size_t col) const {
 }
 
 Piece* BoardModel::piece_at(std::size_t row, std::size_t col) {
+    if (!is_in_bounds(row, col)) {
+        return nullptr;
+    }
     const std::optional<Piece::Id>& id = cells_[row][col];
     if (!id.has_value()) {
         return nullptr;

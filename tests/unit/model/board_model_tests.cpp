@@ -2,6 +2,7 @@
 #include "test_helpers.h"
 
 #include <doctest/doctest.h>
+#include <limits>
 #include <stdexcept>
 
 TEST_CASE("BoardModelTest - InvalidEmptyBoard") {
@@ -121,4 +122,49 @@ TEST_CASE("BoardModelTest - InvalidZeroWidthRow") {
     CHECK_EQ(board.rows(), 1);
     CHECK_EQ(board.cols(), 0);
     CHECK_FALSE(board.is_valid());
+}
+
+TEST_CASE("BoardModelTest - PieceAtValidCoordinates") {
+    const kfc::BoardModel board =
+        kfc::test::make_board({{"wK", ".", "bK"}, {".", "wN", "."}});
+
+    const kfc::Piece* white_king = board.piece_at(0, 0);
+    REQUIRE(white_king != nullptr);
+    CHECK(white_king->is_white());
+    CHECK(white_king->kind == kfc::PieceKind::King);
+
+    const kfc::Piece* white_knight = board.piece_at(1, 1);
+    REQUIRE(white_knight != nullptr);
+    CHECK(white_knight->kind == kfc::PieceKind::Knight);
+}
+
+TEST_CASE("BoardModelTest - PieceAtEmptyCellReturnsNull") {
+    const kfc::BoardModel board = kfc::test::make_board({{"wK", ".", "bK"}});
+    CHECK(board.piece_at(0, 1) == nullptr);
+}
+
+TEST_CASE("BoardModelTest - PieceAtOutOfBoundsRowReturnsNull") {
+    const kfc::BoardModel board = kfc::test::make_board({{"wK", ".", "bK"}});
+    CHECK(board.piece_at(1, 0) == nullptr);
+    CHECK(board.piece_at(99, 0) == nullptr);
+}
+
+TEST_CASE("BoardModelTest - PieceAtOutOfBoundsColumnReturnsNull") {
+    const kfc::BoardModel board = kfc::test::make_board({{"wK", ".", "bK"}});
+    CHECK(board.piece_at(0, 3) == nullptr);
+    CHECK(board.piece_at(0, 99) == nullptr);
+}
+
+TEST_CASE("BoardModelTest - PieceAtExtremelyLargeIndicesReturnsNull") {
+    const kfc::BoardModel board = kfc::test::make_board({{"wK", ".", "bK"}});
+    const std::size_t huge = std::numeric_limits<std::size_t>::max();
+
+    CHECK(board.piece_at(huge, 0) == nullptr);
+    CHECK(board.piece_at(0, huge) == nullptr);
+    CHECK(board.piece_at(huge, huge) == nullptr);
+
+    kfc::BoardModel mutable_board = kfc::test::make_board({{"wK", ".", "bK"}});
+    CHECK(mutable_board.piece_at(huge, 0) == nullptr);
+    CHECK(mutable_board.piece_at(0, huge) == nullptr);
+    CHECK(mutable_board.piece_at(huge, huge) == nullptr);
 }
