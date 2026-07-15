@@ -90,8 +90,10 @@ TEST_CASE("RealTimeArbiterTest - MoveAbortedIfFriendlyOccupiesTargetBeforeArriva
 
     arbiter.update_time(2 * kfc::kMoveDurationMs, board, rules, game_over);
 
+    CHECK_FALSE(arbiter.is_piece_moving(0, 0));
     CHECK_EQ(board.token_at(0, 0), "wR");
     CHECK_EQ(board.token_at(0, 2), "wK");
+    CHECK_EQ(board.get_piece(piece_id).state, kfc::PieceState::Idle);
 }
 
 TEST_CASE("RealTimeArbiterTest - WouldConflictWithOppositeColorMove") {

@@ -233,3 +233,26 @@ TEST_CASE("GameStateTest - MoveSelectedToWhileMovingIgnored") {
     CHECK(state.is_piece_moving(0, 0));
     CHECK_EQ(state.token_at(0, 0), "wR");
 }
+
+TEST_CASE("GameStateTest - AbortedMoveResetsPieceStateToIdle") {
+    kfc::GameState state(kfc::test::make_board({{"wR", ".", ".", "."}}));
+    const kfc::Piece::Id piece_id =
+        kfc::test::GameStateTestAccess::board(state).piece_at(0, 0)->id;
+
+    state.select(0, 0);
+    state.move_selected_to(0, 2);
+    CHECK_EQ(kfc::test::GameStateTestAccess::piece_state(state, piece_id),
+             kfc::PieceState::Moving);
+
+    kfc::BoardModel& board = kfc::test::GameStateTestAccess::board(state);
+    kfc::PieceFactory factory(board.next_piece_id());
+    board.place_piece_at(0, 2,
+                          factory.create(kfc::PieceColor::White, kfc::PieceKind::King, {0, 2}));
+
+    state.add_clock(2 * kfc::kMoveDurationMs);
+
+    CHECK_FALSE(state.is_piece_moving(0, 0));
+    CHECK_EQ(kfc::test::GameStateTestAccess::piece_state(state, piece_id), kfc::PieceState::Idle);
+    CHECK_EQ(state.token_at(0, 0), "wR");
+    CHECK_EQ(state.token_at(0, 2), "wK");
+}

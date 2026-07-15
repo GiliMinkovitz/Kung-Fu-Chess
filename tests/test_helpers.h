@@ -34,6 +34,12 @@ struct GameStateTestAccess {
                               int end_col) {
         return state.is_legal_move(start_row, start_col, end_row, end_col);
     }
+
+    static BoardModel& board(GameState& state) { return state.board_; }
+
+    static PieceState piece_state(const GameState& state, Piece::Id id) {
+        return state.board_.get_piece(id).state;
+    }
 };
 
 inline BoardModel make_board(std::initializer_list<std::initializer_list<const char*>> rows) {

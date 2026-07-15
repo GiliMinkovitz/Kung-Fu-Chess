@@ -36,6 +36,7 @@ void RealTimeArbiter::settle_pending_moves(BoardModel& board, const GameRules& r
     scheduler_.for_each_pending_due(current_time_ms, [this, &board, &rules, &game_over,
                                                       current_time_ms](const PendingMove& move) {
         if (!can_settle_move(board, rules, move)) {
+            board.get_piece(move.piece_id).state = PieceState::Idle;
             return;
         }
 
