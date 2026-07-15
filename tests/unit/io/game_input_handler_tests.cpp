@@ -1,15 +1,15 @@
 #include "model/board_model.h"
-#include "io/command_processor.h"
+#include "io/game_input_handler.h"
 #include "logic/game_state.h"
 #include "test_helpers.h"
 
 #include <doctest/doctest.h>
 #include <sstream>
 
-TEST_CASE("CommandProcessorTest - CommandProcessorClickSelectAndMove") {
+TEST_CASE("GameInputHandlerTest - GameInputHandlerClickSelectAndMove") {
     kfc::BoardModel board = kfc::test::make_board({{"wK", ".", "bK"}, {".", ".", "."}});
     kfc::GameState state(board);
-    kfc::CommandProcessor processor(state);
+    kfc::GameInputHandler processor(state);
     std::ostringstream sink;
 
     processor.execute("click 50 50", sink);
@@ -30,9 +30,9 @@ TEST_CASE("CommandProcessorTest - CommandProcessorClickSelectAndMove") {
     CHECK_EQ(state.token_at(1, 1), "wK");
 }
 
-TEST_CASE("CommandProcessorTest - CommandProcessorClickOutsideGridIgnored") {
+TEST_CASE("GameInputHandlerTest - GameInputHandlerClickOutsideGridIgnored") {
     kfc::GameState state(kfc::test::make_board({{"wK", ".", "bK"}}));
-    kfc::CommandProcessor processor(state);
+    kfc::GameInputHandler processor(state);
     std::ostringstream sink;
 
     processor.execute("click 350 50", sink);
@@ -40,10 +40,10 @@ TEST_CASE("CommandProcessorTest - CommandProcessorClickOutsideGridIgnored") {
     CHECK_FALSE(state.has_selection());
 }
 
-TEST_CASE("CommandProcessorTest - CommandProcessorFriendlyClickReplacesSelection") {
+TEST_CASE("GameInputHandlerTest - GameInputHandlerFriendlyClickReplacesSelection") {
     kfc::BoardModel board = kfc::test::make_board({{"wK", "wN", "bK"}});
     kfc::GameState state(board);
-    kfc::CommandProcessor processor(state);
+    kfc::GameInputHandler processor(state);
     std::ostringstream sink;
 
     processor.execute("click 50 50", sink);
@@ -58,19 +58,19 @@ TEST_CASE("CommandProcessorTest - CommandProcessorFriendlyClickReplacesSelection
     CHECK_EQ(state.token_at(0, 1), "wN");
 }
 
-TEST_CASE("CommandProcessorTest - CommandProcessorPrintBoard") {
+TEST_CASE("GameInputHandlerTest - GameInputHandlerPrintBoard") {
     kfc::GameState state(kfc::test::make_board({{"wK", ".", "bK"}}));
-    kfc::CommandProcessor processor(state);
+    kfc::GameInputHandler processor(state);
 
     std::ostringstream output;
     processor.execute("print board", output);
     CHECK_EQ(output.str(), "wK . bK\n");
 }
 
-TEST_CASE("CommandProcessorTest - CommandProcessorCapture") {
+TEST_CASE("GameInputHandlerTest - GameInputHandlerCapture") {
     kfc::BoardModel board = kfc::test::make_board({{"wR", ".", "bK"}});
     kfc::GameState state(board);
-    kfc::CommandProcessor processor(state);
+    kfc::GameInputHandler processor(state);
     std::ostringstream sink;
 
     processor.execute("click 50 50", sink);
@@ -86,10 +86,10 @@ TEST_CASE("CommandProcessorTest - CommandProcessorCapture") {
     CHECK_EQ(state.token_at(0, 2), "wR");
 }
 
-TEST_CASE("CommandProcessorTest - CommandProcessorRejectsIllegalMove") {
+TEST_CASE("GameInputHandlerTest - GameInputHandlerRejectsIllegalMove") {
     kfc::BoardModel board = kfc::test::make_board({{"wK", ".", ".", "."}, {".", ".", ".", "."}});
     kfc::GameState state(board);
-    kfc::CommandProcessor processor(state);
+    kfc::GameInputHandler processor(state);
     std::ostringstream sink;
 
     processor.execute("click 50 50", sink);
@@ -101,10 +101,10 @@ TEST_CASE("CommandProcessorTest - CommandProcessorRejectsIllegalMove") {
     CHECK_EQ(state.token_at(0, 3), ".");
 }
 
-TEST_CASE("CommandProcessorTest - PendingMovePrintBeforeArrival") {
+TEST_CASE("GameInputHandlerTest - PendingMovePrintBeforeArrival") {
     kfc::BoardModel board = kfc::test::make_board({{"wK", ".", "bK"}, {".", ".", "."}});
     kfc::GameState state(board);
-    kfc::CommandProcessor processor(state);
+    kfc::GameInputHandler processor(state);
     std::ostringstream sink;
 
     processor.execute("click 50 50", sink);
@@ -115,10 +115,10 @@ TEST_CASE("CommandProcessorTest - PendingMovePrintBeforeArrival") {
     CHECK_EQ(output.str(), "wK . bK\n. . .\n");
 }
 
-TEST_CASE("CommandProcessorTest - PendingMovePrintAfterArrival") {
+TEST_CASE("GameInputHandlerTest - PendingMovePrintAfterArrival") {
     kfc::BoardModel board = kfc::test::make_board({{"wK", ".", "bK"}, {".", ".", "."}});
     kfc::GameState state(board);
-    kfc::CommandProcessor processor(state);
+    kfc::GameInputHandler processor(state);
     std::ostringstream sink;
 
     processor.execute("click 50 50", sink);
@@ -130,10 +130,10 @@ TEST_CASE("CommandProcessorTest - PendingMovePrintAfterArrival") {
     CHECK_EQ(output.str(), ". . bK\n. wK .\n");
 }
 
-TEST_CASE("CommandProcessorTest - TwoCellMoveBeforeAndAfterArrival") {
+TEST_CASE("GameInputHandlerTest - TwoCellMoveBeforeAndAfterArrival") {
     kfc::BoardModel board = kfc::test::make_board({{"wR", ".", "."}});
     kfc::GameState state(board);
-    kfc::CommandProcessor processor(state);
+    kfc::GameInputHandler processor(state);
     std::ostringstream sink;
 
     processor.execute("click 50 50", sink);
@@ -151,10 +151,10 @@ TEST_CASE("CommandProcessorTest - TwoCellMoveBeforeAndAfterArrival") {
     CHECK_EQ(second_print.str(), ". . wR\n");
 }
 
-TEST_CASE("CommandProcessorTest - ClickOnMovingPieceDoesNotSelectOrRedirect") {
+TEST_CASE("GameInputHandlerTest - ClickOnMovingPieceDoesNotSelectOrRedirect") {
     kfc::BoardModel board = kfc::test::make_board({{"wR", ".", "."}});
     kfc::GameState state(board);
-    kfc::CommandProcessor processor(state);
+    kfc::GameInputHandler processor(state);
     std::ostringstream sink;
 
     processor.execute("click 50 50", sink);
@@ -172,10 +172,10 @@ TEST_CASE("CommandProcessorTest - ClickOnMovingPieceDoesNotSelectOrRedirect") {
     CHECK_EQ(output.str(), ". . wR\n");
 }
 
-TEST_CASE("CommandProcessorTest - PieceCanMoveImmediatelyAfterSettle") {
+TEST_CASE("GameInputHandlerTest - PieceCanMoveImmediatelyAfterSettle") {
     kfc::BoardModel board = kfc::test::make_board({{"wR", ".", ".", "."}});
     kfc::GameState state(board);
-    kfc::CommandProcessor processor(state);
+    kfc::GameInputHandler processor(state);
     std::ostringstream sink;
 
     processor.execute("click 50 50", sink);
@@ -194,10 +194,10 @@ TEST_CASE("CommandProcessorTest - PieceCanMoveImmediatelyAfterSettle") {
     CHECK_EQ(output.str(), ". . wR .\n");
 }
 
-TEST_CASE("CommandProcessorTest - OppositeColorsDoNotMoveConcurrentlyInCommonRoute") {
+TEST_CASE("GameInputHandlerTest - OppositeColorsDoNotMoveConcurrentlyInCommonRoute") {
     kfc::BoardModel board = kfc::test::make_board({{"wR", ".", "."}, {".", ".", "."}, {"bR", ".", "."}});
     kfc::GameState state(board);
-    kfc::CommandProcessor processor(state);
+    kfc::GameInputHandler processor(state);
     std::ostringstream sink;
 
     processor.execute("click 50 50", sink);
@@ -211,10 +211,10 @@ TEST_CASE("CommandProcessorTest - OppositeColorsDoNotMoveConcurrentlyInCommonRou
     CHECK_EQ(output.str(), ". . wR\n. . .\nbR . .\n");
 }
 
-TEST_CASE("CommandProcessorTest - OppositeColorsCanMoveOnDisjointRoutes") {
+TEST_CASE("GameInputHandlerTest - OppositeColorsCanMoveOnDisjointRoutes") {
     kfc::BoardModel board = kfc::test::make_board({{"wR", ".", ".", "."}, {".", ".", ".", "."}, {".", ".", "bR", "."}});
     kfc::GameState state(board);
-    kfc::CommandProcessor processor(state);
+    kfc::GameInputHandler processor(state);
     std::ostringstream sink;
 
     processor.execute("click 50 50", sink);
@@ -228,10 +228,10 @@ TEST_CASE("CommandProcessorTest - OppositeColorsCanMoveOnDisjointRoutes") {
     CHECK_EQ(output.str(), ". wR . .\n. . . .\n. . . bR\n");
 }
 
-TEST_CASE("CommandProcessorTest - MovingPieceIgnoresRedirect") {
+TEST_CASE("GameInputHandlerTest - MovingPieceIgnoresRedirect") {
     kfc::BoardModel board = kfc::test::make_board({{"wR", ".", "."}});
     kfc::GameState state(board);
-    kfc::CommandProcessor processor(state);
+    kfc::GameInputHandler processor(state);
     std::ostringstream sink;
 
     processor.execute("click 50 50", sink);
@@ -246,10 +246,10 @@ TEST_CASE("CommandProcessorTest - MovingPieceIgnoresRedirect") {
     CHECK_EQ(output.str(), ". . wR\n");
 }
 
-TEST_CASE("CommandProcessorTest - RejectsMoveForPieceAlreadyInPendingMove") {
+TEST_CASE("GameInputHandlerTest - RejectsMoveForPieceAlreadyInPendingMove") {
     kfc::BoardModel board = kfc::test::make_board({{"wR", ".", "."}});
     kfc::GameState state(board);
-    kfc::CommandProcessor processor(state);
+    kfc::GameInputHandler processor(state);
     std::ostringstream sink;
 
     processor.execute("click 50 50", sink);
@@ -272,10 +272,10 @@ TEST_CASE("CommandProcessorTest - RejectsMoveForPieceAlreadyInPendingMove") {
     CHECK_EQ(output.str(), ". . wR\n");
 }
 
-TEST_CASE("CommandProcessorTest - RejectsTwoSameColorMovesToSameSquare") {
+TEST_CASE("GameInputHandlerTest - RejectsTwoSameColorMovesToSameSquare") {
     kfc::BoardModel board = kfc::test::make_board({{"wR", ".", ".", "."}, {".", ".", ".", "."}, {".", ".", ".", "wN"}});
     kfc::GameState state(board);
-    kfc::CommandProcessor processor(state);
+    kfc::GameInputHandler processor(state);
     std::ostringstream sink;
 
     processor.execute("click 50 50", sink);
@@ -289,10 +289,10 @@ TEST_CASE("CommandProcessorTest - RejectsTwoSameColorMovesToSameSquare") {
     CHECK_EQ(output.str(), ". . wR .\n. . . .\n. . . wN\n");
 }
 
-TEST_CASE("CommandProcessorTest - KingCaptureSetsGameOver") {
+TEST_CASE("GameInputHandlerTest - KingCaptureSetsGameOver") {
     kfc::BoardModel board = kfc::test::make_board({{"wR", ".", "bK"}});
     kfc::GameState state(board);
-    kfc::CommandProcessor processor(state);
+    kfc::GameInputHandler processor(state);
     std::ostringstream sink;
 
     CHECK_FALSE(state.is_game_over());
@@ -307,10 +307,10 @@ TEST_CASE("CommandProcessorTest - KingCaptureSetsGameOver") {
     CHECK_EQ(state.token_at(0, 2), "wR");
 }
 
-TEST_CASE("CommandProcessorTest - CommandsIgnoredAfterGameOver") {
+TEST_CASE("GameInputHandlerTest - CommandsIgnoredAfterGameOver") {
     kfc::BoardModel board = kfc::test::make_board({{"wR", ".", "bK"}, {".", "wN", "."}});
     kfc::GameState state(board);
-    kfc::CommandProcessor processor(state);
+    kfc::GameInputHandler processor(state);
     std::ostringstream sink;
 
     processor.execute("click 50 50", sink);
@@ -334,10 +334,10 @@ TEST_CASE("CommandProcessorTest - CommandsIgnoredAfterGameOver") {
     CHECK(kfc::test::layout_matches(state, board_snapshot));
 }
 
-TEST_CASE("CommandProcessorTest - PrintBoardAfterKingCapture") {
+TEST_CASE("GameInputHandlerTest - PrintBoardAfterKingCapture") {
     kfc::BoardModel board = kfc::test::make_board({{"wR", ".", "bK"}});
     kfc::GameState state(board);
-    kfc::CommandProcessor processor(state);
+    kfc::GameInputHandler processor(state);
     std::ostringstream sink;
 
     processor.execute("click 50 50", sink);
@@ -349,10 +349,10 @@ TEST_CASE("CommandProcessorTest - PrintBoardAfterKingCapture") {
     CHECK_EQ(output.str(), ". . wR\n");
 }
 
-TEST_CASE("CommandProcessorTest - JumpCommandAirbornePieceCapturesArrivingEnemy") {
+TEST_CASE("GameInputHandlerTest - JumpCommandAirbornePieceCapturesArrivingEnemy") {
     kfc::BoardModel board = kfc::test::make_board({{".", ".", "."}, {"wK", ".", "bR"}, {".", ".", "."}});
     kfc::GameState state(board);
-    kfc::CommandProcessor processor(state);
+    kfc::GameInputHandler processor(state);
     std::ostringstream sink;
 
     processor.execute("jump 50 150", sink);
@@ -365,9 +365,9 @@ TEST_CASE("CommandProcessorTest - JumpCommandAirbornePieceCapturesArrivingEnemy"
     CHECK_EQ(output.str(), ". . .\nwK . .\n. . .\n");
 }
 
-TEST_CASE("CommandProcessorTest - CommandProcessorWaitWithoutMs") {
+TEST_CASE("GameInputHandlerTest - GameInputHandlerWaitWithoutMs") {
     kfc::GameState state(kfc::test::make_board({{"wK", ".", "bK"}}));
-    kfc::CommandProcessor processor(state);
+    kfc::GameInputHandler processor(state);
     std::ostringstream sink;
 
     CHECK_EQ(state.clock_ms(), 0);
@@ -375,9 +375,9 @@ TEST_CASE("CommandProcessorTest - CommandProcessorWaitWithoutMs") {
     CHECK_EQ(state.clock_ms(), 0);
 }
 
-TEST_CASE("CommandProcessorTest - CommandProcessorUnknownVerb") {
+TEST_CASE("GameInputHandlerTest - GameInputHandlerUnknownVerb") {
     kfc::GameState state(kfc::test::make_board({{"wK", ".", "bK"}}));
-    kfc::CommandProcessor processor(state);
+    kfc::GameInputHandler processor(state);
     std::ostringstream sink;
 
     processor.execute("foobar 1 2", sink);
@@ -385,10 +385,10 @@ TEST_CASE("CommandProcessorTest - CommandProcessorUnknownVerb") {
     CHECK_EQ(state.clock_ms(), 0);
 }
 
-TEST_CASE("CommandProcessorTest - JumpCommandTooLateDoesNotSavePiece") {
+TEST_CASE("GameInputHandlerTest - JumpCommandTooLateDoesNotSavePiece") {
     kfc::BoardModel board = kfc::test::make_board({{".", ".", "."}, {"wK", ".", "bR"}, {".", ".", "."}});
     kfc::GameState state(board);
-    kfc::CommandProcessor processor(state);
+    kfc::GameInputHandler processor(state);
     std::ostringstream sink;
 
     processor.execute("click 250 150", sink);
@@ -401,27 +401,27 @@ TEST_CASE("CommandProcessorTest - JumpCommandTooLateDoesNotSavePiece") {
     CHECK_EQ(output.str(), ". . .\nbR . .\n. . .\n");
 }
 
-TEST_CASE("CommandProcessorTest - CommandProcessorClickWithoutCoords") {
+TEST_CASE("GameInputHandlerTest - GameInputHandlerClickWithoutCoords") {
     kfc::GameState state(kfc::test::make_board({{"wK", ".", "bK"}}));
-    kfc::CommandProcessor processor(state);
+    kfc::GameInputHandler processor(state);
     std::ostringstream sink;
 
     processor.execute("click", sink);
     CHECK_FALSE(state.has_selection());
 }
 
-TEST_CASE("CommandProcessorTest - CommandProcessorJumpWithoutCoords") {
+TEST_CASE("GameInputHandlerTest - GameInputHandlerJumpWithoutCoords") {
     kfc::GameState state(kfc::test::make_board({{"wK", ".", "bK"}}));
-    kfc::CommandProcessor processor(state);
+    kfc::GameInputHandler processor(state);
     std::ostringstream sink;
 
     processor.execute("jump", sink);
     CHECK_FALSE(state.is_piece_jumping(0, 0));
 }
 
-TEST_CASE("CommandProcessorTest - CommandProcessorPrintPartialCommandIgnored") {
+TEST_CASE("GameInputHandlerTest - GameInputHandlerPrintPartialCommandIgnored") {
     kfc::GameState state(kfc::test::make_board({{"wK", ".", "bK"}}));
-    kfc::CommandProcessor processor(state);
+    kfc::GameInputHandler processor(state);
     std::ostringstream output;
 
     processor.execute("print", output);
@@ -430,18 +430,18 @@ TEST_CASE("CommandProcessorTest - CommandProcessorPrintPartialCommandIgnored") {
     CHECK(output.str().empty());
 }
 
-TEST_CASE("CommandProcessorTest - CommandProcessorSelectEmptySquare") {
+TEST_CASE("GameInputHandlerTest - GameInputHandlerSelectEmptySquare") {
     kfc::GameState state(kfc::test::make_board({{"wK", ".", "bK"}}));
-    kfc::CommandProcessor processor(state);
+    kfc::GameInputHandler processor(state);
     std::ostringstream sink;
 
     processor.execute("click 150 50", sink);
     CHECK_FALSE(state.has_selection());
 }
 
-TEST_CASE("CommandProcessorTest - CommandProcessorFriendlyClickSameCellJumps") {
+TEST_CASE("GameInputHandlerTest - GameInputHandlerFriendlyClickSameCellJumps") {
     kfc::GameState state(kfc::test::make_board({{"wK", ".", "bK"}}));
-    kfc::CommandProcessor processor(state);
+    kfc::GameInputHandler processor(state);
     std::ostringstream sink;
 
     processor.execute("click 50 50", sink);
@@ -451,9 +451,9 @@ TEST_CASE("CommandProcessorTest - CommandProcessorFriendlyClickSameCellJumps") {
     CHECK(state.is_piece_jumping(0, 0));
 }
 
-TEST_CASE("CommandProcessorTest - FriendlyClickSameCellWhileMovingIgnored") {
+TEST_CASE("GameInputHandlerTest - FriendlyClickSameCellWhileMovingIgnored") {
     kfc::GameState state(kfc::test::make_board({{"wR", ".", "."}}));
-    kfc::CommandProcessor processor(state);
+    kfc::GameInputHandler processor(state);
     std::ostringstream sink;
 
     processor.execute("click 50 50", sink);
@@ -467,9 +467,9 @@ TEST_CASE("CommandProcessorTest - FriendlyClickSameCellWhileMovingIgnored") {
     CHECK_FALSE(state.is_piece_jumping(0, 0));
 }
 
-TEST_CASE("CommandProcessorTest - FriendlyClickSameCellWhileJumpingIgnored") {
+TEST_CASE("GameInputHandlerTest - FriendlyClickSameCellWhileJumpingIgnored") {
     kfc::GameState state(kfc::test::make_board({{"wK", ".", "bK"}}));
-    kfc::CommandProcessor processor(state);
+    kfc::GameInputHandler processor(state);
     std::ostringstream sink;
 
     processor.execute("click 50 50", sink);
@@ -483,36 +483,36 @@ TEST_CASE("CommandProcessorTest - FriendlyClickSameCellWhileJumpingIgnored") {
     CHECK(state.has_selection());
 }
 
-TEST_CASE("CommandProcessorTest - CommandProcessorJumpOutsideGrid") {
+TEST_CASE("GameInputHandlerTest - GameInputHandlerJumpOutsideGrid") {
     kfc::GameState state(kfc::test::make_board({{"wK", ".", "bK"}}));
-    kfc::CommandProcessor processor(state);
+    kfc::GameInputHandler processor(state);
     std::ostringstream sink;
 
     processor.execute("jump 350 50", sink);
     CHECK_FALSE(state.is_piece_jumping(0, 0));
 }
 
-TEST_CASE("CommandProcessorTest - CommandProcessorJumpOnEmptyCell") {
+TEST_CASE("GameInputHandlerTest - GameInputHandlerJumpOnEmptyCell") {
     kfc::GameState state(kfc::test::make_board({{"wK", ".", "bK"}}));
-    kfc::CommandProcessor processor(state);
+    kfc::GameInputHandler processor(state);
     std::ostringstream sink;
 
     processor.execute("jump 150 50", sink);
     CHECK_FALSE(state.is_piece_jumping(0, 1));
 }
 
-TEST_CASE("CommandProcessorTest - ClickOnEmptyBoardIgnored") {
+TEST_CASE("GameInputHandlerTest - ClickOnEmptyBoardIgnored") {
     kfc::GameState state(kfc::BoardModel{});
-    kfc::CommandProcessor processor(state);
+    kfc::GameInputHandler processor(state);
     std::ostringstream sink;
 
     processor.execute("click 50 50", sink);
     CHECK_FALSE(state.has_selection());
 }
 
-TEST_CASE("CommandProcessorTest - JumpWhilePieceMovingIgnored") {
+TEST_CASE("GameInputHandlerTest - JumpWhilePieceMovingIgnored") {
     kfc::GameState state(kfc::test::make_board({{"wR", ".", "."}}));
-    kfc::CommandProcessor processor(state);
+    kfc::GameInputHandler processor(state);
     std::ostringstream sink;
 
     processor.execute("click 50 50", sink);
@@ -524,9 +524,9 @@ TEST_CASE("CommandProcessorTest - JumpWhilePieceMovingIgnored") {
     CHECK_FALSE(state.is_piece_jumping(0, 0));
 }
 
-TEST_CASE("CommandProcessorTest - MoveAttemptWhilePieceMovingIgnored") {
+TEST_CASE("GameInputHandlerTest - MoveAttemptWhilePieceMovingIgnored") {
     kfc::GameState state(kfc::test::make_board({{"wR", ".", "bK"}}));
-    kfc::CommandProcessor processor(state);
+    kfc::GameInputHandler processor(state);
     std::ostringstream sink;
 
     processor.execute("click 50 50", sink);

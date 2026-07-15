@@ -1,6 +1,6 @@
 #pragma once
 
-#include "io/command_processor.h"
+#include "io/game_input_handler.h"
 #include "logic/game_state.h"
 
 #include <iosfwd>
@@ -9,7 +9,7 @@
 
 namespace kfc {
 
-// CLI/VPL application shell: owns one GameState and wires it to a CommandProcessor.
+// CLI/VPL application shell: owns one GameState and wires it to a GameInputHandler.
 // Provides the stable entry point used by main.cpp; does not parse VPL input or
 // implement game rules. GUI code may bypass this class and use GameState directly.
 class GameEngine {
@@ -24,7 +24,7 @@ public:
 
 private:
     GameState state_;
-    CommandProcessor processor_;
+    GameInputHandler processor_;
 };
 
 }  // namespace kfc

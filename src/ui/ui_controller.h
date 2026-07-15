@@ -2,7 +2,7 @@
 
 #include "i_ui_input_sink.h"
 #include "i_ui_renderer.h"
-#include "../io/command_processor.h"
+#include "../io/game_input_handler.h"
 #include "../logic/game_state.h"
 
 #include <cstdint>
@@ -11,8 +11,8 @@
 namespace kfc {
 
 // GUI application loop: advances the realtime clock each frame, builds a view model
-// for rendering, and routes mouse input through CommandProcessor. Does not draw
-// pixels or implement rules; collaborates with GameState, CommandProcessor, and
+// for rendering, and routes mouse input through GameInputHandler. Does not draw
+// pixels or implement rules; collaborates with GameState, GameInputHandler, and
 // IUiRenderer.
 class UiController final : public IUiInputSink {
 public:
@@ -29,7 +29,7 @@ public:
 
 private:
     GameState& state_;
-    CommandProcessor processor_;
+    GameInputHandler processor_;
     std::unique_ptr<IUiRenderer> renderer_;
     int cell_pixel_size_ = 0;
 };

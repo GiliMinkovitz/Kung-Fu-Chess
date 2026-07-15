@@ -1,4 +1,4 @@
-#include "command_processor.h"
+#include "game_input_handler.h"
 
 #include "board_writer.h"
 #include "../model/game_config.h"
@@ -8,10 +8,10 @@
 
 namespace kfc {
 
-CommandProcessor::CommandProcessor(GameState& state, int cell_pixel_size)
+GameInputHandler::GameInputHandler(GameState& state, int cell_pixel_size)
     : state_(state), cell_pixel_size_(cell_pixel_size) {}
 
-void CommandProcessor::execute(const std::string& command, std::ostream& out) {
+void GameInputHandler::execute(const std::string& command, std::ostream& out) {
     std::istringstream stream(command);
     std::string verb;
     stream >> verb;
@@ -48,16 +48,16 @@ void CommandProcessor::execute(const std::string& command, std::ostream& out) {
     }
 }
 
-void CommandProcessor::handle_pixel_click(int x, int y) {
+void GameInputHandler::handle_pixel_click(int x, int y) {
     handle_click(x, y);
 }
 
-void CommandProcessor::handle_pixel_jump(int x, int y) {
+void GameInputHandler::handle_pixel_jump(int x, int y) {
     handle_jump(x, y);
 }
 
 // Click state machine: no selection -> select; friendly -> re-select or jump; else move.
-void CommandProcessor::handle_click(int x, int y) {
+void GameInputHandler::handle_click(int x, int y) {
     if (state_.is_game_over()) {
         return;
     }
@@ -81,13 +81,13 @@ void CommandProcessor::handle_click(int x, int y) {
     handle_move_attempt(row, col);
 }
 
-void CommandProcessor::handle_select(std::size_t row, std::size_t col) {
+void GameInputHandler::handle_select(std::size_t row, std::size_t col) {
     if (state_.is_selectable_piece(row, col)) {
         state_.select(row, col);
     }
 }
 
-void CommandProcessor::handle_friendly_click(std::size_t row, std::size_t col) {
+void GameInputHandler::handle_friendly_click(std::size_t row, std::size_t col) {
     std::size_t from_row = 0;
     std::size_t from_col = 0;
     // Clicking the already-selected friendly piece triggers a jump, not a re-select.
@@ -102,7 +102,7 @@ void CommandProcessor::handle_friendly_click(std::size_t row, std::size_t col) {
     state_.select(row, col);
 }
 
-void CommandProcessor::handle_move_attempt(std::size_t row, std::size_t col) {
+void GameInputHandler::handle_move_attempt(std::size_t row, std::size_t col) {
     std::size_t from_row = 0;
     std::size_t from_col = 0;
     state_.selection(from_row, from_col);
@@ -114,7 +114,7 @@ void CommandProcessor::handle_move_attempt(std::size_t row, std::size_t col) {
     state_.move_selected_to(row, col);
 }
 
-void CommandProcessor::handle_jump(int x, int y) {
+void GameInputHandler::handle_jump(int x, int y) {
     if (state_.is_game_over()) {
         return;
     }
@@ -133,7 +133,7 @@ void CommandProcessor::handle_jump(int x, int y) {
     state_.clear_selection();
 }
 
-void CommandProcessor::handle_wait(std::int64_t ms) {
+void GameInputHandler::handle_wait(std::int64_t ms) {
     if (state_.is_game_over()) {
         return;
     }
@@ -141,11 +141,11 @@ void CommandProcessor::handle_wait(std::int64_t ms) {
     state_.add_clock(ms);
 }
 
-void CommandProcessor::handle_print_board(std::ostream& out) {
+void GameInputHandler::handle_print_board(std::ostream& out) {
     state_.write_board(out, kfc::write_board);
 }
 
-bool CommandProcessor::pixel_to_cell(int x, int y, std::size_t& row, std::size_t& col) const {
+bool GameInputHandler::pixel_to_cell(int x, int y, std::size_t& row, std::size_t& col) const {
     if (x < 0 || y < 0) {
         return false;
     }

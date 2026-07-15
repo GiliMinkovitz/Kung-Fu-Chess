@@ -1,5 +1,5 @@
 #include "engine/game_engine.h"
-#include "io/command_processor.h"
+#include "io/game_input_handler.h"
 #include "test_helpers.h"
 
 #include <doctest/doctest.h>
@@ -7,11 +7,11 @@
 #include <string>
 #include <vector>
 
-TEST_CASE("GameEngineTest - ExecutePrintBoardDelegatesToCommandProcessor") {
+TEST_CASE("GameEngineTest - ExecutePrintBoardDelegatesToGameInputHandler") {
     const kfc::BoardModel board = kfc::test::make_board({{"wK", ".", "bK"}});
     kfc::GameEngine engine(board);
     kfc::GameState reference_state(board);
-    kfc::CommandProcessor reference_processor(reference_state);
+    kfc::GameInputHandler reference_processor(reference_state);
 
     std::ostringstream engine_out;
     std::ostringstream processor_out;

@@ -1,5 +1,5 @@
 #include "io/board_writer.h"
-#include "io/command_processor.h"
+#include "io/game_input_handler.h"
 #include "model/board_model.h"
 #include "logic/game_state.h"
 #include "test_helpers.h"
@@ -23,7 +23,7 @@ TEST_CASE("IntegrationTest - CommandSequenceWriteBoardGroundTruth") {
 
     SUBCASE("KingMoveSequence") {
         kfc::GameState state(kfc::test::make_board({{"wK", ".", "bK"}, {".", ".", "."}}));
-        kfc::CommandProcessor processor(state);
+        kfc::GameInputHandler processor(state);
 
         CHECK_EQ(capture_board(state), "wK . bK\n. . .");
 
@@ -37,7 +37,7 @@ TEST_CASE("IntegrationTest - CommandSequenceWriteBoardGroundTruth") {
 
     SUBCASE("RookCaptureSequence") {
         kfc::GameState state(kfc::test::make_board({{"wR", ".", "bK"}}));
-        kfc::CommandProcessor processor(state);
+        kfc::GameInputHandler processor(state);
 
         CHECK_EQ(capture_board(state), "wR . bK");
 

@@ -51,7 +51,7 @@ set(KFC_SOURCES
     src/realtime/collision_resolver.cpp
     src/realtime/real_time_arbiter.cpp
     src/logic/game_state.cpp
-    src/io/command_processor.cpp
+    src/io/game_input_handler.cpp
     src/rules/move_validator.cpp
     src/engine/game_engine.cpp
     ${KFC_UI_SOURCES}
@@ -141,7 +141,7 @@ set(KFC_TEST_SOURCES
     tests/unit/realtime/real_time_arbiter_tests.cpp
     tests/unit/rules/game_rules_tests.cpp
     tests/unit/io/board_writer_tests.cpp
-    tests/unit/io/command_processor_tests.cpp
+    tests/unit/io/game_input_handler_tests.cpp
     tests/unit/io/vpl_io_tests.cpp
     tests/unit/engine/game_engine_tests.cpp
     tests/unit/ui/board_view_builder_tests.cpp
