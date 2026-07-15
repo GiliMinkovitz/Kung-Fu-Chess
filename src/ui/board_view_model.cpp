@@ -2,21 +2,32 @@
 
 namespace kfc {
 
-std::size_t board_view_cell_index(std::size_t row, std::size_t col, std::size_t cols) noexcept {
-    return row * cols + col;
+namespace {
+
+CellView kEmptyCellView{};
+
+}  // namespace
+
+std::size_t board_view_cell_index(std::size_t row, std::size_t col, std::size_t width) noexcept {
+    return row * width + col;
 }
 
-std::string board_view_token_at(const BoardViewModel& view, std::size_t row, std::size_t col) {
-    if (row >= view.rows || col >= view.cols) {
-        return std::string(1, kEmptyToken);
+const CellView& board_view_cell_at(const BoardViewModel& view, std::size_t row, std::size_t col) {
+    if (row >= view.height || col >= view.width) {
+        return kEmptyCellView;
     }
 
-    const std::size_t index = board_view_cell_index(row, col, view.cols);
-    if (index >= view.tokens.size()) {
-        return std::string(1, kEmptyToken);
+    const std::size_t index = board_view_cell_index(row, col, view.width);
+    if (index >= view.cells.size()) {
+        return kEmptyCellView;
     }
 
-    return view.tokens[index];
+    return view.cells[index];
+}
+
+std::optional<PieceView> board_view_piece_at(const BoardViewModel& view, std::size_t row,
+                                             std::size_t col) {
+    return board_view_cell_at(view, row, col).piece;
 }
 
 bool board_view_is_move_origin(const BoardViewModel& view, std::size_t row, std::size_t col) {

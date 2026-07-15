@@ -9,30 +9,42 @@ TEST_CASE("BoardViewBuilderTest - EmptyBoard") {
     kfc::GameState state(kfc::BoardModel{});
     const kfc::BoardViewModel view = kfc::BoardViewBuilder::build(state);
 
-    CHECK_EQ(view.rows, 0u);
-    CHECK_EQ(view.cols, 0u);
-    CHECK(view.tokens.empty());
+    CHECK_EQ(view.height, 0u);
+    CHECK_EQ(view.width, 0u);
+    CHECK(view.cells.empty());
     CHECK_FALSE(view.selection.has_value());
     CHECK(view.animations.moves.empty());
     CHECK(view.animations.jumps.empty());
 }
 
-TEST_CASE("BoardViewBuilderTest - MapsDimensionsTokensAndClock") {
+TEST_CASE("BoardViewBuilderTest - MapsDimensionsPiecesAndClock") {
     kfc::GameState state(kfc::test::make_board({{"wK", ".", "bK"}}));
     state.add_clock(250);
 
     const kfc::BoardViewModel view = kfc::BoardViewBuilder::build(state);
 
-    CHECK_EQ(view.rows, 1u);
-    CHECK_EQ(view.cols, 3u);
+    CHECK_EQ(view.height, 1u);
+    CHECK_EQ(view.width, 3u);
     CHECK_EQ(view.clock_ms, 250);
     CHECK_FALSE(view.game_over);
-    REQUIRE_EQ(view.tokens.size(), 3u);
-    CHECK_EQ(view.tokens[0], "wK");
-    CHECK_EQ(view.tokens[1], ".");
-    CHECK_EQ(view.tokens[2], "bK");
-    CHECK_EQ(kfc::board_view_token_at(view, 0, 0), "wK");
-    CHECK_EQ(kfc::board_view_token_at(view, 0, 2), "bK");
+    REQUIRE_EQ(view.cells.size(), 3u);
+    REQUIRE(view.cells[0].piece.has_value());
+    CHECK(view.cells[0].piece->color == kfc::PieceColor::White);
+    CHECK(view.cells[0].piece->kind == kfc::PieceKind::King);
+    CHECK_FALSE(view.cells[1].piece.has_value());
+    REQUIRE(view.cells[2].piece.has_value());
+    CHECK(view.cells[2].piece->color == kfc::PieceColor::Black);
+    CHECK(view.cells[2].piece->kind == kfc::PieceKind::King);
+
+    const std::optional<kfc::PieceView> white_king = kfc::board_view_piece_at(view, 0, 0);
+    REQUIRE(white_king.has_value());
+    CHECK(white_king->color == kfc::PieceColor::White);
+    CHECK(white_king->kind == kfc::PieceKind::King);
+
+    const std::optional<kfc::PieceView> black_king = kfc::board_view_piece_at(view, 0, 2);
+    REQUIRE(black_king.has_value());
+    CHECK(black_king->color == kfc::PieceColor::Black);
+    CHECK(black_king->kind == kfc::PieceKind::King);
 }
 
 TEST_CASE("BoardViewBuilderTest - SelectionIncludedWhenPresent") {

@@ -1,7 +1,7 @@
 #include "ctd26_renderer.h"
 
 #include "i_ui_input_sink.h"
-#include "../model/game_config.h"
+#include "../model/piece_token.h"
 
 #include <img.hpp>
 
@@ -83,12 +83,12 @@ UiFrameResult Ctd26Renderer::present(const BoardViewModel& view) {
         return {true};
     }
 
-    const int width = static_cast<int>(view.cols) * cell_size_;
-    const int height = static_cast<int>(view.rows) * cell_size_;
+    const int width = static_cast<int>(view.width) * cell_size_;
+    const int height = static_cast<int>(view.height) * cell_size_;
     impl_->frame->create(width, height, to_scalar(theme_.frame_background));
 
     draw_static_board(view);
-    draw_moving_tokens(view);
+    draw_moving_pieces(view);
     draw_game_over_banner(view.game_over);
 
     impl_->frame->show_in(kWindowName);
@@ -121,22 +121,18 @@ void Ctd26Renderer::draw_jump_effect(int x, int y, float jump_progress) {
                             theme_.jump_border_thickness);
 }
 
-void Ctd26Renderer::draw_token(const std::string& token, int x, int y) {
-    if (token.empty() || token == std::string(1, kEmptyToken)) {
-        return;
-    }
-
+void Ctd26Renderer::draw_piece(const PieceView& piece, int x, int y) {
+    const std::string label = std::string{color_to_char(piece.color), kind_to_char(piece.kind)};
     const cv::Scalar color =
-        (!token.empty() && token.front() == kWhiteColor) ? to_scalar(theme_.white_token)
-                                                         : to_scalar(theme_.black_token);
+        piece.color == PieceColor::White ? to_scalar(theme_.white_token) : to_scalar(theme_.black_token);
     const int text_x = x + cell_size_ / 6;
     const int text_y = y + (cell_size_ * 2) / 3;
-    impl_->frame->put_text(token, text_x, text_y, theme_.token_font_scale, color, theme_.token_thickness);
+    impl_->frame->put_text(label, text_x, text_y, theme_.token_font_scale, color, theme_.token_thickness);
 }
 
 void Ctd26Renderer::draw_static_board(const BoardViewModel& view) {
-    for (std::size_t row = 0; row < view.rows; ++row) {
-        for (std::size_t col = 0; col < view.cols; ++col) {
+    for (std::size_t row = 0; row < view.height; ++row) {
+        for (std::size_t col = 0; col < view.width; ++col) {
             const int x = static_cast<int>(col) * cell_size_;
             const int y = static_cast<int>(row) * cell_size_;
             const bool light = (row + col) % 2 == 0;
@@ -155,15 +151,18 @@ void Ctd26Renderer::draw_static_board(const BoardViewModel& view) {
                 continue;
             }
 
-            draw_token(board_view_token_at(view, row, col), x, y);
+            if (const std::optional<PieceView> piece = board_view_piece_at(view, row, col);
+                piece.has_value()) {
+                draw_piece(*piece, x, y);
+            }
         }
     }
 }
 
-void Ctd26Renderer::draw_moving_tokens(const BoardViewModel& view) {
+void Ctd26Renderer::draw_moving_pieces(const BoardViewModel& view) {
     for (const ActiveMoveSnapshot& move : view.animations.moves) {
-        const std::string token = board_view_token_at(view, move.from_row, move.from_col);
-        if (token.empty() || token == std::string(1, kEmptyToken)) {
+        const std::optional<PieceView> piece = board_view_piece_at(view, move.from_row, move.from_col);
+        if (!piece.has_value()) {
             continue;
         }
 
@@ -175,7 +174,7 @@ void Ctd26Renderer::draw_moving_tokens(const BoardViewModel& view) {
 
         const int draw_x = static_cast<int>(from_x + (to_x - from_x) * progress);
         const int draw_y = static_cast<int>(from_y + (to_y - from_y) * progress);
-        draw_token(token, draw_x, draw_y);
+        draw_piece(*piece, draw_x, draw_y);
     }
 }
 

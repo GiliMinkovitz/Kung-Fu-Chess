@@ -4,8 +4,6 @@
 #include "ui_theme.h"
 
 #include <memory>
-#include <string>
-
 namespace kfc {
 
 struct Ctd26RendererImpl;
@@ -27,9 +25,9 @@ private:
     void draw_cell_background(int x, int y, bool light);
     void draw_selection_highlight(int x, int y);
     void draw_jump_effect(int x, int y, float jump_progress);
-    void draw_token(const std::string& token, int x, int y);
+    void draw_piece(const PieceView& piece, int x, int y);
     void draw_static_board(const BoardViewModel& view);
-    void draw_moving_tokens(const BoardViewModel& view);
+    void draw_moving_pieces(const BoardViewModel& view);
     void draw_game_over_banner(bool game_over);
 
     UiTheme theme_;

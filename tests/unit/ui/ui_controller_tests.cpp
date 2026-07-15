@@ -33,7 +33,7 @@ TEST_CASE("UiControllerTest - FrameAdvancesClockAndPresentsView") {
     CHECK_EQ(state.clock_ms(), 16);
     CHECK_EQ(renderer_ptr->present_count(), 1u);
     CHECK_EQ(renderer_ptr->last_view().clock_ms, 16);
-    CHECK_EQ(renderer_ptr->last_view().tokens.size(), 3u);
+    CHECK_EQ(renderer_ptr->last_view().cells.size(), 3u);
 }
 
 TEST_CASE("UiControllerTest - PixelClickRoutesThroughController") {
