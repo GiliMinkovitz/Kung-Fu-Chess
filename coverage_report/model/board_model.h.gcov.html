@@ -37,7 +37,7 @@
           </tr>
           <tr>
             <td class="headerItem">Test Date:</td>
-            <td class="headerValue">2026-07-14 09:20:55</td>
+            <td class="headerValue">2026-07-15 14:24:53</td>
             <td></td>
             <td class="headerItem">Functions:</td>
             <td class="headerCovTableEntryHi">100.0&nbsp;%</td>
@@ -77,52 +77,59 @@
 <span id="L15"><span class="lineNum">      15</span>              : struct BoardModelTestAccess;</span>
 <span id="L16"><span class="lineNum">      16</span>              : }</span>
 <span id="L17"><span class="lineNum">      17</span>              : </span>
-<span id="L18"><span class="lineNum">      18</span>              : class BoardModel {</span>
-<span id="L19"><span class="lineNum">      19</span>              :     friend struct test::BoardModelTestAccess;</span>
-<span id="L20"><span class="lineNum">      20</span>              : public:</span>
-<span id="L21"><span class="lineNum">      21</span> <span class="tlaGNC">         477 :     [[nodiscard]] std::size_t rows() const noexcept { return cells_.size(); }</span></span>
-<span id="L22"><span class="lineNum">      22</span> <span class="tlaGNC">         534 :     [[nodiscard]] std::size_t cols() const noexcept {</span></span>
-<span id="L23"><span class="lineNum">      23</span> <span class="tlaGNC">         534 :         return cells_.empty() ? 0 : cells_.front().size();</span></span>
-<span id="L24"><span class="lineNum">      24</span>              :     }</span>
-<span id="L25"><span class="lineNum">      25</span>              :     [[nodiscard]] bool is_in_bounds(std::size_t row, std::size_t col) const noexcept;</span>
-<span id="L26"><span class="lineNum">      26</span>              :     [[nodiscard]] bool contains(int row, int col) const noexcept;</span>
-<span id="L27"><span class="lineNum">      27</span>              :     [[nodiscard]] bool is_valid() const noexcept;</span>
-<span id="L28"><span class="lineNum">      28</span>              : </span>
-<span id="L29"><span class="lineNum">      29</span>              :     [[nodiscard]] bool is_empty(std::size_t row, std::size_t col) const;</span>
-<span id="L30"><span class="lineNum">      30</span>              :     [[nodiscard]] const Piece* piece_at(std::size_t row, std::size_t col) const;</span>
-<span id="L31"><span class="lineNum">      31</span>              :     [[nodiscard]] Piece* piece_at(std::size_t row, std::size_t col);</span>
-<span id="L32"><span class="lineNum">      32</span>              : </span>
-<span id="L33"><span class="lineNum">      33</span>              :     [[nodiscard]] Piece&amp; get_piece(Piece::Id id);</span>
+<span id="L18"><span class="lineNum">      18</span>              : // Authoritative board snapshot: a grid of piece IDs plus a stable piece store keyed by</span>
+<span id="L19"><span class="lineNum">      19</span>              : // Piece::Id. All spatial queries and mutations go through here. Does not validate</span>
+<span id="L20"><span class="lineNum">      20</span>              : // move legality, advance time, or interpret game rules.</span>
+<span id="L21"><span class="lineNum">      21</span>              : //</span>
+<span id="L22"><span class="lineNum">      22</span>              : // Invariant: cells_[row][col] and pieces_[id-1].cell always refer to the same</span>
+<span id="L23"><span class="lineNum">      23</span>              : // occupancy once the board is in a settled (non-animating) state.</span>
+<span id="L24"><span class="lineNum">      24</span>              : class BoardModel {</span>
+<span id="L25"><span class="lineNum">      25</span>              :     friend struct test::BoardModelTestAccess;</span>
+<span id="L26"><span class="lineNum">      26</span>              : public:</span>
+<span id="L27"><span class="lineNum">      27</span> <span class="tlaGNC">         503 :     [[nodiscard]] std::size_t rows() const noexcept { return cells_.size(); }</span></span>
+<span id="L28"><span class="lineNum">      28</span> <span class="tlaGNC">         557 :     [[nodiscard]] std::size_t cols() const noexcept {</span></span>
+<span id="L29"><span class="lineNum">      29</span> <span class="tlaGNC">         557 :         return cells_.empty() ? 0 : cells_.front().size();</span></span>
+<span id="L30"><span class="lineNum">      30</span>              :     }</span>
+<span id="L31"><span class="lineNum">      31</span>              :     [[nodiscard]] bool is_in_bounds(std::size_t row, std::size_t col) const noexcept;</span>
+<span id="L32"><span class="lineNum">      32</span>              :     [[nodiscard]] bool contains(int row, int col) const noexcept;</span>
+<span id="L33"><span class="lineNum">      33</span>              :     [[nodiscard]] bool is_valid() const noexcept;</span>
 <span id="L34"><span class="lineNum">      34</span>              : </span>
-<span id="L35"><span class="lineNum">      35</span>              :     void place_piece(Piece piece);</span>
-<span id="L36"><span class="lineNum">      36</span>              :     void place_piece_at(std::size_t row, std::size_t col, Piece piece);</span>
-<span id="L37"><span class="lineNum">      37</span>              :     void remove_piece_at(std::size_t row, std::size_t col);</span>
-<span id="L38"><span class="lineNum">      38</span>              :     void clear_cell(std::size_t row, std::size_t col);</span>
-<span id="L39"><span class="lineNum">      39</span>              : </span>
-<span id="L40"><span class="lineNum">      40</span>              :     [[nodiscard]] std::string token_at(std::size_t row, std::size_t col) const;</span>
+<span id="L35"><span class="lineNum">      35</span>              :     [[nodiscard]] bool is_empty(std::size_t row, std::size_t col) const;</span>
+<span id="L36"><span class="lineNum">      36</span>              :     [[nodiscard]] const Piece* piece_at(std::size_t row, std::size_t col) const;</span>
+<span id="L37"><span class="lineNum">      37</span>              :     [[nodiscard]] Piece* piece_at(std::size_t row, std::size_t col);</span>
+<span id="L38"><span class="lineNum">      38</span>              : </span>
+<span id="L39"><span class="lineNum">      39</span>              :     [[nodiscard]] Piece&amp; get_piece(Piece::Id id);</span>
+<span id="L40"><span class="lineNum">      40</span>              :     [[nodiscard]] const Piece&amp; get_piece(Piece::Id id) const;</span>
 <span id="L41"><span class="lineNum">      41</span>              : </span>
-<span id="L42"><span class="lineNum">      42</span> <span class="tlaGNC">           1 :     [[nodiscard]] Piece::Id next_piece_id() const noexcept {</span></span>
-<span id="L43"><span class="lineNum">      43</span> <span class="tlaGNC">           1 :         return static_cast&lt;Piece::Id&gt;(pieces_.size() + 1);</span></span>
-<span id="L44"><span class="lineNum">      44</span>              :     }</span>
-<span id="L45"><span class="lineNum">      45</span>              : </span>
-<span id="L46"><span class="lineNum">      46</span>              :     void append_token_row(const std::vector&lt;std::string&gt;&amp; tokens, std::size_t row_index,</span>
-<span id="L47"><span class="lineNum">      47</span>              :                           PieceFactory&amp; factory);</span>
+<span id="L42"><span class="lineNum">      42</span>              :     void place_piece(Piece piece);</span>
+<span id="L43"><span class="lineNum">      43</span>              :     void place_piece_at(std::size_t row, std::size_t col, Piece piece);</span>
+<span id="L44"><span class="lineNum">      44</span>              :     void remove_piece_at(std::size_t row, std::size_t col);</span>
+<span id="L45"><span class="lineNum">      45</span>              :     void clear_cell(std::size_t row, std::size_t col);</span>
+<span id="L46"><span class="lineNum">      46</span>              : </span>
+<span id="L47"><span class="lineNum">      47</span>              :     [[nodiscard]] std::string token_at(std::size_t row, std::size_t col) const;</span>
 <span id="L48"><span class="lineNum">      48</span>              : </span>
-<span id="L49"><span class="lineNum">      49</span>              :     static BoardModel from_token_grid(</span>
-<span id="L50"><span class="lineNum">      50</span>              :         std::initializer_list&lt;std::initializer_list&lt;const char*&gt;&gt; rows);</span>
-<span id="L51"><span class="lineNum">      51</span>              : </span>
-<span id="L52"><span class="lineNum">      52</span>              : private:</span>
-<span id="L53"><span class="lineNum">      53</span>              :     void store_piece(Piece piece);</span>
-<span id="L54"><span class="lineNum">      54</span>              :     [[nodiscard]] Piece* find_piece_by_id(Piece::Id id);</span>
-<span id="L55"><span class="lineNum">      55</span>              :     [[nodiscard]] const Piece* find_piece_by_id(Piece::Id id) const;</span>
-<span id="L56"><span class="lineNum">      56</span>              : </span>
-<span id="L57"><span class="lineNum">      57</span>              :     std::vector&lt;std::vector&lt;std::optional&lt;Piece::Id&gt;&gt;&gt; cells_;</span>
-<span id="L58"><span class="lineNum">      58</span>              :     std::vector&lt;Piece&gt; pieces_;</span>
-<span id="L59"><span class="lineNum">      59</span>              : };</span>
-<span id="L60"><span class="lineNum">      60</span>              : </span>
-<span id="L61"><span class="lineNum">      61</span>              : [[nodiscard]] bool operator==(const BoardModel&amp; lhs, const BoardModel&amp; rhs) noexcept;</span>
-<span id="L62"><span class="lineNum">      62</span>              : </span>
-<span id="L63"><span class="lineNum">      63</span>              : }  // namespace kfc</span>
+<span id="L49"><span class="lineNum">      49</span> <span class="tlaGNC">           2 :     [[nodiscard]] Piece::Id next_piece_id() const noexcept {</span></span>
+<span id="L50"><span class="lineNum">      50</span> <span class="tlaGNC">           2 :         return static_cast&lt;Piece::Id&gt;(pieces_.size() + 1);</span></span>
+<span id="L51"><span class="lineNum">      51</span>              :     }</span>
+<span id="L52"><span class="lineNum">      52</span>              : </span>
+<span id="L53"><span class="lineNum">      53</span>              :     void append_token_row(const std::vector&lt;std::string&gt;&amp; tokens, std::size_t row_index,</span>
+<span id="L54"><span class="lineNum">      54</span>              :                           PieceFactory&amp; factory);</span>
+<span id="L55"><span class="lineNum">      55</span>              : </span>
+<span id="L56"><span class="lineNum">      56</span>              :     static BoardModel from_token_grid(</span>
+<span id="L57"><span class="lineNum">      57</span>              :         std::initializer_list&lt;std::initializer_list&lt;const char*&gt;&gt; rows);</span>
+<span id="L58"><span class="lineNum">      58</span>              : </span>
+<span id="L59"><span class="lineNum">      59</span>              : private:</span>
+<span id="L60"><span class="lineNum">      60</span>              :     void store_piece(Piece piece);</span>
+<span id="L61"><span class="lineNum">      61</span>              :     [[nodiscard]] Piece* find_piece_by_id(Piece::Id id);</span>
+<span id="L62"><span class="lineNum">      62</span>              :     [[nodiscard]] const Piece* find_piece_by_id(Piece::Id id) const;</span>
+<span id="L63"><span class="lineNum">      63</span>              : </span>
+<span id="L64"><span class="lineNum">      64</span>              :     std::vector&lt;std::vector&lt;std::optional&lt;Piece::Id&gt;&gt;&gt; cells_;</span>
+<span id="L65"><span class="lineNum">      65</span>              :     std::vector&lt;Piece&gt; pieces_;</span>
+<span id="L66"><span class="lineNum">      66</span>              : };</span>
+<span id="L67"><span class="lineNum">      67</span>              : </span>
+<span id="L68"><span class="lineNum">      68</span>              : [[nodiscard]] bool operator==(const BoardModel&amp; lhs, const BoardModel&amp; rhs) noexcept;</span>
+<span id="L69"><span class="lineNum">      69</span>              : </span>
+<span id="L70"><span class="lineNum">      70</span>              : }  // namespace kfc</span>
         </pre>
               </td>
             </tr>

@@ -1,1 +1,1 @@
-genhtml '/mnt/c/Users/גילי/OneDrive/Desktop/Kung Fu Chess/build/coverage.info' --output-directory '/mnt/c/Users/גילי/OneDrive/Desktop/Kung Fu Chess/coverage_report' --ignore-errors source
+genhtml '/home/gili/Kung Fu Chess/build/coverage.info' --output-directory '/home/gili/Kung Fu Chess/coverage_report' --ignore-errors source

@@ -136,6 +136,7 @@ set(KFC_TEST_SOURCES
     tests/unit/rules/move_validator_tests.cpp
     tests/unit/realtime/collision_resolver_tests.cpp
     tests/unit/logic/game_state_tests.cpp
+    tests/unit/realtime/move_scheduler_tests.cpp
     tests/unit/realtime/real_time_arbiter_tests.cpp
     tests/unit/rules/game_rules_tests.cpp
     tests/unit/io/board_writer_tests.cpp

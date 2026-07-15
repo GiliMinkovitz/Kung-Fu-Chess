@@ -37,7 +37,7 @@
           </tr>
           <tr>
             <td class="headerItem">Test Date:</td>
-            <td class="headerValue">2026-07-14 09:20:55</td>
+            <td class="headerValue">2026-07-15 14:24:53</td>
             <td></td>
             <td class="headerItem">Functions:</td>
             <td class="headerCovTableEntryHi">100.0&nbsp;%</td>
@@ -71,22 +71,25 @@
 <span id="L9"><span class="lineNum">       9</span>              : </span>
 <span id="L10"><span class="lineNum">      10</span>              : namespace kfc {</span>
 <span id="L11"><span class="lineNum">      11</span>              : </span>
-<span id="L12"><span class="lineNum">      12</span>              : class GameEngine {</span>
-<span id="L13"><span class="lineNum">      13</span>              : public:</span>
-<span id="L14"><span class="lineNum">      14</span>              :     explicit GameEngine(BoardModel board);</span>
-<span id="L15"><span class="lineNum">      15</span>              : </span>
-<span id="L16"><span class="lineNum">      16</span>              :     void execute(const std::string&amp; command, std::ostream&amp; out);</span>
-<span id="L17"><span class="lineNum">      17</span>              :     void execute_all(const std::vector&lt;std::string&gt;&amp; commands, std::ostream&amp; out);</span>
+<span id="L12"><span class="lineNum">      12</span>              : // CLI/VPL application shell: owns one GameState and wires it to a CommandProcessor.</span>
+<span id="L13"><span class="lineNum">      13</span>              : // Provides the stable entry point used by main.cpp; does not parse VPL input or</span>
+<span id="L14"><span class="lineNum">      14</span>              : // implement game rules. GUI code may bypass this class and use GameState directly.</span>
+<span id="L15"><span class="lineNum">      15</span>              : class GameEngine {</span>
+<span id="L16"><span class="lineNum">      16</span>              : public:</span>
+<span id="L17"><span class="lineNum">      17</span>              :     explicit GameEngine(BoardModel board);</span>
 <span id="L18"><span class="lineNum">      18</span>              : </span>
-<span id="L19"><span class="lineNum">      19</span>              :     [[nodiscard]] const GameState&amp; state() const noexcept { return state_; }</span>
-<span id="L20"><span class="lineNum">      20</span> <span class="tlaGNC">           1 :     GameState&amp; state() noexcept { return state_; }</span></span>
+<span id="L19"><span class="lineNum">      19</span>              :     void execute(const std::string&amp; command, std::ostream&amp; out);</span>
+<span id="L20"><span class="lineNum">      20</span>              :     void execute_all(const std::vector&lt;std::string&gt;&amp; commands, std::ostream&amp; out);</span>
 <span id="L21"><span class="lineNum">      21</span>              : </span>
-<span id="L22"><span class="lineNum">      22</span>              : private:</span>
-<span id="L23"><span class="lineNum">      23</span>              :     GameState state_;</span>
-<span id="L24"><span class="lineNum">      24</span>              :     CommandProcessor processor_;</span>
-<span id="L25"><span class="lineNum">      25</span>              : };</span>
-<span id="L26"><span class="lineNum">      26</span>              : </span>
-<span id="L27"><span class="lineNum">      27</span>              : }  // namespace kfc</span>
+<span id="L22"><span class="lineNum">      22</span>              :     [[nodiscard]] const GameState&amp; state() const noexcept { return state_; }</span>
+<span id="L23"><span class="lineNum">      23</span> <span class="tlaGNC">           1 :     GameState&amp; state() noexcept { return state_; }</span></span>
+<span id="L24"><span class="lineNum">      24</span>              : </span>
+<span id="L25"><span class="lineNum">      25</span>              : private:</span>
+<span id="L26"><span class="lineNum">      26</span>              :     GameState state_;</span>
+<span id="L27"><span class="lineNum">      27</span>              :     CommandProcessor processor_;</span>
+<span id="L28"><span class="lineNum">      28</span>              : };</span>
+<span id="L29"><span class="lineNum">      29</span>              : </span>
+<span id="L30"><span class="lineNum">      30</span>              : }  // namespace kfc</span>
         </pre>
               </td>
             </tr>

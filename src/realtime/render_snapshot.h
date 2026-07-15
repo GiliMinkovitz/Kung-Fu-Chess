@@ -40,10 +40,6 @@ struct AnimationSnapshot {
     }
 
     const std::int64_t duration = arrival_time - start_time;
-    if (duration <= 0) {
-        return 1.0f;
-    }
-
     return static_cast<float>(clock_ms - start_time) / static_cast<float>(duration);
 }
 

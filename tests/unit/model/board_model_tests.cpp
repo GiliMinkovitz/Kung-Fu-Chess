@@ -65,6 +65,15 @@ TEST_CASE("BoardModelTest - GetPieceInvalidIdThrows") {
         std::out_of_range);
 }
 
+TEST_CASE("BoardModelTest - ConstGetPieceInvalidIdThrows") {
+    const kfc::BoardModel board = kfc::test::make_board({{"wK"}});
+    CHECK_THROWS_AS(
+        [&board]() -> const kfc::Piece& { return board.get_piece(999); }(), std::out_of_range);
+    CHECK_THROWS_AS(
+        [&board]() -> const kfc::Piece& { return board.get_piece(kfc::Piece::kInvalidId); }(),
+        std::out_of_range);
+}
+
 TEST_CASE("BoardModelTest - PlacePieceInvalidIdThrows") {
     kfc::BoardModel board;
     kfc::Piece invalid = kfc::test::make_piece(kfc::PieceColor::White, kfc::PieceKind::King);
