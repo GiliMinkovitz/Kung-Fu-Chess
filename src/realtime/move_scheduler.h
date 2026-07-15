@@ -11,6 +11,8 @@
 
 namespace kfc {
 
+// A move in flight: the piece remains at start_pos on the board until settlement.
+// Invariant: start_time <= arrival_time; only moves with clock < arrival_time are active.
 struct PendingMove {
     Piece::Id piece_id = Piece::kInvalidId;
     PieceColor color = PieceColor::White;
@@ -20,6 +22,7 @@ struct PendingMove {
     std::int64_t arrival_time = 0;
 };
 
+// Jump invulnerability window at a fixed cell; checked at move arrival, not on request.
 struct JumpState {
     Piece::Id piece_id = Piece::kInvalidId;
     PieceColor color = PieceColor::White;
@@ -33,8 +36,12 @@ class CollisionResolver;
 struct GameRules;
 struct ArrivingPieceInfo;
 
+// Time-indexed queues for in-flight moves and jumps. Stores schedules and answers
+// temporal queries; does not interpret chess rules except by forwarding to
+// CollisionResolver. Board mutation happens only in RealTimeArbiter's settle callback.
 class MoveScheduler {
 public:
+    // Invokes fn for each due move and removes them from pending_moves_.
     void for_each_pending_due(uint64_t current_time_ms,
                               const std::function<void(const PendingMove&)>& fn);
     [[nodiscard]] bool check_for_jump_capture(

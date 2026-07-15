@@ -8,11 +8,15 @@
 
 namespace kfc {
 
+// Input adapter: maps VPL text commands and pixel coordinates to GameState actions.
+// Encodes click semantics (select, move, jump-on-friendly-reclick) but does not
+// validate moves or mutate the board directly.
 class CommandProcessor {
 public:
     explicit CommandProcessor(GameState& state, int cell_pixel_size = kCellPixelSize);
 
     void execute(const std::string& command, std::ostream& out);
+    // Shared entry points used by both VPL parsing and the GUI (UiController).
     void handle_pixel_click(int x, int y);
     void handle_pixel_jump(int x, int y);
 

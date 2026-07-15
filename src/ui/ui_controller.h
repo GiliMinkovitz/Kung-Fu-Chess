@@ -10,6 +10,10 @@
 
 namespace kfc {
 
+// GUI application loop: advances the realtime clock each frame, builds a view model
+// for rendering, and routes mouse input through CommandProcessor. Does not draw
+// pixels or implement rules; collaborates with GameState, CommandProcessor, and
+// IUiRenderer.
 class UiController final : public IUiInputSink {
 public:
     UiController(GameState& state, std::unique_ptr<IUiRenderer> renderer);
@@ -17,6 +21,7 @@ public:
     UiController(const UiController&) = delete;
     UiController& operator=(const UiController&) = delete;
 
+    // Unlike CLI "wait" commands, the GUI drives time continuously via delta_ms.
     [[nodiscard]] UiFrameResult frame(std::int64_t delta_ms);
     void on_pixel_click(int x, int y) override;
     void on_pixel_jump(int x, int y) override;

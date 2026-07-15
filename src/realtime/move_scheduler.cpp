@@ -9,6 +9,7 @@ namespace kfc {
 bool MoveScheduler::is_piece_moving(uint64_t current_time_ms, std::size_t row,
                                     std::size_t col) const {
     const auto clock_ms = static_cast<std::int64_t>(current_time_ms);
+    // Until settlement, the piece still occupies its start cell on the board.
     for (const PendingMove& move : pending_moves_) {
         if (clock_ms < move.arrival_time && move.start_pos.first == row &&
             move.start_pos.second == col) {

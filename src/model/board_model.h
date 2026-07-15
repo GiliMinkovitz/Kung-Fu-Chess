@@ -15,6 +15,12 @@ namespace test {
 struct BoardModelTestAccess;
 }
 
+// Authoritative board snapshot: a grid of piece IDs plus a stable piece store keyed by
+// Piece::Id. All spatial queries and mutations go through here. Does not validate
+// move legality, advance time, or interpret game rules.
+//
+// Invariant: cells_[row][col] and pieces_[id-1].cell always refer to the same
+// occupancy once the board is in a settled (non-animating) state.
 class BoardModel {
     friend struct test::BoardModelTestAccess;
 public:

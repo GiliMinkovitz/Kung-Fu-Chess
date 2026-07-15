@@ -6,6 +6,9 @@ namespace kfc {
 
 namespace {
 
+// Sliding pieces validate geometry only; capture-vs-empty is enforced here so piece
+// validators stay unaware of occupant color. Pawns skip this (requires_destination_check=false)
+// because is_pawn_move already encodes capture rules.
 [[nodiscard]] bool is_destination_legal(const BoardModel& board, int start_row, int start_col,
                                         int end_row, int end_col) {
     const Piece* dest =

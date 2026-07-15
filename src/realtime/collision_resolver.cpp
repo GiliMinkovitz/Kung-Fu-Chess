@@ -20,6 +20,8 @@ bool CollisionResolver::has_common_route(const PendingMove& a, const PendingMove
         return true;
     }
 
+    // Also treat parallel moves on the same row/column as conflicting even when paths
+    // do not share a cell (Kung Fu Chess simultaneous-move restriction).
     const bool a_horizontal = a.start_pos.first == a.end_pos.first;
     const bool b_horizontal = b.start_pos.first == b.end_pos.first;
     if (a_horizontal && b_horizontal) {
@@ -85,6 +87,7 @@ bool CollisionResolver::check_for_jump_capture(
     const auto [end_row, end_col] = target_cell;
     const Piece& arriving_piece = board.get_piece(arriving_piece_info.piece_id);
 
+    // Active jump at the target cell captures the arriving piece (jump beats move arrival).
     for (const JumpState& jump : active_jumps) {
         if (clock_ms <= jump.arrival_time && jump.cell == target_cell &&
             arriving_piece.color != jump.color) {
@@ -96,6 +99,7 @@ bool CollisionResolver::check_for_jump_capture(
     }
 
     const Piece* destination = board.piece_at(end_row, end_col);
+    // Occupied by opponent: resolve capture here so RealTimeArbiter can skip normal placement.
     if (destination != nullptr && destination->color != arriving_piece.color) {
         if (rules.is_game_over(*destination)) {
             game_over = true;

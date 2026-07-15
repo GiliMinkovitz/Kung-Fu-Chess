@@ -9,6 +9,9 @@
 
 namespace kfc {
 
+// CLI/VPL application shell: owns one GameState and wires it to a CommandProcessor.
+// Provides the stable entry point used by main.cpp; does not parse VPL input or
+// implement game rules. GUI code may bypass this class and use GameState directly.
 class GameEngine {
 public:
     explicit GameEngine(BoardModel board);

@@ -7,6 +7,8 @@ namespace kfc {
 
 namespace {
 
+// Re-validated at arrival because the board may have changed while the move was in flight
+// (e.g. another piece moved onto the path or the start cell was cleared unexpectedly).
 [[nodiscard]] bool can_settle_move(const BoardModel& board, const GameRules& rules,
                                    const PendingMove& move) {
     const auto [start_row, start_col] = move.start_pos;
@@ -33,6 +35,8 @@ void RealTimeArbiter::update_time(std::int64_t ms, BoardModel& board, const Game
 void RealTimeArbiter::settle_pending_moves(BoardModel& board, const GameRules& rules,
                                            bool& game_over) {
     const uint64_t current_time_ms = static_cast<uint64_t>(clock_ms_);
+    // MoveScheduler removes each due move from the queue before invoking the callback;
+    // this callback owns all board mutations for that arrival.
     scheduler_.for_each_pending_due(current_time_ms, [this, &board, &rules, &game_over,
                                                       current_time_ms](const PendingMove& move) {
         if (!can_settle_move(board, rules, move)) {
@@ -55,6 +59,7 @@ void RealTimeArbiter::settle_pending_moves(BoardModel& board, const GameRules& r
             move.end_pos,
         };
 
+        // CollisionResolver handles jump-capture and occupant capture; otherwise we place normally.
         if (!scheduler_.check_for_jump_capture(current_time_ms, collision_resolver_, board, rules,
                                                move.end_pos, arriving_piece_info, game_over)) {
             Piece updated = board.get_piece(move.piece_id);

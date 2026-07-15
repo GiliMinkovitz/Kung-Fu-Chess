@@ -73,6 +73,7 @@ bool GameState::is_legal_move(int start_row, int start_col, int end_row, int end
     if (moving == nullptr) {
         return false;
     }
+    // Routed through GameRules so callers share the same injectable policy as settlement.
     return rules_.is_legal_move(board_, moving->kind, start_row, start_col, end_row, end_col);
 }
 
@@ -101,6 +102,7 @@ void GameState::clear_selection() {
 
 // --- Move logic ---
 
+// Kung Fu Chess timing: captures use a fixed duration; non-captures scale with Chebyshev distance.
 std::int64_t GameState::compute_move_duration(std::size_t from_row, std::size_t from_col,
                                               std::size_t to_row, std::size_t to_col,
                                               bool is_capture) const noexcept {
@@ -130,6 +132,7 @@ bool GameState::can_move_selected_to(std::size_t from_row, std::size_t from_col,
                        static_cast<int>(to_row), static_cast<int>(to_col))) {
         return false;
     }
+    // Static legality alone is insufficient: two realtime constraints must also pass.
     if (arbiter_.is_same_color_destination_claimed(moving->color, {to_row, to_col})) {
         return false;
     }
@@ -139,6 +142,7 @@ bool GameState::can_move_selected_to(std::size_t from_row, std::size_t from_col,
     const std::int64_t move_duration =
         compute_move_duration(from_row, from_col, to_row, to_col, is_capture);
 
+    // Opposite-color moves sharing a route cannot both be in flight (Kung Fu Chess rule).
     return !arbiter_.would_conflict_with_opposite_color_move(
         moving->color, moving->id, {from_row, from_col}, {to_row, to_col}, move_duration);
 }

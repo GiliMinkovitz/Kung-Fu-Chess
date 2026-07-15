@@ -8,6 +8,10 @@
 
 namespace kfc {
 
+// Injectable policy bundle for a rule set: move legality, promotion, win condition,
+// and timing constants. GameState and RealTimeArbiter depend on this interface rather
+// than calling MoveValidator directly, so tests and future variants can swap rules
+// without changing orchestration code.
 struct GameRules {
     std::function<bool(const BoardModel& board, PieceKind kind, int start_row, int start_col,
                        int end_row, int end_col)>

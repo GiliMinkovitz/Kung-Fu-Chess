@@ -18,6 +18,10 @@ namespace test {
 struct GameStateTestAccess;
 }
 
+// Session-level game coordinator: owns the board, injectable rules, realtime arbiter,
+// selection, and game-over flag. Translates player intents (select/move/jump) into
+// board and arbiter operations. Does not parse commands (CommandProcessor) or
+// implement piece geometry (MoveValidator / piece_rules).
 class GameState {
     friend struct test::GameStateTestAccess;
 public:
@@ -50,6 +54,7 @@ public:
     void move_selected_to(std::size_t to_row, std::size_t to_col);
     void jump_selected();
     void jump_at(std::size_t row, std::size_t col);
+    // Settles all due moves before writing so printed output matches a quiescent board.
     void write_board(std::ostream& out,
                      const std::function<void(std::ostream&, const BoardModel&)>& writer);
 

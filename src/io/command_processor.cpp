@@ -56,6 +56,7 @@ void CommandProcessor::handle_pixel_jump(int x, int y) {
     handle_jump(x, y);
 }
 
+// Click state machine: no selection -> select; friendly -> re-select or jump; else move.
 void CommandProcessor::handle_click(int x, int y) {
     if (state_.is_game_over()) {
         return;
@@ -89,6 +90,7 @@ void CommandProcessor::handle_select(std::size_t row, std::size_t col) {
 void CommandProcessor::handle_friendly_click(std::size_t row, std::size_t col) {
     std::size_t from_row = 0;
     std::size_t from_col = 0;
+    // Clicking the already-selected friendly piece triggers a jump, not a re-select.
     if (state_.selection(from_row, from_col) && from_row == row && from_col == col) {
         if (!state_.is_piece_moving(from_row, from_col) &&
             !state_.is_piece_jumping(from_row, from_col)) {

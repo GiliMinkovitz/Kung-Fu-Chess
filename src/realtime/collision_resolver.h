@@ -14,6 +14,9 @@ struct ArrivingPieceInfo {
     std::pair<std::size_t, std::size_t> end_pos;
 };
 
+// Kung Fu Chess collision domain: route overlap, same-color destination claims, and
+// arrival resolution (jump capture vs normal capture). Extracted from RealTimeArbiter
+// so conflict logic is unit-testable without driving the full clock/settlement loop.
 class CollisionResolver {
 public:
     [[nodiscard]] static bool has_common_route(const PendingMove& a, const PendingMove& b);
@@ -24,6 +27,8 @@ public:
         const std::vector<PendingMove>& pending_moves, std::int64_t clock_ms,
         PieceColor moving_color, const std::pair<std::size_t, std::size_t>& end_pos);
 
+    // Returns true if the arrival was resolved as a capture (jump or occupant);
+    // false leaves normal placement to the caller (RealTimeArbiter).
     [[nodiscard]] bool check_for_jump_capture(
         BoardModel& board, const GameRules& rules, std::int64_t clock_ms,
         const std::vector<JumpState>& active_jumps,
