@@ -37,7 +37,7 @@
           </tr>
           <tr>
             <td class="headerItem">Test Date:</td>
-            <td class="headerValue">2026-07-15 23:48:12</td>
+            <td class="headerValue">2026-07-16 19:57:03</td>
             <td></td>
             <td class="headerItem">Functions:</td>
             <td class="headerCovTableEntryHi">100.0&nbsp;%</td>
@@ -71,12 +71,12 @@
 <span id="L9"><span class="lineNum">       9</span>              : // Sliding pieces validate geometry only; capture-vs-empty is enforced here so piece</span>
 <span id="L10"><span class="lineNum">      10</span>              : // validators stay unaware of occupant color. Pawns skip this (requires_destination_check=false)</span>
 <span id="L11"><span class="lineNum">      11</span>              : // because is_pawn_move already encodes capture rules.</span>
-<span id="L12"><span class="lineNum">      12</span> <span class="tlaGNC">          90 : [[nodiscard]] bool is_destination_legal(const BoardModel&amp; board, int start_row, int start_col,</span></span>
+<span id="L12"><span class="lineNum">      12</span> <span class="tlaGNC">         103 : [[nodiscard]] bool is_destination_legal(const BoardModel&amp; board, int start_row, int start_col,</span></span>
 <span id="L13"><span class="lineNum">      13</span>              :                                         int end_row, int end_col) {</span>
 <span id="L14"><span class="lineNum">      14</span>              :     const Piece* dest =</span>
-<span id="L15"><span class="lineNum">      15</span> <span class="tlaGNC">          90 :         board.piece_at(static_cast&lt;std::size_t&gt;(end_row), static_cast&lt;std::size_t&gt;(end_col));</span></span>
-<span id="L16"><span class="lineNum">      16</span> <span class="tlaGNC">          90 :     if (dest == nullptr) {</span></span>
-<span id="L17"><span class="lineNum">      17</span> <span class="tlaGNC">          60 :         return true;</span></span>
+<span id="L15"><span class="lineNum">      15</span> <span class="tlaGNC">         103 :         board.piece_at(static_cast&lt;std::size_t&gt;(end_row), static_cast&lt;std::size_t&gt;(end_col));</span></span>
+<span id="L16"><span class="lineNum">      16</span> <span class="tlaGNC">         103 :     if (dest == nullptr) {</span></span>
+<span id="L17"><span class="lineNum">      17</span> <span class="tlaGNC">          73 :         return true;</span></span>
 <span id="L18"><span class="lineNum">      18</span>              :     }</span>
 <span id="L19"><span class="lineNum">      19</span> <span class="tlaGNC">          30 :     const Piece* moving = board.piece_at(static_cast&lt;std::size_t&gt;(start_row),</span></span>
 <span id="L20"><span class="lineNum">      20</span>              :                                          static_cast&lt;std::size_t&gt;(start_col));</span>
@@ -88,27 +88,27 @@
 <span id="L26"><span class="lineNum">      26</span>              : </span>
 <span id="L27"><span class="lineNum">      27</span>              : }  // namespace</span>
 <span id="L28"><span class="lineNum">      28</span>              : </span>
-<span id="L29"><span class="lineNum">      29</span> <span class="tlaGNC">         148 : bool is_legal_move(const BoardModel&amp; board, PieceKind kind, int start_row, int start_col,</span></span>
+<span id="L29"><span class="lineNum">      29</span> <span class="tlaGNC">         161 : bool is_legal_move(const BoardModel&amp; board, PieceKind kind, int start_row, int start_col,</span></span>
 <span id="L30"><span class="lineNum">      30</span>              :                    int end_row, int end_col) {</span>
-<span id="L31"><span class="lineNum">      31</span> <span class="tlaGNC">         148 :     if (board.rows() == 0 || board.cols() == 0) {</span></span>
+<span id="L31"><span class="lineNum">      31</span> <span class="tlaGNC">         161 :     if (board.rows() == 0 || board.cols() == 0) {</span></span>
 <span id="L32"><span class="lineNum">      32</span> <span class="tlaGNC">           1 :         return false;</span></span>
 <span id="L33"><span class="lineNum">      33</span>              :     }</span>
-<span id="L34"><span class="lineNum">      34</span> <span class="tlaGNC">         147 :     if (!board.contains(start_row, start_col) || !board.contains(end_row, end_col)) {</span></span>
+<span id="L34"><span class="lineNum">      34</span> <span class="tlaGNC">         160 :     if (!board.contains(start_row, start_col) || !board.contains(end_row, end_col)) {</span></span>
 <span id="L35"><span class="lineNum">      35</span> <span class="tlaGNC">           5 :         return false;</span></span>
 <span id="L36"><span class="lineNum">      36</span>              :     }</span>
-<span id="L37"><span class="lineNum">      37</span> <span class="tlaGNC">         142 :     if (start_row == end_row &amp;&amp; start_col == end_col) {</span></span>
+<span id="L37"><span class="lineNum">      37</span> <span class="tlaGNC">         155 :     if (start_row == end_row &amp;&amp; start_col == end_col) {</span></span>
 <span id="L38"><span class="lineNum">      38</span> <span class="tlaGNC">           1 :         return false;</span></span>
 <span id="L39"><span class="lineNum">      39</span>              :     }</span>
 <span id="L40"><span class="lineNum">      40</span>              : </span>
-<span id="L41"><span class="lineNum">      41</span> <span class="tlaGNC">         141 :     const piece_rules::PieceRuleEntry rule = piece_rules::get_rule_entry(kind);</span></span>
-<span id="L42"><span class="lineNum">      42</span> <span class="tlaGNC">         141 :     if (rule.validator == nullptr) {</span></span>
+<span id="L41"><span class="lineNum">      41</span> <span class="tlaGNC">         154 :     const piece_rules::PieceRuleEntry rule = piece_rules::get_rule_entry(kind);</span></span>
+<span id="L42"><span class="lineNum">      42</span> <span class="tlaGNC">         154 :     if (rule.validator == nullptr) {</span></span>
 <span id="L43"><span class="lineNum">      43</span> <span class="tlaGNC">           1 :         return false;</span></span>
 <span id="L44"><span class="lineNum">      44</span>              :     }</span>
-<span id="L45"><span class="lineNum">      45</span> <span class="tlaGNC">         140 :     if (!rule.validator(board, start_row, start_col, end_row, end_col)) {</span></span>
+<span id="L45"><span class="lineNum">      45</span> <span class="tlaGNC">         153 :     if (!rule.validator(board, start_row, start_col, end_row, end_col)) {</span></span>
 <span id="L46"><span class="lineNum">      46</span> <span class="tlaGNC">          37 :         return false;</span></span>
 <span id="L47"><span class="lineNum">      47</span>              :     }</span>
-<span id="L48"><span class="lineNum">      48</span> <span class="tlaGNC">         103 :     if (rule.requires_destination_check) {</span></span>
-<span id="L49"><span class="lineNum">      49</span> <span class="tlaGNC">          90 :         return is_destination_legal(board, start_row, start_col, end_row, end_col);</span></span>
+<span id="L48"><span class="lineNum">      48</span> <span class="tlaGNC">         116 :     if (rule.requires_destination_check) {</span></span>
+<span id="L49"><span class="lineNum">      49</span> <span class="tlaGNC">         103 :         return is_destination_legal(board, start_row, start_col, end_row, end_col);</span></span>
 <span id="L50"><span class="lineNum">      50</span>              :     }</span>
 <span id="L51"><span class="lineNum">      51</span> <span class="tlaGNC">          13 :     return true;</span></span>
 <span id="L52"><span class="lineNum">      52</span>              : }</span>

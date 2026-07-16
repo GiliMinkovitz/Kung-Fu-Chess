@@ -37,7 +37,7 @@
           </tr>
           <tr>
             <td class="headerItem">Test Date:</td>
-            <td class="headerValue">2026-07-15 23:48:12</td>
+            <td class="headerValue">2026-07-16 19:57:03</td>
             <td></td>
             <td class="headerItem">Functions:</td>
             <td class="headerCovTableEntryHi">100.0&nbsp;%</td>
@@ -84,35 +84,36 @@
 <span id="L22"><span class="lineNum">      22</span>              :     // Applies all moves whose arrival_time &lt;= clock; may set game_over via capture rules.</span>
 <span id="L23"><span class="lineNum">      23</span>              :     void settle_pending_moves(BoardModel&amp; board, const GameRules&amp; rules, bool&amp; game_over);</span>
 <span id="L24"><span class="lineNum">      24</span>              : </span>
-<span id="L25"><span class="lineNum">      25</span> <span class="tlaGNC">          17 :     [[nodiscard]] std::int64_t clock_ms() const noexcept { return clock_ms_; }</span></span>
+<span id="L25"><span class="lineNum">      25</span> <span class="tlaGNC">          23 :     [[nodiscard]] std::int64_t clock_ms() const noexcept { return clock_ms_; }</span></span>
 <span id="L26"><span class="lineNum">      26</span>              :     [[nodiscard]] bool is_piece_moving(std::size_t row, std::size_t col) const;</span>
 <span id="L27"><span class="lineNum">      27</span>              :     [[nodiscard]] bool is_piece_jumping(std::size_t row, std::size_t col) const;</span>
-<span id="L28"><span class="lineNum">      28</span>              :     // Pre-flight checks used by GameState before accepting a new move request.</span>
-<span id="L29"><span class="lineNum">      29</span>              :     [[nodiscard]] bool is_same_color_destination_claimed(</span>
-<span id="L30"><span class="lineNum">      30</span>              :         PieceColor color, const std::pair&lt;std::size_t, std::size_t&gt;&amp; end_pos) const;</span>
-<span id="L31"><span class="lineNum">      31</span>              :     [[nodiscard]] bool would_conflict_with_opposite_color_move(</span>
-<span id="L32"><span class="lineNum">      32</span>              :         PieceColor moving_color, Piece::Id piece_id,</span>
-<span id="L33"><span class="lineNum">      33</span>              :         const std::pair&lt;std::size_t, std::size_t&gt;&amp; start_pos,</span>
-<span id="L34"><span class="lineNum">      34</span>              :         const std::pair&lt;std::size_t, std::size_t&gt;&amp; end_pos,</span>
-<span id="L35"><span class="lineNum">      35</span>              :         std::int64_t move_duration_ms) const;</span>
-<span id="L36"><span class="lineNum">      36</span>              : </span>
-<span id="L37"><span class="lineNum">      37</span>              :     void request_move(Piece::Id piece_id, PieceColor color,</span>
-<span id="L38"><span class="lineNum">      38</span>              :                       const std::pair&lt;std::size_t, std::size_t&gt;&amp; start_pos,</span>
-<span id="L39"><span class="lineNum">      39</span>              :                       const std::pair&lt;std::size_t, std::size_t&gt;&amp; end_pos,</span>
-<span id="L40"><span class="lineNum">      40</span>              :                       std::int64_t move_duration_ms);</span>
-<span id="L41"><span class="lineNum">      41</span>              :     void request_jump(Piece::Id piece_id, PieceColor color,</span>
-<span id="L42"><span class="lineNum">      42</span>              :                       const std::pair&lt;std::size_t, std::size_t&gt;&amp; cell,</span>
-<span id="L43"><span class="lineNum">      43</span>              :                       std::int64_t jump_duration_ms);</span>
-<span id="L44"><span class="lineNum">      44</span>              : </span>
-<span id="L45"><span class="lineNum">      45</span>              :     [[nodiscard]] AnimationSnapshot animations_for_render() const;</span>
-<span id="L46"><span class="lineNum">      46</span>              : </span>
-<span id="L47"><span class="lineNum">      47</span>              : private:</span>
-<span id="L48"><span class="lineNum">      48</span>              :     MoveScheduler scheduler_;</span>
-<span id="L49"><span class="lineNum">      49</span>              :     CollisionResolver collision_resolver_;</span>
-<span id="L50"><span class="lineNum">      50</span>              :     std::int64_t clock_ms_ = 0;</span>
-<span id="L51"><span class="lineNum">      51</span>              : };</span>
-<span id="L52"><span class="lineNum">      52</span>              : </span>
-<span id="L53"><span class="lineNum">      53</span>              : }  // namespace kfc</span>
+<span id="L28"><span class="lineNum">      28</span>              :     [[nodiscard]] bool is_piece_resting(Piece::Id piece_id) const;</span>
+<span id="L29"><span class="lineNum">      29</span>              :     // Pre-flight checks used by GameState before accepting a new move request.</span>
+<span id="L30"><span class="lineNum">      30</span>              :     [[nodiscard]] bool is_same_color_destination_claimed(</span>
+<span id="L31"><span class="lineNum">      31</span>              :         PieceColor color, const std::pair&lt;std::size_t, std::size_t&gt;&amp; end_pos) const;</span>
+<span id="L32"><span class="lineNum">      32</span>              :     [[nodiscard]] bool would_conflict_with_opposite_color_move(</span>
+<span id="L33"><span class="lineNum">      33</span>              :         PieceColor moving_color, Piece::Id piece_id,</span>
+<span id="L34"><span class="lineNum">      34</span>              :         const std::pair&lt;std::size_t, std::size_t&gt;&amp; start_pos,</span>
+<span id="L35"><span class="lineNum">      35</span>              :         const std::pair&lt;std::size_t, std::size_t&gt;&amp; end_pos,</span>
+<span id="L36"><span class="lineNum">      36</span>              :         std::int64_t move_duration_ms) const;</span>
+<span id="L37"><span class="lineNum">      37</span>              : </span>
+<span id="L38"><span class="lineNum">      38</span>              :     void request_move(Piece::Id piece_id, PieceColor color,</span>
+<span id="L39"><span class="lineNum">      39</span>              :                       const std::pair&lt;std::size_t, std::size_t&gt;&amp; start_pos,</span>
+<span id="L40"><span class="lineNum">      40</span>              :                       const std::pair&lt;std::size_t, std::size_t&gt;&amp; end_pos,</span>
+<span id="L41"><span class="lineNum">      41</span>              :                       std::int64_t move_duration_ms);</span>
+<span id="L42"><span class="lineNum">      42</span>              :     void request_jump(Piece::Id piece_id, PieceColor color,</span>
+<span id="L43"><span class="lineNum">      43</span>              :                       const std::pair&lt;std::size_t, std::size_t&gt;&amp; cell,</span>
+<span id="L44"><span class="lineNum">      44</span>              :                       std::int64_t jump_duration_ms);</span>
+<span id="L45"><span class="lineNum">      45</span>              : </span>
+<span id="L46"><span class="lineNum">      46</span>              :     [[nodiscard]] AnimationSnapshot animations_for_render() const;</span>
+<span id="L47"><span class="lineNum">      47</span>              : </span>
+<span id="L48"><span class="lineNum">      48</span>              : private:</span>
+<span id="L49"><span class="lineNum">      49</span>              :     MoveScheduler scheduler_;</span>
+<span id="L50"><span class="lineNum">      50</span>              :     CollisionResolver collision_resolver_;</span>
+<span id="L51"><span class="lineNum">      51</span>              :     std::int64_t clock_ms_ = 0;</span>
+<span id="L52"><span class="lineNum">      52</span>              : };</span>
+<span id="L53"><span class="lineNum">      53</span>              : </span>
+<span id="L54"><span class="lineNum">      54</span>              : }  // namespace kfc</span>
         </pre>
               </td>
             </tr>

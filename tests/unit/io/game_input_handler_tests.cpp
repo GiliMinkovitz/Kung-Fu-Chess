@@ -1,10 +1,12 @@
 #include "model/board_model.h"
+#include "model/game_config.h"
 #include "io/game_input_handler.h"
 #include "logic/game_state.h"
 #include "test_helpers.h"
 
 #include <doctest/doctest.h>
 #include <sstream>
+#include <string>
 
 TEST_CASE("GameInputHandlerTest - GameInputHandlerClickSelectAndMove") {
     kfc::BoardModel board = kfc::test::make_board({{"wK", ".", "bK"}, {".", ".", "."}});
@@ -184,7 +186,7 @@ TEST_CASE("GameInputHandlerTest - PieceCanMoveAfterLongRestExpires") {
     CHECK_FALSE(state.is_piece_moving(0, 1));
     CHECK(state.is_piece_resting(0, 1));
 
-    processor.execute("wait 1000", sink);
+    processor.execute("wait " + std::to_string(kfc::kLongRestDurationMs), sink);
     CHECK_FALSE(state.is_piece_resting(0, 1));
 
     processor.execute("click 150 50", sink);

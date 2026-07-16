@@ -37,7 +37,7 @@
           </tr>
           <tr>
             <td class="headerItem">Test Date:</td>
-            <td class="headerValue">2026-07-15 23:48:12</td>
+            <td class="headerValue">2026-07-16 19:57:03</td>
             <td></td>
             <td class="headerItem">Functions:</td>
             <td class="headerCovTableEntryHi">100.0&nbsp;%</td>
@@ -130,26 +130,26 @@
 <span id="L68"><span class="lineNum">      68</span> <span class="tlaGNC">           1 :         return scaled_size(kReferenceGameOverFontThickness);</span></span>
 <span id="L69"><span class="lineNum">      69</span>              :     }</span>
 <span id="L70"><span class="lineNum">      70</span>              : </span>
-<span id="L71"><span class="lineNum">      71</span> <span class="tlaGNC">          87 :     [[nodiscard]] bool try_pixel_to_cell(int x, int y, std::size_t width_cells,</span></span>
+<span id="L71"><span class="lineNum">      71</span> <span class="tlaGNC">          93 :     [[nodiscard]] bool try_pixel_to_cell(int x, int y, std::size_t width_cells,</span></span>
 <span id="L72"><span class="lineNum">      72</span>              :                                          std::size_t height_cells, std::size_t&amp; row,</span>
 <span id="L73"><span class="lineNum">      73</span>              :                                          std::size_t&amp; col) const noexcept {</span>
-<span id="L74"><span class="lineNum">      74</span> <span class="tlaGNC">          87 :         if (cell_size &lt;= 0 || width_cells == 0 || height_cells == 0) {</span></span>
+<span id="L74"><span class="lineNum">      74</span> <span class="tlaGNC">          93 :         if (cell_size &lt;= 0 || width_cells == 0 || height_cells == 0) {</span></span>
 <span id="L75"><span class="lineNum">      75</span> <span class="tlaUNC">           0 :             return false;</span></span>
 <span id="L76"><span class="lineNum">      76</span>              :         }</span>
 <span id="L77"><span class="lineNum">      77</span>              : </span>
-<span id="L78"><span class="lineNum">      78</span> <span class="tlaGNC">          87 :         if (x &lt; board_x || y &lt; board_y) {</span></span>
+<span id="L78"><span class="lineNum">      78</span> <span class="tlaGNC">          93 :         if (x &lt; board_x || y &lt; board_y) {</span></span>
 <span id="L79"><span class="lineNum">      79</span> <span class="tlaGNC">           2 :             return false;</span></span>
 <span id="L80"><span class="lineNum">      80</span>              :         }</span>
 <span id="L81"><span class="lineNum">      81</span>              : </span>
-<span id="L82"><span class="lineNum">      82</span> <span class="tlaGNC">          85 :         const int local_x = x - board_x;</span></span>
-<span id="L83"><span class="lineNum">      83</span> <span class="tlaGNC">          85 :         const int local_y = y - board_y;</span></span>
-<span id="L84"><span class="lineNum">      84</span> <span class="tlaGNC">          85 :         if (local_x &gt;= board_width_pixels || local_y &gt;= board_height_pixels) {</span></span>
+<span id="L82"><span class="lineNum">      82</span> <span class="tlaGNC">          91 :         const int local_x = x - board_x;</span></span>
+<span id="L83"><span class="lineNum">      83</span> <span class="tlaGNC">          91 :         const int local_y = y - board_y;</span></span>
+<span id="L84"><span class="lineNum">      84</span> <span class="tlaGNC">          91 :         if (local_x &gt;= board_width_pixels || local_y &gt;= board_height_pixels) {</span></span>
 <span id="L85"><span class="lineNum">      85</span> <span class="tlaGNC">           4 :             return false;</span></span>
 <span id="L86"><span class="lineNum">      86</span>              :         }</span>
 <span id="L87"><span class="lineNum">      87</span>              : </span>
-<span id="L88"><span class="lineNum">      88</span> <span class="tlaGNC">          81 :         col = static_cast&lt;std::size_t&gt;(local_x / cell_size);</span></span>
-<span id="L89"><span class="lineNum">      89</span> <span class="tlaGNC">          81 :         row = static_cast&lt;std::size_t&gt;(local_y / cell_size);</span></span>
-<span id="L90"><span class="lineNum">      90</span> <span class="tlaGNC">          81 :         return col &lt; width_cells &amp;&amp; row &lt; height_cells;</span></span>
+<span id="L88"><span class="lineNum">      88</span> <span class="tlaGNC">          87 :         col = static_cast&lt;std::size_t&gt;(local_x / cell_size);</span></span>
+<span id="L89"><span class="lineNum">      89</span> <span class="tlaGNC">          87 :         row = static_cast&lt;std::size_t&gt;(local_y / cell_size);</span></span>
+<span id="L90"><span class="lineNum">      90</span> <span class="tlaGNC">          87 :         return col &lt; width_cells &amp;&amp; row &lt; height_cells;</span></span>
 <span id="L91"><span class="lineNum">      91</span>              :     }</span>
 <span id="L92"><span class="lineNum">      92</span>              : </span>
 <span id="L93"><span class="lineNum">      93</span>              : private:</span>

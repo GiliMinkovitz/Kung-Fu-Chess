@@ -32,16 +32,16 @@
             <td></td>
             <td class="headerItem">Lines:</td>
             <td class="headerCovTableEntryLo">0.0&nbsp;%</td>
-            <td class="headerCovTableEntry">7</td>
+            <td class="headerCovTableEntry">9</td>
             <td class="headerCovTableEntry">0</td>
           </tr>
           <tr>
             <td class="headerItem">Test Date:</td>
-            <td class="headerValue">2026-07-15 23:48:12</td>
+            <td class="headerValue">2026-07-16 19:57:03</td>
             <td></td>
             <td class="headerItem">Functions:</td>
             <td class="headerCovTableEntryLo">0.0&nbsp;%</td>
-            <td class="headerCovTableEntry">3</td>
+            <td class="headerCovTableEntry">4</td>
             <td class="headerCovTableEntry">0</td>
           </tr>
                   <tr><td><img src="../../glass.png" width=3 height=3 alt=""></td></tr>
@@ -79,7 +79,12 @@
 <span id="L17"><span class="lineNum">      17</span> <span class="tlaUNC">           0 :     return theme_.pieces_directory / token / &quot;states&quot;;</span></span>
 <span id="L18"><span class="lineNum">      18</span> <span class="tlaUNC">           0 : }</span></span>
 <span id="L19"><span class="lineNum">      19</span>              : </span>
-<span id="L20"><span class="lineNum">      20</span>              : }  // namespace kfc</span>
+<span id="L20"><span class="lineNum">      20</span> <span class="tlaUNC">           0 : std::filesystem::path AssetPaths::piece_sprite(PieceColor color, PieceKind kind,</span></span>
+<span id="L21"><span class="lineNum">      21</span>              :                                                const std::string&amp; state, int frame) const {</span>
+<span id="L22"><span class="lineNum">      22</span> <span class="tlaUNC">           0 :     return piece_directory(color, kind) / state / &quot;sprites&quot; / (std::to_string(frame) + &quot;.png&quot;);</span></span>
+<span id="L23"><span class="lineNum">      23</span>              : }</span>
+<span id="L24"><span class="lineNum">      24</span>              : </span>
+<span id="L25"><span class="lineNum">      25</span>              : }  // namespace kfc</span>
         </pre>
               </td>
             </tr>

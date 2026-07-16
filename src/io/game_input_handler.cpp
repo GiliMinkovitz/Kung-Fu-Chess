@@ -125,7 +125,9 @@ void GameInputHandler::handle_friendly_click(std::size_t row, std::size_t col) {
 void GameInputHandler::handle_move_attempt(std::size_t row, std::size_t col) {
     std::size_t from_row = 0;
     std::size_t from_col = 0;
-    state_.selection(from_row, from_col);
+    if (!state_.selection(from_row, from_col)) {
+        return;
+    }
 
     if (state_.is_piece_moving(from_row, from_col) || state_.is_piece_jumping(from_row, from_col) ||
         state_.is_piece_resting(from_row, from_col)) {
