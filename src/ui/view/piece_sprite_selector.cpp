@@ -15,6 +15,9 @@ PieceSpriteSelection PieceSpriteSelector::select(const PieceSpriteContext& conte
     if (context.moving) {
         return {"move", frame_from_progress(context.progress)};
     }
+    if (context.jumping) {
+        return {"jump", frame_from_progress(context.progress)};
+    }
     return {"idle", 1};
 }
 

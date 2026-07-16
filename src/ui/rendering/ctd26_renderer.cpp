@@ -142,12 +142,20 @@ void Ctd26Renderer::reload_piece_sprites() {
             }
 
             for (int frame = 1; frame <= 5; ++frame) {
-                const PieceSpriteCacheKey key{color, kind, "move", frame};
+                const PieceSpriteCacheKey move_key{color, kind, "move", frame};
                 try {
-                    impl_->piece_sprites[key] =
+                    impl_->piece_sprites[move_key] =
                         image_loader.load_piece_sprite(color, kind, "move", frame, sprite_size);
                 } catch (const std::exception&) {
-                    impl_->piece_sprites[key] = std::nullopt;
+                    impl_->piece_sprites[move_key] = std::nullopt;
+                }
+
+                const PieceSpriteCacheKey jump_key{color, kind, "jump", frame};
+                try {
+                    impl_->piece_sprites[jump_key] =
+                        image_loader.load_piece_sprite(color, kind, "jump", frame, sprite_size);
+                } catch (const std::exception&) {
+                    impl_->piece_sprites[jump_key] = std::nullopt;
                 }
             }
         }
@@ -244,7 +252,12 @@ void Ctd26Renderer::draw_static_board(const BoardViewModel& view) {
 
             if (const std::optional<PieceView> piece = board_view_piece_at(view, row, col);
                 piece.has_value()) {
-                draw_piece(PieceSpriteContext{*piece}, x, y);
+                if (board_view_is_jumping_cell(view, row, col)) {
+                    const float progress = board_view_jump_progress_at(view, row, col);
+                    draw_piece(PieceSpriteContext{*piece, false, true, progress}, x, y);
+                } else {
+                    draw_piece(PieceSpriteContext{*piece}, x, y);
+                }
             }
         }
     }
