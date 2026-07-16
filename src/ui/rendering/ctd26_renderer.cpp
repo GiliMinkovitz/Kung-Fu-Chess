@@ -90,7 +90,8 @@ void Ctd26Renderer::init(int window_width, int window_height, std::size_t rows, 
     reload_board_background();
     reload_piece_sprites();
 
-    Img::open_window(kWindowName);
+    cv::namedWindow(kWindowName, cv::WINDOW_NORMAL);
+    cv::resizeWindow(kWindowName, window_width_, window_height_);
     Img::set_mouse_callback(kWindowName, on_mouse, input_sink_);
 
     impl_->frame->create(window_width_, window_height_, to_scalar(theme_.frame_background));
