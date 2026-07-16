@@ -44,15 +44,20 @@ TEST_CASE("GameStateTest - IsPieceMovingWhileInTransit") {
     CHECK_FALSE(state.is_piece_moving(0, 2));
 }
 
-TEST_CASE("GameStateTest - IsPieceMovingFalseAfterSettleNoCooldown") {
+TEST_CASE("GameStateTest - IsPieceRestingAfterMoveUntilLongRestExpires") {
     kfc::GameState state(kfc::test::make_board({{"wR", ".", "."}}));
     state.select(0, 0);
     state.move_selected_to(0, 2);
     CHECK(state.is_piece_moving(0, 0));
 
-    state.add_clock(2000);
+    state.add_clock(2 * kfc::kMoveDurationMs);
     CHECK_FALSE(state.is_piece_moving(0, 0));
     CHECK_FALSE(state.is_piece_moving(0, 2));
+    CHECK(state.is_piece_resting(0, 2));
+    CHECK_FALSE(state.is_selectable_piece(0, 2));
+
+    state.add_clock(kfc::kLongRestDurationMs);
+    CHECK_FALSE(state.is_piece_resting(0, 2));
     CHECK(state.is_selectable_piece(0, 2));
 }
 
@@ -94,9 +99,13 @@ TEST_CASE("GameStateTest - JumpStatusClearedAfterDuration") {
     state.jump_selected();
     CHECK(state.is_piece_jumping(0, 0));
 
-    state.add_clock(1000);
+    state.add_clock(kfc::kJumpDurationMs);
     CHECK_FALSE(state.is_piece_jumping(0, 0));
+    CHECK(state.is_piece_resting(0, 0));
     CHECK_EQ(state.token_at(0, 0), "wR");
+
+    state.add_clock(kfc::kShortRestDurationMs);
+    CHECK_FALSE(state.is_piece_resting(0, 0));
 }
 
 TEST_CASE("GameStateTest - GameStateCustomRules") {
@@ -106,6 +115,8 @@ TEST_CASE("GameStateTest - GameStateCustomRules") {
     rules.is_game_over = [](const kfc::Piece&) { return false; };
     rules.move_duration_ms = 500;
     rules.jump_duration_ms = 300;
+    rules.long_rest_duration_ms = 500;
+    rules.short_rest_duration_ms = 300;
 
     kfc::BoardModel board = kfc::test::make_board({{"wR", ".", "."}});
     kfc::GameState state(board, rules);
@@ -115,13 +126,18 @@ TEST_CASE("GameStateTest - GameStateCustomRules") {
 
     state.add_clock(1000);
     CHECK_EQ(state.token_at(0, 2), "wR");
+    CHECK(state.is_piece_resting(0, 2));
     CHECK_FALSE(state.is_game_over());
 
+    state.add_clock(500);
     state.select(0, 2);
     state.jump_selected();
     CHECK(state.is_piece_jumping(0, 2));
     state.add_clock(300);
     CHECK_FALSE(state.is_piece_jumping(0, 2));
+    CHECK(state.is_piece_resting(0, 2));
+    state.add_clock(300);
+    CHECK_FALSE(state.is_piece_resting(0, 2));
 }
 
 TEST_CASE("GameStateTest - GameStateSelectOutOfBounds") {
@@ -232,6 +248,31 @@ TEST_CASE("GameStateTest - MoveSelectedToWhileMovingIgnored") {
     state.move_selected_to(0, 1);
     CHECK(state.is_piece_moving(0, 0));
     CHECK_EQ(state.token_at(0, 0), "wR");
+}
+
+TEST_CASE("GameStateTest - RestingPieceCannotMove") {
+    kfc::GameState state(kfc::test::make_board({{"wR", ".", "."}}));
+    state.select(0, 0);
+    state.move_selected_to(0, 1);
+    state.add_clock(kfc::kMoveDurationMs);
+    CHECK(state.is_piece_resting(0, 1));
+
+    state.select(0, 1);
+    state.move_selected_to(0, 2);
+    CHECK_EQ(state.token_at(0, 1), "wR");
+    CHECK_EQ(state.token_at(0, 2), ".");
+}
+
+TEST_CASE("GameStateTest - RestingPieceCannotJump") {
+    kfc::GameState state(kfc::test::make_board({{"wR", ".", "."}}));
+    state.select(0, 0);
+    state.move_selected_to(0, 1);
+    state.add_clock(kfc::kMoveDurationMs);
+    CHECK(state.is_piece_resting(0, 1));
+
+    state.select(0, 1);
+    state.jump_selected();
+    CHECK_FALSE(state.is_piece_jumping(0, 1));
 }
 
 TEST_CASE("GameStateTest - AbortedMoveResetsPieceStateToIdle") {

@@ -23,6 +23,8 @@ struct GameRules {
 
     std::int64_t move_duration_ms = 1000;
     std::int64_t jump_duration_ms = 1000;
+    std::int64_t long_rest_duration_ms = 1000;
+    std::int64_t short_rest_duration_ms = 1000;
 };
 
 namespace KungFuChessRules {

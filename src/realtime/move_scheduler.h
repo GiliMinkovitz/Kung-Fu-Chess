@@ -6,6 +6,8 @@
 
 #include <cstdint>
 #include <functional>
+#include <optional>
+#include <unordered_map>
 #include <utility>
 #include <vector>
 
@@ -29,6 +31,13 @@ struct JumpState {
     std::pair<std::size_t, std::size_t> cell;
     std::int64_t start_time = 0;
     std::int64_t arrival_time = 0;
+};
+
+enum class RestKind { Short, Long };
+
+struct ActiveRest {
+    RestKind kind;
+    int end_time_ms;
 };
 
 class BoardModel;
@@ -62,13 +71,21 @@ public:
 
     void schedule_move(PendingMove move);
     void schedule_jump(JumpState jump);
-    void expire_jumps(uint64_t current_time_ms);
+    void schedule_rest(Piece::Id piece_id, RestKind kind, int end_time_ms);
+    void expire_jumps(
+        uint64_t current_time_ms,
+        const std::function<void(const JumpState&)>& on_complete = {});
+    void expire_rests(uint64_t current_time_ms);
 
+    [[nodiscard]] bool is_piece_resting(uint64_t current_time_ms, Piece::Id piece_id) const;
+    [[nodiscard]] std::optional<RestKind> rest_kind(uint64_t current_time_ms,
+                                                      Piece::Id piece_id) const;
     [[nodiscard]] AnimationSnapshot animations_at(std::int64_t clock_ms) const;
 
 private:
     std::vector<PendingMove> pending_moves_;
     std::vector<JumpState> active_jumps_;
+    std::unordered_map<Piece::Id, ActiveRest> active_rests_;
 };
 
 }  // namespace kfc

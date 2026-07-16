@@ -67,13 +67,20 @@ void RealTimeArbiter::settle_pending_moves(BoardModel& board, const GameRules& r
             updated.cell = Position{static_cast<int>(end_row), static_cast<int>(end_col)};
             updated.state = PieceState::Idle;
             board.place_piece(std::move(updated));
+            scheduler_.schedule_rest(
+                move.piece_id, RestKind::Long,
+                static_cast<int>(move.arrival_time + rules.long_rest_duration_ms));
         } else {
             Piece& arriving_piece = board.get_piece(move.piece_id);
             arriving_piece.state = PieceState::Captured;
         }
     });
 
-    scheduler_.expire_jumps(current_time_ms);
+    scheduler_.expire_jumps(current_time_ms, [this, &rules](const JumpState& jump) {
+        scheduler_.schedule_rest(jump.piece_id, RestKind::Short,
+                                 static_cast<int>(jump.arrival_time + rules.short_rest_duration_ms));
+    });
+    scheduler_.expire_rests(current_time_ms);
 }
 
 bool RealTimeArbiter::is_piece_moving(std::size_t row, std::size_t col) const {
@@ -82,6 +89,10 @@ bool RealTimeArbiter::is_piece_moving(std::size_t row, std::size_t col) const {
 
 bool RealTimeArbiter::is_piece_jumping(std::size_t row, std::size_t col) const {
     return scheduler_.is_piece_jumping(static_cast<uint64_t>(clock_ms_), row, col);
+}
+
+bool RealTimeArbiter::is_piece_resting(Piece::Id piece_id) const {
+    return scheduler_.is_piece_resting(static_cast<uint64_t>(clock_ms_), piece_id);
 }
 
 bool RealTimeArbiter::is_same_color_destination_claimed(

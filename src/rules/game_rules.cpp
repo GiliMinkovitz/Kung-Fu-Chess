@@ -36,6 +36,8 @@ GameRules standard() {
     rules.is_game_over = king_capture_ends_game;
     rules.move_duration_ms = kMoveDurationMs;
     rules.jump_duration_ms = kJumpDurationMs;
+    rules.long_rest_duration_ms = kLongRestDurationMs;
+    rules.short_rest_duration_ms = kShortRestDurationMs;
     return rules;
 }
 

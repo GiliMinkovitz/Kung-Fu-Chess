@@ -172,7 +172,7 @@ TEST_CASE("GameInputHandlerTest - ClickOnMovingPieceDoesNotSelectOrRedirect") {
     CHECK_EQ(output.str(), ". . wR\n");
 }
 
-TEST_CASE("GameInputHandlerTest - PieceCanMoveImmediatelyAfterSettle") {
+TEST_CASE("GameInputHandlerTest - PieceCanMoveAfterLongRestExpires") {
     kfc::BoardModel board = kfc::test::make_board({{"wR", ".", ".", "."}});
     kfc::GameState state(board);
     kfc::GameInputHandler processor(state);
@@ -182,6 +182,10 @@ TEST_CASE("GameInputHandlerTest - PieceCanMoveImmediatelyAfterSettle") {
     processor.execute("click 150 50", sink);
     processor.execute("wait 1000", sink);
     CHECK_FALSE(state.is_piece_moving(0, 1));
+    CHECK(state.is_piece_resting(0, 1));
+
+    processor.execute("wait 1000", sink);
+    CHECK_FALSE(state.is_piece_resting(0, 1));
 
     processor.execute("click 150 50", sink);
     CHECK(state.has_selection());
@@ -522,6 +526,38 @@ TEST_CASE("GameInputHandlerTest - JumpWhilePieceMovingIgnored") {
     processor.execute("jump 50 50", sink);
     CHECK(state.is_piece_moving(0, 0));
     CHECK_FALSE(state.is_piece_jumping(0, 0));
+}
+
+TEST_CASE("GameInputHandlerTest - MoveAttemptWhilePieceRestingIgnored") {
+    kfc::GameState state(kfc::test::make_board({{"wR", ".", "bK"}}));
+    kfc::GameInputHandler processor(state);
+    std::ostringstream sink;
+
+    processor.execute("click 50 50", sink);
+    processor.execute("click 150 50", sink);
+    processor.execute("wait 1000", sink);
+    REQUIRE(state.is_piece_resting(0, 1));
+
+    state.select(0, 1);
+    processor.execute("click 250 50", sink);
+    CHECK(state.is_piece_resting(0, 1));
+    CHECK_EQ(state.token_at(0, 1), "wR");
+    CHECK_EQ(state.token_at(0, 2), "bK");
+}
+
+TEST_CASE("GameInputHandlerTest - JumpWhilePieceRestingIgnored") {
+    kfc::GameState state(kfc::test::make_board({{"wR", ".", "."}}));
+    kfc::GameInputHandler processor(state);
+    std::ostringstream sink;
+
+    processor.execute("click 50 50", sink);
+    processor.execute("click 150 50", sink);
+    processor.execute("wait 1000", sink);
+    REQUIRE(state.is_piece_resting(0, 1));
+
+    processor.execute("jump 150 50", sink);
+    CHECK_FALSE(state.is_piece_jumping(0, 1));
+    CHECK(state.is_piece_resting(0, 1));
 }
 
 TEST_CASE("GameInputHandlerTest - MoveAttemptWhilePieceMovingIgnored") {

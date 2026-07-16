@@ -8,6 +8,8 @@ TEST_CASE("GameRulesTest - StandardRulesConfiguration") {
     const kfc::GameRules rules = kfc::KungFuChessRules::standard();
     CHECK_EQ(rules.move_duration_ms, kfc::kMoveDurationMs);
     CHECK_EQ(rules.jump_duration_ms, kfc::kJumpDurationMs);
+    CHECK_EQ(rules.long_rest_duration_ms, kfc::kLongRestDurationMs);
+    CHECK_EQ(rules.short_rest_duration_ms, kfc::kShortRestDurationMs);
     CHECK(rules.is_game_over(kfc::test::make_piece(kfc::PieceColor::White, kfc::PieceKind::King)));
     CHECK(rules.is_game_over(kfc::test::make_piece(kfc::PieceColor::Black, kfc::PieceKind::King)));
     CHECK_FALSE(rules.is_game_over(kfc::test::make_piece(kfc::PieceColor::White, kfc::PieceKind::Pawn)));

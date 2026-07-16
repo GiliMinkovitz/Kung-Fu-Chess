@@ -79,6 +79,30 @@ void MoveScheduler::schedule_jump(JumpState jump) {
     active_jumps_.push_back(std::move(jump));
 }
 
+void MoveScheduler::schedule_rest(Piece::Id piece_id, RestKind kind, int end_time_ms) {
+    active_rests_[piece_id] = ActiveRest{kind, end_time_ms};
+}
+
+bool MoveScheduler::is_piece_resting(uint64_t current_time_ms, Piece::Id piece_id) const {
+    const auto it = active_rests_.find(piece_id);
+    if (it == active_rests_.end()) {
+        return false;
+    }
+    return static_cast<std::int64_t>(current_time_ms) < it->second.end_time_ms;
+}
+
+std::optional<RestKind> MoveScheduler::rest_kind(uint64_t current_time_ms,
+                                                   Piece::Id piece_id) const {
+    const auto it = active_rests_.find(piece_id);
+    if (it == active_rests_.end()) {
+        return std::nullopt;
+    }
+    if (static_cast<std::int64_t>(current_time_ms) >= it->second.end_time_ms) {
+        return std::nullopt;
+    }
+    return it->second.kind;
+}
+
 AnimationSnapshot MoveScheduler::animations_at(std::int64_t clock_ms) const {
     AnimationSnapshot snapshot;
 
@@ -116,7 +140,8 @@ AnimationSnapshot MoveScheduler::animations_at(std::int64_t clock_ms) const {
     return snapshot;
 }
 
-void MoveScheduler::expire_jumps(uint64_t current_time_ms) {
+void MoveScheduler::expire_jumps(
+    uint64_t current_time_ms, const std::function<void(const JumpState&)>& on_complete) {
     const auto clock_ms = static_cast<std::int64_t>(current_time_ms);
     std::vector<JumpState> still_jumping;
     still_jumping.reserve(active_jumps_.size());
@@ -124,10 +149,23 @@ void MoveScheduler::expire_jumps(uint64_t current_time_ms) {
     for (JumpState& jump : active_jumps_) {
         if (clock_ms < jump.arrival_time) {
             still_jumping.push_back(std::move(jump));
+        } else if (on_complete) {
+            on_complete(jump);
         }
     }
 
     active_jumps_ = std::move(still_jumping);
+}
+
+void MoveScheduler::expire_rests(uint64_t current_time_ms) {
+    const auto clock_ms = static_cast<std::int64_t>(current_time_ms);
+    for (auto it = active_rests_.begin(); it != active_rests_.end();) {
+        if (clock_ms >= it->second.end_time_ms) {
+            it = active_rests_.erase(it);
+        } else {
+            ++it;
+        }
+    }
 }
 
 }  // namespace kfc

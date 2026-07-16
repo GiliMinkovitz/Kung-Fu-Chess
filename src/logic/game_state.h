@@ -43,6 +43,7 @@ public:
     [[nodiscard]] bool is_piece(std::size_t row, std::size_t col) const;
     [[nodiscard]] bool is_piece_moving(std::size_t row, std::size_t col) const;
     [[nodiscard]] bool is_piece_jumping(std::size_t row, std::size_t col) const;
+    [[nodiscard]] bool is_piece_resting(std::size_t row, std::size_t col) const;
     [[nodiscard]] bool is_selectable_piece(std::size_t row, std::size_t col) const;
     [[nodiscard]] bool is_friendly_to_selection(std::size_t row, std::size_t col) const;
     [[nodiscard]] AnimationSnapshot animations_for_render() const;

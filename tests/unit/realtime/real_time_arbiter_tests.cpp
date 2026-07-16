@@ -184,6 +184,56 @@ TEST_CASE("RealTimeArbiterTest - AnimationsForRenderTracksJumpProgress") {
     CHECK(snapshot.moves.empty());
 }
 
+TEST_CASE("RealTimeArbiterTest - RequestMoveSchedulesLongRestAfterSettlement") {
+    kfc::BoardModel board = kfc::test::make_board({{"wR", ".", "."}});
+    kfc::RealTimeArbiter arbiter;
+    kfc::GameRules rules = kfc::KungFuChessRules::standard();
+    bool game_over = false;
+    const auto piece_id = piece_id_at(board, 0, 0);
+
+    board.get_piece(piece_id).state = kfc::PieceState::Moving;
+    arbiter.request_move(piece_id, kfc::PieceColor::White, {0, 0}, {0, 1}, kfc::kMoveDurationMs);
+
+    arbiter.update_time(kfc::kMoveDurationMs, board, rules, game_over);
+
+    CHECK(arbiter.is_piece_resting(piece_id));
+    arbiter.update_time(kfc::kLongRestDurationMs, board, rules, game_over);
+    CHECK_FALSE(arbiter.is_piece_resting(piece_id));
+}
+
+TEST_CASE("RealTimeArbiterTest - RequestJumpSchedulesShortRestAfterCompletion") {
+    kfc::BoardModel board = kfc::test::make_board({{"wR", ".", "."}});
+    kfc::RealTimeArbiter arbiter;
+    kfc::GameRules rules = kfc::KungFuChessRules::standard();
+    bool game_over = false;
+    const auto piece_id = piece_id_at(board, 0, 0);
+
+    arbiter.request_jump(piece_id, kfc::PieceColor::White, {0, 0}, kfc::kJumpDurationMs);
+
+    arbiter.update_time(kfc::kJumpDurationMs, board, rules, game_over);
+
+    CHECK(arbiter.is_piece_resting(piece_id));
+    arbiter.update_time(kfc::kShortRestDurationMs, board, rules, game_over);
+    CHECK_FALSE(arbiter.is_piece_resting(piece_id));
+}
+
+TEST_CASE("RealTimeArbiterTest - AbortedMoveDoesNotScheduleRest") {
+    kfc::BoardModel board = kfc::test::make_board({{"wR", ".", "."}});
+    kfc::RealTimeArbiter arbiter;
+    kfc::GameRules rules = kfc::KungFuChessRules::standard();
+    bool game_over = false;
+    const auto piece_id = piece_id_at(board, 0, 0);
+
+    board.get_piece(piece_id).state = kfc::PieceState::Moving;
+    arbiter.request_move(piece_id, kfc::PieceColor::White, {0, 0}, {0, 2}, 2 * kfc::kMoveDurationMs);
+
+    board.clear_cell(0, 0);
+
+    arbiter.update_time(2 * kfc::kMoveDurationMs, board, rules, game_over);
+
+    CHECK_FALSE(arbiter.is_piece_resting(piece_id));
+}
+
 TEST_CASE("RealTimeArbiterTest - AnimationsForRenderEmptyAfterArrival") {
     kfc::BoardModel board = kfc::test::make_board({{"wR", ".", "."}});
     kfc::RealTimeArbiter arbiter;

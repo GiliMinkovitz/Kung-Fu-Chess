@@ -25,6 +25,7 @@ public:
     [[nodiscard]] std::int64_t clock_ms() const noexcept { return clock_ms_; }
     [[nodiscard]] bool is_piece_moving(std::size_t row, std::size_t col) const;
     [[nodiscard]] bool is_piece_jumping(std::size_t row, std::size_t col) const;
+    [[nodiscard]] bool is_piece_resting(Piece::Id piece_id) const;
     // Pre-flight checks used by GameState before accepting a new move request.
     [[nodiscard]] bool is_same_color_destination_claimed(
         PieceColor color, const std::pair<std::size_t, std::size_t>& end_pos) const;

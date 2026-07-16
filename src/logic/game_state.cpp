@@ -46,8 +46,17 @@ bool GameState::is_piece_jumping(std::size_t row, std::size_t col) const {
     return arbiter_.is_piece_jumping(row, col);
 }
 
+bool GameState::is_piece_resting(std::size_t row, std::size_t col) const {
+    const Piece* piece = board_.piece_at(row, col);
+    if (piece == nullptr) {
+        return false;
+    }
+    return arbiter_.is_piece_resting(piece->id);
+}
+
 bool GameState::is_selectable_piece(std::size_t row, std::size_t col) const {
-    return is_piece(row, col) && !is_piece_moving(row, col) && !is_piece_jumping(row, col);
+    return is_piece(row, col) && !is_piece_moving(row, col) && !is_piece_jumping(row, col) &&
+           !is_piece_resting(row, col);
 }
 
 AnimationSnapshot GameState::animations_for_render() const {
@@ -120,7 +129,8 @@ bool GameState::can_move_selected_to(std::size_t from_row, std::size_t from_col,
     if (!is_in_bounds(to_row, to_col)) {
         return false;
     }
-    if (is_piece_moving(from_row, from_col) || is_piece_jumping(from_row, from_col)) {
+    if (is_piece_moving(from_row, from_col) || is_piece_jumping(from_row, from_col) ||
+        is_piece_resting(from_row, from_col)) {
         return false;
     }
 
@@ -186,7 +196,7 @@ void GameState::jump_at(std::size_t row, std::size_t col) {
     if (!is_in_bounds(row, col) || board_.is_empty(row, col)) {
         return;
     }
-    if (is_piece_moving(row, col) || is_piece_jumping(row, col)) {
+    if (is_piece_moving(row, col) || is_piece_jumping(row, col) || is_piece_resting(row, col)) {
         return;
     }
 
