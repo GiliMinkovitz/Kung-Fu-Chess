@@ -11,7 +11,7 @@ struct ThemeConfig {
 
 inline const ThemeConfig kDefaultCtd26ThemeConfig{
     std::filesystem::path{"third_party/CTD26/board_classic.png"},
-    std::filesystem::path{"third_party/CTD26/pieces"},
+    std::filesystem::path{"third_party/CTD26/pieces3"},
 };
 
 }  // namespace kfc

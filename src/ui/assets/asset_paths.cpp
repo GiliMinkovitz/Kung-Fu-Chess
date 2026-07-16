@@ -17,4 +17,9 @@ std::filesystem::path AssetPaths::piece_directory(PieceColor color, PieceKind ki
     return theme_.pieces_directory / token / "states";
 }
 
+std::filesystem::path AssetPaths::piece_sprite(PieceColor color, PieceKind kind,
+                                               const std::string& state, int frame) const {
+    return piece_directory(color, kind) / state / "sprites" / (std::to_string(frame) + ".png");
+}
+
 }  // namespace kfc
