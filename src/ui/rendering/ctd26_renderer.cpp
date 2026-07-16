@@ -110,9 +110,12 @@ void Ctd26Renderer::reload_piece_sprites() {
         for (std::size_t kind_index = 0; kind_index < static_cast<std::size_t>(PieceKind::Count);
              ++kind_index) {
             const auto kind = static_cast<PieceKind>(kind_index);
+            const PieceSpriteSelection selection =
+                sprite_selector_.select(PieceView{kind, color});
             try {
                 impl_->piece_sprites[color_index][kind_index] =
-                    image_loader.load_piece_sprite(color, kind, "idle", 1, sprite_size);
+                    image_loader.load_piece_sprite(color, kind, selection.state, selection.frame,
+                                                   sprite_size);
             } catch (const std::exception&) {
                 impl_->piece_sprites[color_index][kind_index] = std::nullopt;
             }
@@ -170,9 +173,14 @@ void Ctd26Renderer::draw_jump_effect(int x, int y, float jump_progress) {
 }
 
 void Ctd26Renderer::draw_piece(const PieceView& piece, int x, int y) {
+    const PieceSpriteSelection selection = sprite_selector_.select(piece);
+    const PieceSpriteSelection cached_selection =
+        sprite_selector_.select(PieceView{piece.kind, piece.color});
+
     const std::size_t color_index = piece.color == PieceColor::White ? 0 : 1;
     const std::size_t kind_index = static_cast<std::size_t>(piece.kind);
-    if (kind_index < static_cast<std::size_t>(PieceKind::Count)) {
+    if (kind_index < static_cast<std::size_t>(PieceKind::Count) &&
+        selection.state == cached_selection.state && selection.frame == cached_selection.frame) {
         std::optional<Img>& sprite = impl_->piece_sprites[color_index][kind_index];
         if (sprite.has_value() && sprite->is_loaded()) {
             sprite->draw_on(*impl_->frame, x, y);

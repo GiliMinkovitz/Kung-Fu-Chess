@@ -20,6 +20,7 @@ set(KFC_UI_SOURCES
     src/ui/layout/board_layout_calculator.cpp
     src/ui/view/board_view_model.cpp
     src/ui/view/board_view_builder.cpp
+    src/ui/view/piece_sprite_selector.cpp
     src/ui/rendering/headless_renderer.cpp
     src/ui/controller/ui_controller.cpp
 )

@@ -5,6 +5,7 @@
 #include "ui/layout/board_layout.h"
 #include "ui/layout/board_layout_calculator.h"
 #include "ui/rendering/i_ui_renderer.h"
+#include "ui/view/piece_sprite_selector.h"
 
 #include <memory>
 namespace kfc {
@@ -41,6 +42,7 @@ private:
 
     ThemeConfig theme_config_;
     UiTheme theme_;
+    PieceSpriteSelector sprite_selector_;
     BoardLayoutCalculator layout_calculator_;
     BoardLayout layout_{};
     int window_width_ = 0;
