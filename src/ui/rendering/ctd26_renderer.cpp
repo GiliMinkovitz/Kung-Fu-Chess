@@ -13,12 +13,35 @@
 #include <exception>
 #include <optional>
 #include <string>
+#include <unordered_map>
 
 namespace kfc {
 
+struct PieceSpriteCacheKey {
+    PieceColor color;
+    PieceKind kind;
+    std::string state;
+    int frame;
+
+    bool operator==(const PieceSpriteCacheKey& other) const {
+        return color == other.color && kind == other.kind && state == other.state &&
+               frame == other.frame;
+    }
+};
+
+struct PieceSpriteCacheKeyHash {
+    std::size_t operator()(const PieceSpriteCacheKey& key) const {
+        const std::size_t color_hash = std::hash<int>{}(static_cast<int>(key.color));
+        const std::size_t kind_hash = std::hash<int>{}(static_cast<int>(key.kind));
+        const std::size_t state_hash = std::hash<std::string>{}(key.state);
+        const std::size_t frame_hash = std::hash<int>{}(key.frame);
+        return color_hash ^ (kind_hash << 1) ^ (state_hash << 2) ^ (frame_hash << 3);
+    }
+};
+
 struct Ctd26RendererImpl {
     using PieceSpriteCache =
-        std::array<std::array<std::optional<Img>, static_cast<std::size_t>(PieceKind::Count)>, 2>;
+        std::unordered_map<PieceSpriteCacheKey, std::optional<Img>, PieceSpriteCacheKeyHash>;
 
     std::unique_ptr<Img> frame;
     std::unique_ptr<Img> board_background;
@@ -94,7 +117,7 @@ void Ctd26Renderer::reload_board_background() {
 }
 
 void Ctd26Renderer::reload_piece_sprites() {
-    impl_->piece_sprites = {};
+    impl_->piece_sprites.clear();
 
     if (layout_.cell_size <= 0) {
         return;
@@ -106,18 +129,18 @@ void Ctd26Renderer::reload_piece_sprites() {
 
     constexpr std::array<PieceColor, 2> kColors{PieceColor::White, PieceColor::Black};
     for (const PieceColor color : kColors) {
-        const std::size_t color_index = color == PieceColor::White ? 0 : 1;
         for (std::size_t kind_index = 0; kind_index < static_cast<std::size_t>(PieceKind::Count);
              ++kind_index) {
             const auto kind = static_cast<PieceKind>(kind_index);
             const PieceSpriteSelection selection =
-                sprite_selector_.select(PieceView{kind, color});
+                sprite_selector_.select(PieceSpriteContext{.piece = PieceView{kind, color}});
+            const PieceSpriteCacheKey key{color, kind, std::string(selection.state), selection.frame};
             try {
-                impl_->piece_sprites[color_index][kind_index] =
+                impl_->piece_sprites[key] =
                     image_loader.load_piece_sprite(color, kind, selection.state, selection.frame,
                                                    sprite_size);
             } catch (const std::exception&) {
-                impl_->piece_sprites[color_index][kind_index] = std::nullopt;
+                impl_->piece_sprites[key] = std::nullopt;
             }
         }
     }
@@ -172,20 +195,16 @@ void Ctd26Renderer::draw_jump_effect(int x, int y, float jump_progress) {
                             layout_.jump_border_thickness());
 }
 
-void Ctd26Renderer::draw_piece(const PieceView& piece, int x, int y) {
-    const PieceSpriteSelection selection = sprite_selector_.select(piece);
-    const PieceSpriteSelection cached_selection =
-        sprite_selector_.select(PieceView{piece.kind, piece.color});
-
-    const std::size_t color_index = piece.color == PieceColor::White ? 0 : 1;
-    const std::size_t kind_index = static_cast<std::size_t>(piece.kind);
-    if (kind_index < static_cast<std::size_t>(PieceKind::Count) &&
-        selection.state == cached_selection.state && selection.frame == cached_selection.frame) {
-        std::optional<Img>& sprite = impl_->piece_sprites[color_index][kind_index];
-        if (sprite.has_value() && sprite->is_loaded()) {
-            sprite->draw_on(*impl_->frame, x, y);
-            return;
-        }
+void Ctd26Renderer::draw_piece(const PieceSpriteContext& context, int x, int y) {
+    const PieceSpriteSelection selection = sprite_selector_.select(context);
+    const PieceView& piece = context.piece;
+    const PieceSpriteCacheKey key{piece.color, piece.kind, std::string(selection.state),
+                                  selection.frame};
+    const auto cached_sprite = impl_->piece_sprites.find(key);
+    if (cached_sprite != impl_->piece_sprites.end() && cached_sprite->second.has_value() &&
+        cached_sprite->second->is_loaded()) {
+        cached_sprite->second->draw_on(*impl_->frame, x, y);
+        return;
     }
 
     const std::string label = std::string{color_to_char(piece.color), kind_to_char(piece.kind)};
@@ -217,7 +236,7 @@ void Ctd26Renderer::draw_static_board(const BoardViewModel& view) {
 
             if (const std::optional<PieceView> piece = board_view_piece_at(view, row, col);
                 piece.has_value()) {
-                draw_piece(*piece, x, y);
+                draw_piece(PieceSpriteContext{.piece = *piece}, x, y);
             }
         }
     }
@@ -238,7 +257,8 @@ void Ctd26Renderer::draw_moving_pieces(const BoardViewModel& view) {
 
         const int draw_x = static_cast<int>(from_x + (to_x - from_x) * progress);
         const int draw_y = static_cast<int>(from_y + (to_y - from_y) * progress);
-        draw_piece(*piece, draw_x, draw_y);
+        draw_piece(PieceSpriteContext{.piece = *piece, .moving = true, .progress = progress}, draw_x,
+                   draw_y);
     }
 }
 

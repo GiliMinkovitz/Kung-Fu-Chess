@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ui/view/board_view_model.h"
+#include "ui/view/piece_sprite_context.h"
 
 #include <string_view>
 
@@ -13,7 +13,7 @@ struct PieceSpriteSelection {
 
 class PieceSpriteSelector {
 public:
-    [[nodiscard]] PieceSpriteSelection select(const PieceView& piece) const;
+    [[nodiscard]] PieceSpriteSelection select(const PieceSpriteContext& context) const;
 };
 
 }  // namespace kfc

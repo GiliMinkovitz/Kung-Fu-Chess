@@ -2,7 +2,7 @@
 
 namespace kfc {
 
-PieceSpriteSelection PieceSpriteSelector::select(const PieceView& /*piece*/) const {
+PieceSpriteSelection PieceSpriteSelector::select(const PieceSpriteContext& /*context*/) const {
     return {"idle", 1};
 }
 
