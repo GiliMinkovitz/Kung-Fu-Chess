@@ -8,14 +8,21 @@
 #include <img.hpp>
 
 #include <algorithm>
+#include <array>
 #include <cmath>
+#include <exception>
+#include <optional>
 #include <string>
 
 namespace kfc {
 
 struct Ctd26RendererImpl {
+    using PieceSpriteCache =
+        std::array<std::array<std::optional<Img>, static_cast<std::size_t>(PieceKind::Count)>, 2>;
+
     std::unique_ptr<Img> frame;
     std::unique_ptr<Img> board_background;
+    PieceSpriteCache piece_sprites{};
 };
 
 namespace {
@@ -58,6 +65,7 @@ void Ctd26Renderer::init(int window_width, int window_height, std::size_t rows, 
     impl_->frame = std::make_unique<Img>();
     impl_->board_background = std::make_unique<Img>();
     reload_board_background();
+    reload_piece_sprites();
 
     Img::open_window(kWindowName);
     Img::set_mouse_callback(kWindowName, on_mouse, input_sink_);
@@ -70,8 +78,12 @@ void Ctd26Renderer::init(int window_width, int window_height, std::size_t rows, 
 }
 
 void Ctd26Renderer::recalculate_layout() {
+    const int previous_cell_size = layout_.cell_size;
     layout_ = layout_calculator_.calculate(window_width_, window_height_, board_width_cells_,
                                            board_height_cells_);
+    if (initialized_ && layout_.cell_size != previous_cell_size) {
+        reload_piece_sprites();
+    }
 }
 
 void Ctd26Renderer::reload_board_background() {
@@ -79,6 +91,33 @@ void Ctd26Renderer::reload_board_background() {
     const ImageLoader image_loader(asset_paths);
     *impl_->board_background =
         image_loader.load_board({layout_.board_width_pixels, layout_.board_height_pixels});
+}
+
+void Ctd26Renderer::reload_piece_sprites() {
+    impl_->piece_sprites = {};
+
+    if (layout_.cell_size <= 0) {
+        return;
+    }
+
+    const AssetPaths asset_paths(theme_config_);
+    const ImageLoader image_loader(asset_paths);
+    const std::pair<int, int> sprite_size{layout_.cell_size, layout_.cell_size};
+
+    constexpr std::array<PieceColor, 2> kColors{PieceColor::White, PieceColor::Black};
+    for (const PieceColor color : kColors) {
+        const std::size_t color_index = color == PieceColor::White ? 0 : 1;
+        for (std::size_t kind_index = 0; kind_index < static_cast<std::size_t>(PieceKind::Count);
+             ++kind_index) {
+            const auto kind = static_cast<PieceKind>(kind_index);
+            try {
+                impl_->piece_sprites[color_index][kind_index] =
+                    image_loader.load_piece_sprite(color, kind, "idle", 1, sprite_size);
+            } catch (const std::exception&) {
+                impl_->piece_sprites[color_index][kind_index] = std::nullopt;
+            }
+        }
+    }
 }
 
 void Ctd26Renderer::attach_input_sink(IUiInputSink* sink) {
@@ -131,6 +170,16 @@ void Ctd26Renderer::draw_jump_effect(int x, int y, float jump_progress) {
 }
 
 void Ctd26Renderer::draw_piece(const PieceView& piece, int x, int y) {
+    const std::size_t color_index = piece.color == PieceColor::White ? 0 : 1;
+    const std::size_t kind_index = static_cast<std::size_t>(piece.kind);
+    if (kind_index < static_cast<std::size_t>(PieceKind::Count)) {
+        std::optional<Img>& sprite = impl_->piece_sprites[color_index][kind_index];
+        if (sprite.has_value() && sprite->is_loaded()) {
+            sprite->draw_on(*impl_->frame, x, y);
+            return;
+        }
+    }
+
     const std::string label = std::string{color_to_char(piece.color), kind_to_char(piece.kind)};
     const cv::Scalar color =
         piece.color == PieceColor::White ? to_scalar(theme_.white_token) : to_scalar(theme_.black_token);

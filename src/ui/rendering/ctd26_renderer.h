@@ -29,6 +29,7 @@ public:
 private:
     void recalculate_layout();
     void reload_board_background();
+    void reload_piece_sprites();
 
     void draw_board_background();
     void draw_selection_highlight(int x, int y);
