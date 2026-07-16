@@ -35,6 +35,7 @@ private:
     void draw_board_background();
     void draw_selection_highlight(int x, int y);
     void draw_jump_effect(int x, int y, float jump_progress);
+    void draw_rest_cooldown_overlay(int x, int y, float progress, RestKind rest_kind);
     void draw_piece(const PieceSpriteContext& context, int x, int y);
     void draw_static_board(const BoardViewModel& view);
     void draw_moving_pieces(const BoardViewModel& view);

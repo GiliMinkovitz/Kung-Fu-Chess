@@ -227,6 +227,31 @@ void Ctd26Renderer::draw_jump_effect(int x, int y, float jump_progress) {
                             layout_.jump_border_thickness());
 }
 
+void Ctd26Renderer::draw_rest_cooldown_overlay(int x, int y, float progress, RestKind rest_kind) {
+    const float remaining = 1.0f - std::clamp(progress, 0.0f, 1.0f);
+    if (remaining <= 0.0f) {
+        return;
+    }
+
+    const int inset = std::max(1, layout_.cell_size / 16);
+    const int inner_size = layout_.cell_size - 2 * inset;
+    if (inner_size <= 0) {
+        return;
+    }
+
+    const int overlay_height =
+        std::max(1, static_cast<int>(std::ceil(static_cast<float>(inner_size) * remaining)));
+    const int overlay_x = x + inset;
+    const int overlay_y = y + layout_.cell_size - inset - overlay_height;
+
+    const int intensity = static_cast<int>(40.0f + 70.0f * remaining);
+    const cv::Scalar color =
+        rest_kind == RestKind::Long ? cv::Scalar(intensity + 15, intensity - 10, intensity - 30)
+                                    : cv::Scalar(intensity + 25, intensity + 8, intensity - 15);
+
+    impl_->frame->rectangle(overlay_x, overlay_y, inner_size, overlay_height, color, -1);
+}
+
 void Ctd26Renderer::draw_piece(const PieceSpriteContext& context, int x, int y) {
     const PieceSpriteSelection selection = sprite_selector_.select(context);
     const PieceView& piece = context.piece;
@@ -260,6 +285,11 @@ void Ctd26Renderer::draw_static_board(const BoardViewModel& view) {
 
             if (board_view_is_jumping_cell(view, row, col)) {
                 draw_jump_effect(x, y, board_view_jump_progress_at(view, row, col));
+            }
+
+            if (board_view_is_resting_cell(view, row, col)) {
+                draw_rest_cooldown_overlay(x, y, board_view_rest_progress_at(view, row, col),
+                                           board_view_rest_kind_at(view, row, col));
             }
 
             if (board_view_is_move_origin(view, row, col)) {

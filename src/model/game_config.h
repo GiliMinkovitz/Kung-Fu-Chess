@@ -17,8 +17,8 @@ inline constexpr char kPawnType = 'P';
 
 inline constexpr std::int64_t kMoveDurationMs = 1000;
 inline constexpr std::int64_t kJumpDurationMs = 1000;
-inline constexpr std::int64_t kLongRestDurationMs = 1000;
-inline constexpr std::int64_t kShortRestDurationMs = 1000;
+inline constexpr std::int64_t kLongRestDurationMs = 4500;
+inline constexpr std::int64_t kShortRestDurationMs = 2500;
 inline constexpr std::int64_t kTargetFrameMs = 16;
 
 inline constexpr const char* kBoardSectionHeader = "Board:";
