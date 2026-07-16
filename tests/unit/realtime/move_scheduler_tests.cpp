@@ -21,6 +21,59 @@ TEST_CASE("MoveSchedulerTest - AnimationsAtSkipsExpiredJumps") {
 
     CHECK(snapshot.moves.empty());
     CHECK(snapshot.jumps.empty());
+    CHECK(snapshot.rests.empty());
+}
+
+TEST_CASE("MoveSchedulerTest - AnimationsAtIncludesActiveRest") {
+    kfc::MoveScheduler scheduler;
+    scheduler.schedule_rest(1, kfc::RestKind::Long, 100, 600, 2, 3);
+
+    const kfc::AnimationSnapshot snapshot = scheduler.animations_at(350);
+
+    REQUIRE_EQ(snapshot.rests.size(), 1u);
+    const kfc::ActiveRestSnapshot& rest = snapshot.rests.front();
+    CHECK_EQ(rest.piece_id, 1u);
+    CHECK_EQ(rest.row, 2u);
+    CHECK_EQ(rest.col, 3u);
+    CHECK(rest.kind == kfc::RestKind::Long);
+    CHECK(rest.progress == doctest::Approx(0.5f));
+}
+
+TEST_CASE("MoveSchedulerTest - AnimationsAtSkipsExpiredRests") {
+    kfc::MoveScheduler scheduler;
+    scheduler.schedule_rest(1, kfc::RestKind::Short, 0, 100, 0, 0);
+
+    const kfc::AnimationSnapshot snapshot = scheduler.animations_at(100);
+
+    CHECK(snapshot.rests.empty());
+}
+
+TEST_CASE("MoveSchedulerTest - RestBlockingAndSnapshotAlignAtStart") {
+    kfc::MoveScheduler scheduler;
+    scheduler.schedule_rest(1, kfc::RestKind::Long, 100, 600, 2, 3);
+
+    CHECK(scheduler.is_piece_resting(100, 1));
+    const kfc::AnimationSnapshot snapshot = scheduler.animations_at(100);
+    REQUIRE_EQ(snapshot.rests.size(), 1u);
+    CHECK(snapshot.rests.front().progress == doctest::Approx(0.0f));
+}
+
+TEST_CASE("MoveSchedulerTest - RestBlockingAndSnapshotAlignAtEnd") {
+    kfc::MoveScheduler scheduler;
+    scheduler.schedule_rest(1, kfc::RestKind::Short, 0, 100, 0, 0);
+
+    CHECK_FALSE(scheduler.is_piece_resting(100, 1));
+    CHECK(scheduler.animations_at(100).rests.empty());
+}
+
+TEST_CASE("MoveSchedulerTest - RestBlockingAndSnapshotAlignBeforeEnd") {
+    kfc::MoveScheduler scheduler;
+    scheduler.schedule_rest(1, kfc::RestKind::Long, 0, 100, 0, 0);
+
+    CHECK(scheduler.is_piece_resting(99, 1));
+    const kfc::AnimationSnapshot snapshot = scheduler.animations_at(99);
+    REQUIRE_EQ(snapshot.rests.size(), 1u);
+    CHECK(snapshot.rests.front().progress == doctest::Approx(0.99f));
 }
 
 TEST_CASE("RenderSnapshotTest - ComputeAnimationProgressAtOrAfterArrival") {

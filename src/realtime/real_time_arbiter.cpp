@@ -68,8 +68,9 @@ void RealTimeArbiter::settle_pending_moves(BoardModel& board, const GameRules& r
             updated.state = PieceState::Idle;
             board.place_piece(std::move(updated));
             scheduler_.schedule_rest(
-                move.piece_id, RestKind::Long,
-                static_cast<int>(move.arrival_time + rules.long_rest_duration_ms));
+                move.piece_id, RestKind::Long, static_cast<int>(move.arrival_time),
+                static_cast<int>(move.arrival_time + rules.long_rest_duration_ms), end_row,
+                end_col);
         } else {
             Piece& arriving_piece = board.get_piece(move.piece_id);
             arriving_piece.state = PieceState::Captured;
@@ -78,7 +79,9 @@ void RealTimeArbiter::settle_pending_moves(BoardModel& board, const GameRules& r
 
     scheduler_.expire_jumps(current_time_ms, [this, &rules](const JumpState& jump) {
         scheduler_.schedule_rest(jump.piece_id, RestKind::Short,
-                                 static_cast<int>(jump.arrival_time + rules.short_rest_duration_ms));
+                                 static_cast<int>(jump.arrival_time),
+                                 static_cast<int>(jump.arrival_time + rules.short_rest_duration_ms),
+                                 jump.cell.first, jump.cell.second);
     });
     scheduler_.expire_rests(current_time_ms);
 }

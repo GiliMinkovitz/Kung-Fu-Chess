@@ -33,11 +33,12 @@ struct JumpState {
     std::int64_t arrival_time = 0;
 };
 
-enum class RestKind { Short, Long };
-
 struct ActiveRest {
     RestKind kind;
+    int start_time_ms;
     int end_time_ms;
+    std::size_t row = 0;
+    std::size_t col = 0;
 };
 
 class BoardModel;
@@ -71,7 +72,8 @@ public:
 
     void schedule_move(PendingMove move);
     void schedule_jump(JumpState jump);
-    void schedule_rest(Piece::Id piece_id, RestKind kind, int end_time_ms);
+    void schedule_rest(Piece::Id piece_id, RestKind kind, int start_time_ms, int end_time_ms,
+                       std::size_t row, std::size_t col);
     void expire_jumps(
         uint64_t current_time_ms,
         const std::function<void(const JumpState&)>& on_complete = {});

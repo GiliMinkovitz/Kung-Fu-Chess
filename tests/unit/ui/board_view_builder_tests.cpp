@@ -15,6 +15,7 @@ TEST_CASE("BoardViewBuilderTest - EmptyBoard") {
     CHECK_FALSE(view.selection.has_value());
     CHECK(view.animations.moves.empty());
     CHECK(view.animations.jumps.empty());
+    CHECK(view.animations.rests.empty());
 }
 
 TEST_CASE("BoardViewBuilderTest - MapsDimensionsPiecesAndClock") {
@@ -104,6 +105,91 @@ TEST_CASE("BoardViewBuilderTest - ActiveJumpAnimationDuringTransit") {
     CHECK(jump.progress < 1.0f);
     CHECK(kfc::board_view_is_jumping_cell(view, 0, 0));
     CHECK(kfc::board_view_jump_progress_at(view, 0, 0) == doctest::Approx(jump.progress));
+}
+
+TEST_CASE("BoardViewBuilderTest - ActiveLongRestAnimationAfterMove") {
+    kfc::GameState state(kfc::test::make_board({{"wR", ".", "."}}));
+    state.select(0, 0);
+    state.move_selected_to(0, 2);
+    state.add_clock(2 * kfc::kMoveDurationMs + kfc::kLongRestDurationMs / 2);
+
+    const kfc::BoardViewModel view = kfc::BoardViewBuilder::build(state);
+
+    REQUIRE_EQ(view.animations.rests.size(), 1u);
+    const kfc::ActiveRestSnapshot& rest = view.animations.rests.front();
+    CHECK_EQ(rest.row, 0u);
+    CHECK_EQ(rest.col, 2u);
+    CHECK(rest.kind == kfc::RestKind::Long);
+    CHECK(rest.progress > 0.0f);
+    CHECK(rest.progress < 1.0f);
+    CHECK(kfc::board_view_is_resting_cell(view, 0, 2));
+    CHECK(kfc::board_view_rest_progress_at(view, 0, 2) == doctest::Approx(rest.progress));
+    CHECK(kfc::board_view_rest_kind_at(view, 0, 2) == kfc::RestKind::Long);
+}
+
+TEST_CASE("BoardViewBuilderTest - ActiveShortRestAnimationAfterJump") {
+    kfc::GameState state(kfc::test::make_board({{"wK", ".", "bK"}}));
+    state.select(0, 0);
+    state.jump_selected();
+    state.add_clock(kfc::kJumpDurationMs + kfc::kShortRestDurationMs / 2);
+
+    const kfc::BoardViewModel view = kfc::BoardViewBuilder::build(state);
+
+    REQUIRE_EQ(view.animations.rests.size(), 1u);
+    const kfc::ActiveRestSnapshot& rest = view.animations.rests.front();
+    CHECK_EQ(rest.row, 0u);
+    CHECK_EQ(rest.col, 0u);
+    CHECK(rest.kind == kfc::RestKind::Short);
+    CHECK(rest.progress > 0.0f);
+    CHECK(rest.progress < 1.0f);
+    CHECK(kfc::board_view_is_resting_cell(view, 0, 0));
+    CHECK(kfc::board_view_rest_kind_at(view, 0, 0) == kfc::RestKind::Short);
+}
+
+TEST_CASE("BoardViewBuilderTest - RestBlockingAndSnapshotAlignAtMoveBoundaries") {
+    kfc::GameState state(kfc::test::make_board({{"wR", ".", "."}}));
+    state.select(0, 0);
+    state.move_selected_to(0, 1);
+
+    state.add_clock(kfc::kMoveDurationMs);
+    {
+        const kfc::BoardViewModel view = kfc::BoardViewBuilder::build(state);
+        CHECK(state.is_piece_resting(0, 1));
+        REQUIRE_EQ(view.animations.rests.size(), 1u);
+        CHECK(view.animations.rests.front().progress == doctest::Approx(0.0f));
+        CHECK(view.animations.rests.front().kind == kfc::RestKind::Long);
+    }
+
+    state.add_clock(kfc::kLongRestDurationMs);
+    {
+        const kfc::BoardViewModel view = kfc::BoardViewBuilder::build(state);
+        CHECK_FALSE(state.is_piece_resting(0, 1));
+        CHECK(view.animations.rests.empty());
+        CHECK(state.is_selectable_piece(0, 1));
+    }
+}
+
+TEST_CASE("BoardViewBuilderTest - RestBlockingAndSnapshotAlignAtJumpBoundaries") {
+    kfc::GameState state(kfc::test::make_board({{"wK", ".", "bK"}}));
+    state.select(0, 0);
+    state.jump_selected();
+
+    state.add_clock(kfc::kJumpDurationMs);
+    {
+        const kfc::BoardViewModel view = kfc::BoardViewBuilder::build(state);
+        CHECK(state.is_piece_resting(0, 0));
+        REQUIRE_EQ(view.animations.rests.size(), 1u);
+        CHECK(view.animations.rests.front().progress == doctest::Approx(0.0f));
+        CHECK(view.animations.rests.front().kind == kfc::RestKind::Short);
+    }
+
+    state.add_clock(kfc::kShortRestDurationMs);
+    {
+        const kfc::BoardViewModel view = kfc::BoardViewBuilder::build(state);
+        CHECK_FALSE(state.is_piece_resting(0, 0));
+        CHECK(view.animations.rests.empty());
+        CHECK(state.is_selectable_piece(0, 0));
+    }
 }
 
 TEST_CASE("BoardViewBuilderTest - GameOverFlagPropagated") {

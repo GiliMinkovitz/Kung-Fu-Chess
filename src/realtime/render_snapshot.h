@@ -8,6 +8,8 @@
 
 namespace kfc {
 
+enum class RestKind { Short, Long };
+
 struct ActiveMoveSnapshot {
     Piece::Id piece_id = Piece::kInvalidId;
     std::size_t from_row = 0;
@@ -24,9 +26,18 @@ struct ActiveJumpSnapshot {
     float progress = 0.0f;
 };
 
+struct ActiveRestSnapshot {
+    Piece::Id piece_id = Piece::kInvalidId;
+    std::size_t row = 0;
+    std::size_t col = 0;
+    RestKind kind = RestKind::Short;
+    float progress = 0.0f;
+};
+
 struct AnimationSnapshot {
     std::vector<ActiveMoveSnapshot> moves;
     std::vector<ActiveJumpSnapshot> jumps;
+    std::vector<ActiveRestSnapshot> rests;
 };
 
 [[nodiscard]] inline float compute_animation_progress(std::int64_t clock_ms,

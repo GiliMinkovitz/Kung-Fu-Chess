@@ -48,4 +48,13 @@ struct BoardViewModel {
 [[nodiscard]] float board_view_jump_progress_at(const BoardViewModel& view, std::size_t row,
                                                 std::size_t col);
 
+[[nodiscard]] bool board_view_is_resting_cell(const BoardViewModel& view, std::size_t row,
+                                              std::size_t col);
+
+[[nodiscard]] float board_view_rest_progress_at(const BoardViewModel& view, std::size_t row,
+                                                 std::size_t col);
+
+[[nodiscard]] RestKind board_view_rest_kind_at(const BoardViewModel& view, std::size_t row,
+                                               std::size_t col);
+
 }  // namespace kfc

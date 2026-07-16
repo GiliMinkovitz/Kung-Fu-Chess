@@ -57,4 +57,31 @@ float board_view_jump_progress_at(const BoardViewModel& view, std::size_t row, s
     return 0.0f;
 }
 
+bool board_view_is_resting_cell(const BoardViewModel& view, std::size_t row, std::size_t col) {
+    for (const ActiveRestSnapshot& rest : view.animations.rests) {
+        if (rest.row == row && rest.col == col) {
+            return true;
+        }
+    }
+    return false;
+}
+
+float board_view_rest_progress_at(const BoardViewModel& view, std::size_t row, std::size_t col) {
+    for (const ActiveRestSnapshot& rest : view.animations.rests) {
+        if (rest.row == row && rest.col == col) {
+            return rest.progress;
+        }
+    }
+    return 0.0f;
+}
+
+RestKind board_view_rest_kind_at(const BoardViewModel& view, std::size_t row, std::size_t col) {
+    for (const ActiveRestSnapshot& rest : view.animations.rests) {
+        if (rest.row == row && rest.col == col) {
+            return rest.kind;
+        }
+    }
+    return RestKind::Short;
+}
+
 }  // namespace kfc

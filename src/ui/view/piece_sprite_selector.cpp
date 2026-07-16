@@ -18,6 +18,10 @@ PieceSpriteSelection PieceSpriteSelector::select(const PieceSpriteContext& conte
     if (context.jumping) {
         return {"jump", frame_from_progress(context.progress)};
     }
+    if (context.resting) {
+        const char* state = context.rest_kind == RestKind::Long ? "long_rest" : "short_rest";
+        return {state, frame_from_progress(context.progress)};
+    }
     return {"idle", 1};
 }
 

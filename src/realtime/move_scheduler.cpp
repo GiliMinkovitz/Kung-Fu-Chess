@@ -79,8 +79,9 @@ void MoveScheduler::schedule_jump(JumpState jump) {
     active_jumps_.push_back(std::move(jump));
 }
 
-void MoveScheduler::schedule_rest(Piece::Id piece_id, RestKind kind, int end_time_ms) {
-    active_rests_[piece_id] = ActiveRest{kind, end_time_ms};
+void MoveScheduler::schedule_rest(Piece::Id piece_id, RestKind kind, int start_time_ms,
+                                  int end_time_ms, std::size_t row, std::size_t col) {
+    active_rests_[piece_id] = ActiveRest{kind, start_time_ms, end_time_ms, row, col};
 }
 
 bool MoveScheduler::is_piece_resting(uint64_t current_time_ms, Piece::Id piece_id) const {
@@ -134,6 +135,20 @@ AnimationSnapshot MoveScheduler::animations_at(std::int64_t clock_ms) const {
             row,
             col,
             compute_animation_progress(clock_ms, jump.start_time, jump.arrival_time),
+        });
+    }
+
+    for (const auto& [piece_id, rest] : active_rests_) {
+        if (clock_ms >= rest.end_time_ms) {
+            continue;
+        }
+
+        snapshot.rests.push_back({
+            piece_id,
+            rest.row,
+            rest.col,
+            rest.kind,
+            compute_animation_progress(clock_ms, rest.start_time_ms, rest.end_time_ms),
         });
     }
 

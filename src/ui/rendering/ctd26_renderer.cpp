@@ -157,6 +157,22 @@ void Ctd26Renderer::reload_piece_sprites() {
                 } catch (const std::exception&) {
                     impl_->piece_sprites[jump_key] = std::nullopt;
                 }
+
+                const PieceSpriteCacheKey short_rest_key{color, kind, "short_rest", frame};
+                try {
+                    impl_->piece_sprites[short_rest_key] = image_loader.load_piece_sprite(
+                        color, kind, "short_rest", frame, sprite_size);
+                } catch (const std::exception&) {
+                    impl_->piece_sprites[short_rest_key] = std::nullopt;
+                }
+
+                const PieceSpriteCacheKey long_rest_key{color, kind, "long_rest", frame};
+                try {
+                    impl_->piece_sprites[long_rest_key] = image_loader.load_piece_sprite(
+                        color, kind, "long_rest", frame, sprite_size);
+                } catch (const std::exception&) {
+                    impl_->piece_sprites[long_rest_key] = std::nullopt;
+                }
             }
         }
     }
@@ -254,7 +270,13 @@ void Ctd26Renderer::draw_static_board(const BoardViewModel& view) {
                 piece.has_value()) {
                 if (board_view_is_jumping_cell(view, row, col)) {
                     const float progress = board_view_jump_progress_at(view, row, col);
-                    draw_piece(PieceSpriteContext{*piece, false, true, progress}, x, y);
+                    draw_piece(PieceSpriteContext{*piece, false, true, false, RestKind::Short, progress},
+                                x, y);
+                } else if (board_view_is_resting_cell(view, row, col)) {
+                    const float progress = board_view_rest_progress_at(view, row, col);
+                    const RestKind rest_kind = board_view_rest_kind_at(view, row, col);
+                    draw_piece(PieceSpriteContext{*piece, false, false, true, rest_kind, progress}, x,
+                                y);
                 } else {
                     draw_piece(PieceSpriteContext{*piece}, x, y);
                 }
@@ -278,7 +300,8 @@ void Ctd26Renderer::draw_moving_pieces(const BoardViewModel& view) {
 
         const int draw_x = static_cast<int>(from_x + (to_x - from_x) * progress);
         const int draw_y = static_cast<int>(from_y + (to_y - from_y) * progress);
-        draw_piece(PieceSpriteContext{*piece, true, false, progress}, draw_x, draw_y);
+        draw_piece(PieceSpriteContext{*piece, true, false, false, RestKind::Short, progress}, draw_x,
+                    draw_y);
     }
 }
 
