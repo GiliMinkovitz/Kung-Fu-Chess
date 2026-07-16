@@ -132,15 +132,23 @@ void Ctd26Renderer::reload_piece_sprites() {
         for (std::size_t kind_index = 0; kind_index < static_cast<std::size_t>(PieceKind::Count);
              ++kind_index) {
             const auto kind = static_cast<PieceKind>(kind_index);
-            const PieceSpriteSelection selection =
-                sprite_selector_.select(PieceSpriteContext{.piece = PieceView{kind, color}});
-            const PieceSpriteCacheKey key{color, kind, std::string(selection.state), selection.frame};
+
+            const PieceSpriteCacheKey idle_key{color, kind, "idle", 1};
             try {
-                impl_->piece_sprites[key] =
-                    image_loader.load_piece_sprite(color, kind, selection.state, selection.frame,
-                                                   sprite_size);
+                impl_->piece_sprites[idle_key] =
+                    image_loader.load_piece_sprite(color, kind, "idle", 1, sprite_size);
             } catch (const std::exception&) {
-                impl_->piece_sprites[key] = std::nullopt;
+                impl_->piece_sprites[idle_key] = std::nullopt;
+            }
+
+            for (int frame = 1; frame <= 5; ++frame) {
+                const PieceSpriteCacheKey key{color, kind, "move", frame};
+                try {
+                    impl_->piece_sprites[key] =
+                        image_loader.load_piece_sprite(color, kind, "move", frame, sprite_size);
+                } catch (const std::exception&) {
+                    impl_->piece_sprites[key] = std::nullopt;
+                }
             }
         }
     }
@@ -236,7 +244,7 @@ void Ctd26Renderer::draw_static_board(const BoardViewModel& view) {
 
             if (const std::optional<PieceView> piece = board_view_piece_at(view, row, col);
                 piece.has_value()) {
-                draw_piece(PieceSpriteContext{.piece = *piece}, x, y);
+                draw_piece(PieceSpriteContext{*piece}, x, y);
             }
         }
     }
@@ -257,8 +265,7 @@ void Ctd26Renderer::draw_moving_pieces(const BoardViewModel& view) {
 
         const int draw_x = static_cast<int>(from_x + (to_x - from_x) * progress);
         const int draw_y = static_cast<int>(from_y + (to_y - from_y) * progress);
-        draw_piece(PieceSpriteContext{.piece = *piece, .moving = true, .progress = progress}, draw_x,
-                   draw_y);
+        draw_piece(PieceSpriteContext{*piece, true, false, progress}, draw_x, draw_y);
     }
 }
 

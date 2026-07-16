@@ -14,6 +14,10 @@ struct PieceSpriteSelection {
 class PieceSpriteSelector {
 public:
     [[nodiscard]] PieceSpriteSelection select(const PieceSpriteContext& context) const;
+
+private:
+    static constexpr int kMoveFrameCount = 5;
+    [[nodiscard]] static int frame_from_progress(float progress);
 };
 
 }  // namespace kfc
