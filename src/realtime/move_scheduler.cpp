@@ -4,6 +4,8 @@
 #include "collision_resolver.h"
 #include "../rules/game_rules.h"
 
+#include <algorithm>
+
 namespace kfc {
 
 bool MoveScheduler::is_piece_moving(uint64_t current_time_ms, std::size_t row,
@@ -44,6 +46,26 @@ bool MoveScheduler::conflicts_with_opposite_color_move(uint64_t current_time_ms,
                                                      const PendingMove& proposed) const {
     return CollisionResolver::conflicts_with_opposite_color_move(
         pending_moves_, static_cast<std::int64_t>(current_time_ms), moving_color, proposed);
+}
+
+void MoveScheduler::for_each_in_flight_pending(
+    uint64_t current_time_ms, const std::function<void(const PendingMove&)>& fn) const {
+    const auto clock_ms = static_cast<std::int64_t>(current_time_ms);
+    for (const PendingMove& move : pending_moves_) {
+        if (clock_ms < move.arrival_time) {
+            fn(move);
+        }
+    }
+}
+
+void MoveScheduler::cancel_pending_move(Piece::Id piece_id) {
+    const auto it = std::find_if(pending_moves_.begin(), pending_moves_.end(),
+                                 [piece_id](const PendingMove& move) {
+                                     return move.piece_id == piece_id;
+                                 });
+    if (it != pending_moves_.end()) {
+        pending_moves_.erase(it);
+    }
 }
 
 void MoveScheduler::for_each_pending_due(uint64_t current_time_ms,

@@ -48,6 +48,8 @@ public:
     [[nodiscard]] AnimationSnapshot animations_for_render() const;
 
 private:
+    void cancel_invalid_in_flight_moves(BoardModel& board);
+
     MoveScheduler scheduler_;
     CollisionResolver collision_resolver_;
     std::int64_t clock_ms_ = 0;

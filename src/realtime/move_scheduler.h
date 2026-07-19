@@ -61,6 +61,12 @@ public:
     // Invokes fn for each due move and removes them from pending_moves_.
     void for_each_pending_due(uint64_t current_time_ms,
                               const std::function<void(const PendingMove&)>& fn);
+    // Read-only: invokes fn for each in-flight move (clock < arrival_time).
+    void for_each_in_flight_pending(
+        uint64_t current_time_ms,
+        const std::function<void(const PendingMove&)>& fn) const;
+    // Removes the pending move for piece_id, if any. Does not mutate board state.
+    void cancel_pending_move(Piece::Id piece_id);
     [[nodiscard]] bool check_for_jump_capture(
         uint64_t current_time_ms, const CollisionResolver& resolver, BoardModel& board,
         const GameRules& rules, const std::pair<std::size_t, std::size_t>& target_cell,

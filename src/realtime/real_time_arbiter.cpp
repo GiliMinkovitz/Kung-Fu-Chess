@@ -5,6 +5,8 @@
 #include "../rules/rules_registry.h"
 #include "../rules/piece_rules/pawn_rules.h"
 
+#include <vector>
+
 namespace kfc {
 
 namespace {
@@ -73,6 +75,22 @@ void restore_jumper(BoardModel& board, const JumpState& jump) {
 
 }  // namespace
 
+void RealTimeArbiter::cancel_invalid_in_flight_moves(BoardModel& board) {
+    const uint64_t current_time_ms = static_cast<uint64_t>(clock_ms_);
+    std::vector<PendingMove> invalid_moves;
+
+    scheduler_.for_each_in_flight_pending(current_time_ms, [&](const PendingMove& move) {
+        if (!can_settle_move(board, move)) {
+            invalid_moves.push_back(move);
+        }
+    });
+
+    for (const PendingMove& move : invalid_moves) {
+        restore_aborted_move(board, move);
+        scheduler_.cancel_pending_move(move.piece_id);
+    }
+}
+
 void RealTimeArbiter::update_time(std::int64_t ms, BoardModel& board, const GameRules& rules,
                                   bool& game_over) {
     clock_ms_ += ms;
@@ -82,10 +100,13 @@ void RealTimeArbiter::update_time(std::int64_t ms, BoardModel& board, const Game
 void RealTimeArbiter::settle_pending_moves(BoardModel& board, const GameRules& rules,
                                            bool& game_over) {
     const uint64_t current_time_ms = static_cast<uint64_t>(clock_ms_);
+    bool board_changed_from_settlement = false;
     // MoveScheduler removes each due move from the queue before invoking the callback;
     // this callback owns all board mutations for that arrival.
     scheduler_.for_each_pending_due(current_time_ms, [this, &board, &rules, &game_over,
-                                                      current_time_ms](const PendingMove& move) {
+                                                      current_time_ms,
+                                                      &board_changed_from_settlement](
+                                                         const PendingMove& move) {
         if (!can_settle_move(board, move)) {
             restore_aborted_move(board, move);
             return;
@@ -128,6 +149,7 @@ void RealTimeArbiter::settle_pending_moves(BoardModel& board, const GameRules& r
                 move.piece_id, RestKind::Long, static_cast<int>(move.arrival_time),
                 static_cast<int>(move.arrival_time + rules.long_rest_duration_ms), end_row,
                 end_col);
+            board_changed_from_settlement = true;
         } else if (destination_piece != nullptr && destination_piece->id == move.piece_id) {
             if (captured_opponent_id != Piece::kInvalidId) {
                 scheduler_.clear_rest(captured_opponent_id);
@@ -136,12 +158,17 @@ void RealTimeArbiter::settle_pending_moves(BoardModel& board, const GameRules& r
                 move.piece_id, RestKind::Long, static_cast<int>(move.arrival_time),
                 static_cast<int>(move.arrival_time + rules.long_rest_duration_ms), end_row,
                 end_col);
+            board_changed_from_settlement = true;
         } else {
             scheduler_.clear_rest(move.piece_id);
             Piece& captured_arriving_piece = board.get_piece(move.piece_id);
             captured_arriving_piece.state = PieceState::Captured;
         }
     });
+
+    if (board_changed_from_settlement) {
+        cancel_invalid_in_flight_moves(board);
+    }
 
     scheduler_.expire_jumps(current_time_ms, [this, &board, &rules](const JumpState& jump) {
         restore_jumper(board, jump);

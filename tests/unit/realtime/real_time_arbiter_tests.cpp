@@ -344,6 +344,88 @@ TEST_CASE("RealTimeArbiterTest - AnimationsForRenderEmptyAfterArrival") {
     CHECK(snapshot.jumps.empty());
 }
 
+TEST_CASE("RealTimeArbiterTest - CancelsInvalidInFlightMoveWhenFriendlySettlesOnDestination") {
+    kfc::BoardModel board = kfc::test::make_board({{"wR", "wK", "."}});
+    kfc::RealTimeArbiter arbiter;
+    kfc::GameRules rules = kfc::KungFuChessRules::standard();
+    bool game_over = false;
+    const auto rook_id = piece_id_at(board, 0, 0);
+    const auto king_id = piece_id_at(board, 0, 1);
+
+    board.get_piece(rook_id).state = kfc::PieceState::Moving;
+    board.get_piece(king_id).state = kfc::PieceState::Moving;
+    board.clear_cell(0, 0);
+    board.clear_cell(0, 1);
+
+    arbiter.request_move(rook_id, kfc::PieceColor::White, kfc::PieceKind::Rook, {0, 0}, {0, 2},
+                         2 * kfc::kMoveDurationMs);
+    arbiter.request_move(king_id, kfc::PieceColor::White, kfc::PieceKind::King, {0, 1}, {0, 2},
+                         kfc::kMoveDurationMs);
+
+    arbiter.update_time(kfc::kMoveDurationMs, board, rules, game_over);
+
+    CHECK_EQ(board.token_at(0, 0), "wR");
+    CHECK_EQ(board.token_at(0, 1), ".");
+    CHECK_EQ(board.token_at(0, 2), "wK");
+    CHECK_EQ(board.get_piece(rook_id).state, kfc::PieceState::Idle);
+    CHECK_FALSE(arbiter.is_piece_moving(0, 0));
+    CHECK(arbiter.animations_for_render().moves.empty());
+}
+
+TEST_CASE("RealTimeArbiterTest - CancelsInvalidInFlightMoveWhenPathBlockedBySettlement") {
+    kfc::BoardModel board = kfc::test::make_board({{"wR", "wR", ".", "."}});
+    kfc::RealTimeArbiter arbiter;
+    kfc::GameRules rules = kfc::KungFuChessRules::standard();
+    bool game_over = false;
+    const auto rook_a_id = piece_id_at(board, 0, 0);
+    const auto rook_b_id = piece_id_at(board, 0, 1);
+
+    board.get_piece(rook_a_id).state = kfc::PieceState::Moving;
+    board.get_piece(rook_b_id).state = kfc::PieceState::Moving;
+    board.clear_cell(0, 0);
+    board.clear_cell(0, 1);
+
+    arbiter.request_move(rook_a_id, kfc::PieceColor::White, kfc::PieceKind::Rook, {0, 0}, {0, 3},
+                         3 * kfc::kMoveDurationMs);
+    arbiter.request_move(rook_b_id, kfc::PieceColor::White, kfc::PieceKind::Rook, {0, 1}, {0, 2},
+                         kfc::kMoveDurationMs);
+
+    arbiter.update_time(kfc::kMoveDurationMs, board, rules, game_over);
+
+    CHECK_EQ(board.token_at(0, 0), "wR");
+    CHECK_EQ(board.token_at(0, 2), "wR");
+    CHECK_EQ(board.token_at(0, 3), ".");
+    CHECK_EQ(board.get_piece(rook_a_id).state, kfc::PieceState::Idle);
+    CHECK_FALSE(arbiter.is_piece_moving(0, 0));
+    CHECK(arbiter.animations_for_render().moves.empty());
+}
+
+TEST_CASE("RealTimeArbiterTest - KeepsValidInFlightMoveAfterUnrelatedSettlement") {
+    kfc::BoardModel board = kfc::test::make_board({{"wR", ".", ".", "wR"}});
+    kfc::RealTimeArbiter arbiter;
+    kfc::GameRules rules = kfc::KungFuChessRules::standard();
+    bool game_over = false;
+    const auto rook_a_id = piece_id_at(board, 0, 0);
+    const auto rook_b_id = piece_id_at(board, 0, 3);
+
+    board.get_piece(rook_a_id).state = kfc::PieceState::Moving;
+    board.get_piece(rook_b_id).state = kfc::PieceState::Moving;
+    board.clear_cell(0, 0);
+    board.clear_cell(0, 3);
+
+    arbiter.request_move(rook_a_id, kfc::PieceColor::White, kfc::PieceKind::Rook, {0, 0}, {0, 1},
+                         2 * kfc::kMoveDurationMs);
+    arbiter.request_move(rook_b_id, kfc::PieceColor::White, kfc::PieceKind::Rook, {0, 3}, {0, 2},
+                         kfc::kMoveDurationMs);
+
+    arbiter.update_time(kfc::kMoveDurationMs, board, rules, game_over);
+
+    CHECK_EQ(board.token_at(0, 2), "wR");
+    CHECK(arbiter.is_piece_moving(0, 0));
+    CHECK_EQ(arbiter.animations_for_render().moves.size(), 1u);
+    CHECK_EQ(arbiter.animations_for_render().moves.front().piece_id, rook_a_id);
+}
+
 TEST_CASE("RealTimeArbiterTest - AbortsIllegalPawnMoveAtSettlement") {
     kfc::BoardModel board = kfc::test::make_board({{".", ".", "."}, {"wP", ".", "."}});
     kfc::RealTimeArbiter arbiter;

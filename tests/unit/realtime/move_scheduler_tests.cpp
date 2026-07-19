@@ -123,6 +123,58 @@ TEST_CASE("MoveSchedulerTest - RestKindReturnsActiveRest") {
     CHECK_FALSE(scheduler.rest_kind(700, 1).has_value());
 }
 
+TEST_CASE("MoveSchedulerTest - ForEachInFlightPendingVisitsActiveMovesOnly") {
+    kfc::MoveScheduler scheduler;
+    scheduler.schedule_move(
+        {1, kfc::PieceColor::White, kfc::PieceKind::Rook, {0, 0}, {0, 2}, 0, 100});
+    scheduler.schedule_move(
+        {2, kfc::PieceColor::Black, kfc::PieceKind::Pawn, {1, 0}, {1, 2}, 0, 50});
+
+    std::vector<kfc::Piece::Id> visited;
+    scheduler.for_each_in_flight_pending(75, [&](const kfc::PendingMove& move) {
+        visited.push_back(move.piece_id);
+    });
+
+    REQUIRE_EQ(visited.size(), 1u);
+    CHECK_EQ(visited.front(), 1u);
+    CHECK_EQ(scheduler.animations_at(75).moves.size(), 1u);
+}
+
+TEST_CASE("MoveSchedulerTest - ForEachInFlightPendingDoesNotModifyEntries") {
+    kfc::MoveScheduler scheduler;
+    scheduler.schedule_move(
+        {1, kfc::PieceColor::White, kfc::PieceKind::Rook, {0, 0}, {0, 2}, 0, 100});
+
+    scheduler.for_each_in_flight_pending(50, [](const kfc::PendingMove&) {});
+    scheduler.for_each_in_flight_pending(50, [](const kfc::PendingMove&) {});
+
+    CHECK_EQ(scheduler.animations_at(50).moves.size(), 1u);
+}
+
+TEST_CASE("MoveSchedulerTest - CancelPendingMoveRemovesMatchingMoveOnly") {
+    kfc::MoveScheduler scheduler;
+    scheduler.schedule_move(
+        {1, kfc::PieceColor::White, kfc::PieceKind::Rook, {0, 0}, {0, 2}, 0, 100});
+    scheduler.schedule_move(
+        {2, kfc::PieceColor::Black, kfc::PieceKind::Pawn, {1, 0}, {1, 2}, 0, 100});
+
+    scheduler.cancel_pending_move(1);
+
+    const kfc::AnimationSnapshot snapshot = scheduler.animations_at(50);
+    REQUIRE_EQ(snapshot.moves.size(), 1u);
+    CHECK_EQ(snapshot.moves.front().piece_id, 2u);
+}
+
+TEST_CASE("MoveSchedulerTest - CancelPendingMoveIsNoOpWhenNotScheduled") {
+    kfc::MoveScheduler scheduler;
+    scheduler.schedule_move(
+        {1, kfc::PieceColor::White, kfc::PieceKind::Rook, {0, 0}, {0, 2}, 0, 100});
+
+    scheduler.cancel_pending_move(99);
+
+    CHECK_EQ(scheduler.animations_at(50).moves.size(), 1u);
+}
+
 TEST_CASE("RenderSnapshotTest - ComputeAnimationProgressAtOrAfterArrival") {
     CHECK(kfc::compute_animation_progress(100, 0, 100) == doctest::Approx(1.0f));
     CHECK(kfc::compute_animation_progress(150, 0, 100) == doctest::Approx(1.0f));
