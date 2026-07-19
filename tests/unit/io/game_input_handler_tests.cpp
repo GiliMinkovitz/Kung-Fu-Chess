@@ -584,6 +584,18 @@ TEST_CASE("GameInputHandlerTest - JumpWhilePieceRestingIgnored") {
     CHECK(state.is_piece_resting(0, 1));
 }
 
+TEST_CASE("GameInputHandlerTest - MoveAttemptWithoutSelectionIsIgnored") {
+    kfc::GameState state(kfc::test::make_board({{"wK", ".", "bK"}}));
+    kfc::GameInputHandler processor(state);
+    std::ostringstream sink;
+
+    kfc::test::GameInputHandlerTestAccess::handle_move_attempt(processor, 0, 2);
+
+    CHECK_FALSE(state.has_selection());
+    CHECK_EQ(state.token_at(0, 0), "wK");
+    CHECK_EQ(state.token_at(0, 2), "bK");
+}
+
 TEST_CASE("GameInputHandlerTest - MoveAttemptWhilePieceMovingIgnored") {
     kfc::GameState state(kfc::test::make_board({{"wR", ".", "bK"}}));
     const kfc::Piece::Id rook_id =

@@ -37,7 +37,7 @@
           </tr>
           <tr>
             <td class="headerItem">Test Date:</td>
-            <td class="headerValue">2026-07-16 19:57:03</td>
+            <td class="headerValue">2026-07-19 16:16:32</td>
             <td></td>
             <td class="headerItem">Functions:</td>
             <td class="headerCovTableEntryHi">100.0&nbsp;%</td>
@@ -89,12 +89,12 @@
 <span id="L27"><span class="lineNum">      27</span>              : </span>
 <span id="L28"><span class="lineNum">      28</span>              : }  // namespace</span>
 <span id="L29"><span class="lineNum">      29</span>              : </span>
-<span id="L30"><span class="lineNum">      30</span> <span class="tlaGNC">         154 : PieceRuleEntry get_rule_entry(PieceKind kind) noexcept {</span></span>
-<span id="L31"><span class="lineNum">      31</span> <span class="tlaGNC">         154 :     const auto index = static_cast&lt;std::size_t&gt;(kind);</span></span>
-<span id="L32"><span class="lineNum">      32</span> <span class="tlaGNC">         154 :     if (index &gt;= kRules.size()) {</span></span>
-<span id="L33"><span class="lineNum">      33</span> <span class="tlaGNC">           1 :         return {};</span></span>
+<span id="L30"><span class="lineNum">      30</span> <span class="tlaGNC">         175 : PieceRuleEntry get_rule_entry(PieceKind kind) noexcept {</span></span>
+<span id="L31"><span class="lineNum">      31</span> <span class="tlaGNC">         175 :     const auto index = static_cast&lt;std::size_t&gt;(kind);</span></span>
+<span id="L32"><span class="lineNum">      32</span> <span class="tlaGNC">         175 :     if (index &gt;= kRules.size()) {</span></span>
+<span id="L33"><span class="lineNum">      33</span> <span class="tlaGNC">           2 :         return {};</span></span>
 <span id="L34"><span class="lineNum">      34</span>              :     }</span>
-<span id="L35"><span class="lineNum">      35</span> <span class="tlaGNC">         153 :     return kRules[index];</span></span>
+<span id="L35"><span class="lineNum">      35</span> <span class="tlaGNC">         173 :     return kRules[index];</span></span>
 <span id="L36"><span class="lineNum">      36</span>              : }</span>
 <span id="L37"><span class="lineNum">      37</span>              : </span>
 <span id="L38"><span class="lineNum">      38</span>              : }  // namespace kfc::piece_rules</span>

@@ -64,6 +64,16 @@ TEST_CASE("UiControllerTest - FrameStopsWhenRendererRequestsQuit") {
     CHECK_FALSE(result.should_continue);
 }
 
+TEST_CASE("UiControllerTest - PixelJumpRoutesThroughController") {
+    kfc::GameState state(kfc::test::make_board({{"wK", ".", "bK"}}));
+    kfc::UiController controller(state, std::make_unique<kfc::HeadlessRenderer>());
+
+    controller.on_pixel_jump(50, 50);
+
+    CHECK(state.is_piece_jumping(0, 0));
+    CHECK_FALSE(state.has_selection());
+}
+
 TEST_CASE("UiControllerTest - ShutdownDelegatesToRenderer") {
     kfc::GameState state(kfc::test::make_board({{"wK", ".", "bK"}}));
     auto renderer = std::make_unique<kfc::HeadlessRenderer>();

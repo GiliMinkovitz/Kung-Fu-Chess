@@ -4,7 +4,7 @@ namespace kfc {
 
 class IUiInputSink {
 public:
-    virtual ~IUiInputSink() = default;
+    virtual ~IUiInputSink();
     virtual void on_pixel_click(int x, int y) = 0;
     virtual void on_pixel_jump(int x, int y) = 0;
 };

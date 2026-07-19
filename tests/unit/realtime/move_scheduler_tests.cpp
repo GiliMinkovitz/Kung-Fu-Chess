@@ -112,6 +112,17 @@ TEST_CASE("MoveSchedulerTest - RestBlockingAndSnapshotAlignBeforeEnd") {
     CHECK(snapshot.rests.front().progress == doctest::Approx(0.99f));
 }
 
+TEST_CASE("MoveSchedulerTest - RestKindReturnsActiveRest") {
+    kfc::MoveScheduler scheduler;
+    scheduler.schedule_rest(1, kfc::RestKind::Long, 100, 600, 0, 0);
+
+    const std::optional<kfc::RestKind> active = scheduler.rest_kind(350, 1);
+    REQUIRE(active.has_value());
+    CHECK(*active == kfc::RestKind::Long);
+    CHECK_FALSE(scheduler.rest_kind(100, 99).has_value());
+    CHECK_FALSE(scheduler.rest_kind(700, 1).has_value());
+}
+
 TEST_CASE("RenderSnapshotTest - ComputeAnimationProgressAtOrAfterArrival") {
     CHECK(kfc::compute_animation_progress(100, 0, 100) == doctest::Approx(1.0f));
     CHECK(kfc::compute_animation_progress(150, 0, 100) == doctest::Approx(1.0f));

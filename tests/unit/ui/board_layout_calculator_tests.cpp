@@ -234,3 +234,20 @@ TEST_CASE("BoardLayoutTest - ScalesTypographyForSmallerCells") {
     CHECK_EQ(layout.game_over_text_y(), 4);
     CHECK(layout.piece_font_scale() < 1.2);
 }
+
+TEST_CASE("BoardLayoutTest - InvalidDimensionsRejectPixelMapping") {
+    const kfc::BoardLayout layout{};
+    std::size_t row = 0;
+    std::size_t col = 0;
+
+    CHECK_FALSE(layout.try_pixel_to_cell(0, 0, 0, 8, row, col));
+    CHECK_FALSE(layout.try_pixel_to_cell(0, 0, 8, 0, row, col));
+}
+
+TEST_CASE("BoardLayoutTest - ZeroCellSizeUsesReferenceScaling") {
+    const kfc::BoardLayout layout{};
+
+    CHECK_EQ(layout.piece_font_scale(), doctest::Approx(1.2));
+    CHECK_EQ(layout.piece_font_thickness(), 2);
+    CHECK_EQ(layout.selection_border_thickness(), 3);
+}

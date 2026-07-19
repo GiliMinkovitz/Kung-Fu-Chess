@@ -5,6 +5,7 @@
 #include "model/piece_factory.h"
 #include "model/position.h"
 #include "realtime/collision_resolver.h"
+#include "io/game_input_handler.h"
 #include "logic/game_state.h"
 #include "realtime/move_scheduler.h"
 
@@ -26,6 +27,12 @@ struct BoardModelTestAccess {
 
     static Piece* find_piece_by_id(BoardModel& board, Piece::Id id) {
         return board.find_piece_by_id(id);
+    }
+};
+
+struct GameInputHandlerTestAccess {
+    static void handle_move_attempt(GameInputHandler& handler, std::size_t row, std::size_t col) {
+        handler.handle_move_attempt(row, col);
     }
 };
 

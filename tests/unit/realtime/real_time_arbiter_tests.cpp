@@ -343,3 +343,43 @@ TEST_CASE("RealTimeArbiterTest - AnimationsForRenderEmptyAfterArrival") {
     CHECK(snapshot.moves.empty());
     CHECK(snapshot.jumps.empty());
 }
+
+TEST_CASE("RealTimeArbiterTest - AbortsIllegalPawnMoveAtSettlement") {
+    kfc::BoardModel board = kfc::test::make_board({{".", ".", "."}, {"wP", ".", "."}});
+    kfc::RealTimeArbiter arbiter;
+    kfc::GameRules rules = kfc::KungFuChessRules::standard();
+    bool game_over = false;
+    const auto pawn_id = piece_id_at(board, 1, 0);
+
+    board.get_piece(pawn_id).state = kfc::PieceState::Moving;
+    board.clear_cell(1, 0);
+    arbiter.request_move(pawn_id, kfc::PieceColor::White, kfc::PieceKind::Pawn, {1, 0}, {1, 1},
+                         kfc::kMoveDurationMs);
+
+    arbiter.update_time(kfc::kMoveDurationMs, board, rules, game_over);
+
+    CHECK_FALSE(arbiter.is_piece_moving(1, 0));
+    CHECK_EQ(board.token_at(1, 0), "wP");
+    CHECK_EQ(board.get_piece(pawn_id).state, kfc::PieceState::Idle);
+}
+
+TEST_CASE("RealTimeArbiterTest - AbortsMoveForUnknownPieceKindAtSettlement") {
+    kfc::BoardModel board = kfc::test::make_board({{"wR", ".", "."}});
+    kfc::RealTimeArbiter arbiter;
+    kfc::GameRules rules = kfc::KungFuChessRules::standard();
+    bool game_over = false;
+    const auto piece_id = piece_id_at(board, 0, 0);
+
+    board.get_piece(piece_id).kind = kfc::PieceKind::Count;
+    board.get_piece(piece_id).state = kfc::PieceState::Moving;
+    board.clear_cell(0, 0);
+    arbiter.request_move(piece_id, kfc::PieceColor::White, kfc::PieceKind::Count, {0, 0}, {0, 2},
+                         kfc::kMoveDurationMs);
+
+    arbiter.update_time(kfc::kMoveDurationMs, board, rules, game_over);
+
+    CHECK_FALSE(arbiter.is_piece_moving(0, 0));
+    REQUIRE(board.piece_at(0, 0) != nullptr);
+    CHECK_EQ(board.piece_at(0, 0)->id, piece_id);
+    CHECK_EQ(board.get_piece(piece_id).state, kfc::PieceState::Idle);
+}

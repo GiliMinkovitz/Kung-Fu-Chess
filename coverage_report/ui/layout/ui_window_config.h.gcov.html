@@ -37,7 +37,7 @@
           </tr>
           <tr>
             <td class="headerItem">Test Date:</td>
-            <td class="headerValue">2026-07-16 19:57:03</td>
+            <td class="headerValue">2026-07-19 16:16:32</td>
             <td></td>
             <td class="headerItem">Functions:</td>
             <td class="headerCovTableEntryHi">100.0&nbsp;%</td>
@@ -73,11 +73,11 @@
 <span id="L11"><span class="lineNum">      11</span>              : </span>
 <span id="L12"><span class="lineNum">      12</span>              : // Bootstrap-only default window size that preserves the legacy visual output.</span>
 <span id="L13"><span class="lineNum">      13</span>              : // Actual cell size comes from BoardLayoutCalculator after init.</span>
-<span id="L14"><span class="lineNum">      14</span> <span class="tlaGNC">          54 : [[nodiscard]] inline UiWindowDimensions default_initial_window_size(std::size_t rows,</span></span>
+<span id="L14"><span class="lineNum">      14</span> <span class="tlaGNC">          57 : [[nodiscard]] inline UiWindowDimensions default_initial_window_size(std::size_t rows,</span></span>
 <span id="L15"><span class="lineNum">      15</span>              :                                                                     std::size_t cols) noexcept {</span>
-<span id="L16"><span class="lineNum">      16</span> <span class="tlaGNC">          54 :     constexpr int kLegacyInitialPixelsPerBoardCell = 100;</span></span>
-<span id="L17"><span class="lineNum">      17</span> <span class="tlaGNC">          54 :     return {static_cast&lt;int&gt;(cols) * kLegacyInitialPixelsPerBoardCell,</span></span>
-<span id="L18"><span class="lineNum">      18</span> <span class="tlaGNC">          54 :             static_cast&lt;int&gt;(rows) * kLegacyInitialPixelsPerBoardCell};</span></span>
+<span id="L16"><span class="lineNum">      16</span> <span class="tlaGNC">          57 :     constexpr int kLegacyInitialPixelsPerBoardCell = 100;</span></span>
+<span id="L17"><span class="lineNum">      17</span> <span class="tlaGNC">          57 :     return {static_cast&lt;int&gt;(cols) * kLegacyInitialPixelsPerBoardCell,</span></span>
+<span id="L18"><span class="lineNum">      18</span> <span class="tlaGNC">          57 :             static_cast&lt;int&gt;(rows) * kLegacyInitialPixelsPerBoardCell};</span></span>
 <span id="L19"><span class="lineNum">      19</span>              : }</span>
 <span id="L20"><span class="lineNum">      20</span>              : </span>
 <span id="L21"><span class="lineNum">      21</span>              : }  // namespace kfc</span>

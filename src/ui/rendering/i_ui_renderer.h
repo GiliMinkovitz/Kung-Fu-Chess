@@ -14,7 +14,7 @@ struct UiFrameResult {
 
 class IUiRenderer {
 public:
-    virtual ~IUiRenderer() = default;
+    virtual ~IUiRenderer();
     virtual void init(int window_width, int window_height, std::size_t rows, std::size_t cols) = 0;
     virtual void attach_input_sink(IUiInputSink* sink) = 0;
     [[nodiscard]] virtual BoardLayout board_layout() const = 0;

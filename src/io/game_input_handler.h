@@ -8,10 +8,16 @@
 
 namespace kfc {
 
+namespace test {
+struct GameInputHandlerTestAccess;
+}
+
 // Input adapter: maps VPL text commands and pixel coordinates to GameState actions.
 // Encodes click semantics (select, move, jump-on-friendly-reclick) but does not
 // validate moves or mutate the board directly.
 class GameInputHandler {
+    friend struct test::GameInputHandlerTestAccess;
+
 public:
     explicit GameInputHandler(GameState& state);
 

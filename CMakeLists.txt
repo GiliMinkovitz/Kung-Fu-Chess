@@ -21,6 +21,8 @@ set(KFC_UI_SOURCES
     src/ui/view/board_view_model.cpp
     src/ui/view/board_view_builder.cpp
     src/ui/view/piece_sprite_selector.cpp
+    src/ui/rendering/i_ui_input_sink.cpp
+    src/ui/rendering/i_ui_renderer.cpp
     src/ui/rendering/headless_renderer.cpp
     src/ui/controller/ui_controller.cpp
 )
@@ -150,6 +152,9 @@ set(KFC_TEST_SOURCES
     tests/unit/engine/game_engine_tests.cpp
     tests/unit/ui/board_layout_calculator_tests.cpp
     tests/unit/ui/board_view_builder_tests.cpp
+    tests/unit/ui/board_view_model_tests.cpp
+    tests/unit/ui/asset_paths_tests.cpp
+    tests/unit/ui/piece_sprite_selector_tests.cpp
     tests/unit/ui/ui_controller_tests.cpp
     tests/integration/integration_test.cpp
 )
@@ -257,6 +262,12 @@ if(ENABLE_COVERAGE)
         COMMAND ${LCOV}
             --extract ${CMAKE_BINARY_DIR}/coverage.info
             '*/src/*'
+            --output-file ${CMAKE_BINARY_DIR}/coverage.info
+            --ignore-errors unused,inconsistent
+        COMMAND ${LCOV}
+            --remove ${CMAKE_BINARY_DIR}/coverage.info
+            '*/src/ui/rendering/i_ui_input_sink.cpp'
+            '*/src/ui/rendering/i_ui_renderer.cpp'
             --output-file ${CMAKE_BINARY_DIR}/coverage.info
             --ignore-errors unused,inconsistent
         COMMAND ${GENHTML}
