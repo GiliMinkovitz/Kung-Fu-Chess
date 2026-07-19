@@ -74,6 +74,7 @@ public:
     void schedule_jump(JumpState jump);
     void schedule_rest(Piece::Id piece_id, RestKind kind, int start_time_ms, int end_time_ms,
                        std::size_t row, std::size_t col);
+    void clear_rest(Piece::Id piece_id);
     void expire_jumps(
         uint64_t current_time_ms,
         const std::function<void(const JumpState&)>& on_complete = {});

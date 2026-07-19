@@ -59,9 +59,20 @@ void RealTimeArbiter::settle_pending_moves(BoardModel& board, const GameRules& r
             move.end_pos,
         };
 
+        const Piece* arriving_piece = board.piece_at(start_row, start_col);
+        const Piece* opponent_before = board.piece_at(end_row, end_col);
+        const Piece::Id captured_opponent_id =
+            opponent_before != nullptr && arriving_piece != nullptr &&
+                    opponent_before->is_opponent_of(*arriving_piece)
+                ? opponent_before->id
+                : Piece::kInvalidId;
+
         // CollisionResolver handles jump-capture and occupant capture; otherwise we place normally.
-        if (!scheduler_.check_for_jump_capture(current_time_ms, collision_resolver_, board, rules,
-                                               move.end_pos, arriving_piece_info, game_over)) {
+        const bool captured =
+            scheduler_.check_for_jump_capture(current_time_ms, collision_resolver_, board, rules,
+                                              move.end_pos, arriving_piece_info, game_over);
+        Piece* destination_piece = board.piece_at(end_row, end_col);
+        if (!captured) {
             Piece updated = board.get_piece(move.piece_id);
             updated = rules.on_reach_last_row(updated, end_row, board.rows());
             updated.cell = Position{static_cast<int>(end_row), static_cast<int>(end_col)};
@@ -71,9 +82,18 @@ void RealTimeArbiter::settle_pending_moves(BoardModel& board, const GameRules& r
                 move.piece_id, RestKind::Long, static_cast<int>(move.arrival_time),
                 static_cast<int>(move.arrival_time + rules.long_rest_duration_ms), end_row,
                 end_col);
+        } else if (destination_piece != nullptr && destination_piece->id == move.piece_id) {
+            if (captured_opponent_id != Piece::kInvalidId) {
+                scheduler_.clear_rest(captured_opponent_id);
+            }
+            scheduler_.schedule_rest(
+                move.piece_id, RestKind::Long, static_cast<int>(move.arrival_time),
+                static_cast<int>(move.arrival_time + rules.long_rest_duration_ms), end_row,
+                end_col);
         } else {
-            Piece& arriving_piece = board.get_piece(move.piece_id);
-            arriving_piece.state = PieceState::Captured;
+            scheduler_.clear_rest(move.piece_id);
+            Piece& captured_arriving_piece = board.get_piece(move.piece_id);
+            captured_arriving_piece.state = PieceState::Captured;
         }
     });
 

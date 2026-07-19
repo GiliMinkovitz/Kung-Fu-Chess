@@ -84,6 +84,10 @@ void MoveScheduler::schedule_rest(Piece::Id piece_id, RestKind kind, int start_t
     active_rests_[piece_id] = ActiveRest{kind, start_time_ms, end_time_ms, row, col};
 }
 
+void MoveScheduler::clear_rest(Piece::Id piece_id) {
+    active_rests_.erase(piece_id);
+}
+
 bool MoveScheduler::is_piece_resting(uint64_t current_time_ms, Piece::Id piece_id) const {
     const auto it = active_rests_.find(piece_id);
     if (it == active_rests_.end()) {
