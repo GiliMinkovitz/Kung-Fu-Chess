@@ -209,11 +209,17 @@ TEST_CASE("GameStateTest - GameStateSamekfc::test::BoardLayoutAs") {
 
 TEST_CASE("GameStateTest - GameStateCaptureMoveUsesSingleCellDuration") {
     kfc::GameState state(kfc::test::make_board({{"wR", ".", "bP"}}));
+    const kfc::Piece::Id rook_id =
+        kfc::test::GameStateTestAccess::board(state).piece_at(0, 0)->id;
+
     state.select(0, 0);
     state.move_selected_to(0, 2);
     state.add_clock(999);
-    CHECK_EQ(state.token_at(0, 0), "wR");
+    CHECK_EQ(state.token_at(0, 0), ".");
     CHECK_EQ(state.token_at(0, 2), "bP");
+    CHECK(kfc::test::GameStateTestAccess::piece_state(state, rook_id) == kfc::PieceState::Moving);
+    CHECK(state.is_piece_moving(0, 0));
+
     state.add_clock(1);
     CHECK_EQ(state.token_at(0, 0), ".");
     CHECK_EQ(state.token_at(0, 2), "wR");
@@ -242,12 +248,19 @@ TEST_CASE("GameStateTest - MoveSelectedToOutOfBoundsIgnored") {
 
 TEST_CASE("GameStateTest - MoveSelectedToWhileMovingIgnored") {
     kfc::GameState state(kfc::test::make_board({{"wR", ".", "."}}));
+    const kfc::Piece::Id rook_id =
+        kfc::test::GameStateTestAccess::board(state).piece_at(0, 0)->id;
+
     state.select(0, 0);
     state.move_selected_to(0, 2);
     state.select(0, 0);
     state.move_selected_to(0, 1);
+
     CHECK(state.is_piece_moving(0, 0));
-    CHECK_EQ(state.token_at(0, 0), "wR");
+    CHECK_EQ(state.token_at(0, 0), ".");
+    CHECK_EQ(state.token_at(0, 1), ".");
+    CHECK_EQ(state.token_at(0, 2), ".");
+    CHECK(kfc::test::GameStateTestAccess::piece_state(state, rook_id) == kfc::PieceState::Moving);
 }
 
 TEST_CASE("GameStateTest - RestingPieceCannotMove") {
@@ -296,4 +309,155 @@ TEST_CASE("GameStateTest - AbortedMoveResetsPieceStateToIdle") {
     CHECK_EQ(kfc::test::GameStateTestAccess::piece_state(state, piece_id), kfc::PieceState::Idle);
     CHECK_EQ(state.token_at(0, 0), "wR");
     CHECK_EQ(state.token_at(0, 2), "wK");
+}
+
+TEST_CASE("GameStateTest - SourceCellReleasedDuringMovement") {
+    kfc::GameState state(kfc::test::make_board({{"wR", ".", "."}}));
+    kfc::BoardModel& board = kfc::test::GameStateTestAccess::board(state);
+    const kfc::Piece::Id piece_id = board.piece_at(0, 0)->id;
+
+    state.select(0, 0);
+    state.move_selected_to(0, 2);
+
+    CHECK(board.piece_at(0, 0) == nullptr);
+    CHECK(kfc::test::GameStateTestAccess::piece_state(state, piece_id) == kfc::PieceState::Moving);
+    CHECK(kfc::test::BoardModelTestAccess::find_piece_by_id(board, piece_id) != nullptr);
+    CHECK(board.piece_at(0, 2) == nullptr);
+    CHECK(state.is_piece_moving(0, 0));
+
+    state.add_clock(2 * kfc::kMoveDurationMs - 1);
+    CHECK(board.piece_at(0, 0) == nullptr);
+    CHECK(kfc::test::GameStateTestAccess::piece_state(state, piece_id) == kfc::PieceState::Moving);
+    CHECK(board.piece_at(0, 2) == nullptr);
+
+    state.add_clock(1);
+    CHECK_EQ(state.token_at(0, 0), ".");
+    CHECK_EQ(state.token_at(0, 2), "wR");
+    CHECK(kfc::test::GameStateTestAccess::piece_state(state, piece_id) == kfc::PieceState::Idle);
+    CHECK_FALSE(state.is_piece_moving(0, 0));
+}
+
+TEST_CASE("GameStateTest - DestinationOccupiedDuringFlightAbortsAtArrival") {
+    kfc::GameState state(kfc::test::make_board({{"wR", ".", ".", "."}}));
+    kfc::BoardModel& board = kfc::test::GameStateTestAccess::board(state);
+    const kfc::Piece::Id rook_id = board.piece_at(0, 0)->id;
+
+    state.select(0, 0);
+    state.move_selected_to(0, 2);
+
+    kfc::PieceFactory factory(board.next_piece_id());
+    board.place_piece_at(0, 2,
+                          factory.create(kfc::PieceColor::White, kfc::PieceKind::King, {0, 2}));
+    const kfc::Piece::Id blocker_id = board.piece_at(0, 2)->id;
+
+    CHECK(board.piece_at(0, 0) == nullptr);
+    CHECK(kfc::test::GameStateTestAccess::piece_state(state, rook_id) == kfc::PieceState::Moving);
+    CHECK(board.piece_at(0, 2) != nullptr);
+    CHECK_EQ(board.piece_at(0, 2)->id, blocker_id);
+    CHECK(kfc::test::GameStateTestAccess::piece_state(state, blocker_id) == kfc::PieceState::Idle);
+
+    state.add_clock(2 * kfc::kMoveDurationMs);
+
+    CHECK_FALSE(state.is_piece_moving(0, 0));
+    CHECK_EQ(state.token_at(0, 0), "wR");
+    CHECK_EQ(state.token_at(0, 2), "wK");
+    CHECK(kfc::test::GameStateTestAccess::piece_state(state, rook_id) == kfc::PieceState::Idle);
+    CHECK(kfc::test::GameStateTestAccess::piece_state(state, blocker_id) == kfc::PieceState::Idle);
+    CHECK(board.piece_at(0, 0)->id == rook_id);
+    CHECK(board.piece_at(0, 2)->id == blocker_id);
+}
+
+TEST_CASE("GameStateTest - OppositeColorOverlappingRoutesAllowedConcurrently") {
+    kfc::GameState state(
+        kfc::test::make_board({{"wR", ".", "."}, {".", ".", "."}, {"bR", ".", "."}}));
+
+    state.select(0, 0);
+    state.move_selected_to(0, 2);
+
+    state.select(2, 0);
+    state.move_selected_to(2, 2);
+
+    CHECK(state.is_piece_moving(0, 0));
+    CHECK(state.is_piece_moving(2, 0));
+
+    state.add_clock(2 * kfc::kMoveDurationMs);
+    CHECK_EQ(state.token_at(0, 2), "wR");
+    CHECK_EQ(state.token_at(2, 2), "bR");
+}
+
+TEST_CASE("GameStateTest - SameColorSameDestinationStillBlocked") {
+    kfc::GameState state(kfc::test::make_board(
+        {{"wR", ".", ".", "."}, {".", ".", ".", "."}, {".", ".", ".", "wN"}}));
+
+    state.select(0, 0);
+    state.move_selected_to(0, 2);
+
+    state.select(2, 3);
+    state.move_selected_to(0, 2);
+
+    CHECK(state.is_piece_moving(0, 0));
+    CHECK_EQ(state.token_at(2, 3), "wN");
+
+    state.add_clock(2 * kfc::kMoveDurationMs);
+    CHECK_EQ(state.token_at(0, 2), "wR");
+    CHECK_EQ(state.token_at(2, 3), "wN");
+}
+
+TEST_CASE("GameStateTest - PathBlockedDuringFlightAbortsAtArrival") {
+    kfc::GameState state(kfc::test::make_board({{"wR", ".", ".", "."}}));
+    kfc::BoardModel& board = kfc::test::GameStateTestAccess::board(state);
+    const kfc::Piece::Id rook_id = board.piece_at(0, 0)->id;
+
+    state.select(0, 0);
+    state.move_selected_to(0, 3);
+
+    kfc::PieceFactory factory(board.next_piece_id());
+    board.place_piece_at(0, 2,
+                          factory.create(kfc::PieceColor::White, kfc::PieceKind::Pawn, {0, 2}));
+    const kfc::Piece::Id blocker_id = board.piece_at(0, 2)->id;
+
+    CHECK(board.piece_at(0, 0) == nullptr);
+    CHECK(kfc::test::GameStateTestAccess::piece_state(state, rook_id) == kfc::PieceState::Moving);
+    CHECK(board.piece_at(0, 3) == nullptr);
+    CHECK(board.piece_at(0, 2)->id == blocker_id);
+
+    state.add_clock(3 * kfc::kMoveDurationMs);
+
+    CHECK_FALSE(state.is_piece_moving(0, 0));
+    CHECK_EQ(state.token_at(0, 0), "wR");
+    CHECK_EQ(state.token_at(0, 2), "wP");
+    CHECK_EQ(state.token_at(0, 3), ".");
+    CHECK(kfc::test::GameStateTestAccess::piece_state(state, rook_id) == kfc::PieceState::Idle);
+    CHECK(kfc::test::GameStateTestAccess::piece_state(state, blocker_id) == kfc::PieceState::Idle);
+    CHECK(board.piece_at(0, 0)->id == rook_id);
+    CHECK(board.piece_at(0, 3) == nullptr);
+}
+
+TEST_CASE("GameStateTest - AbortedMoveRestoresOverOccupiedStartCell") {
+    kfc::GameState state(kfc::test::make_board({{"wR", ".", ".", "."}}));
+    kfc::BoardModel& board = kfc::test::GameStateTestAccess::board(state);
+    const kfc::Piece::Id rook_id = board.piece_at(0, 0)->id;
+
+    state.select(0, 0);
+    state.move_selected_to(0, 3);
+
+    kfc::PieceFactory factory(board.next_piece_id());
+    board.place_piece_at(0, 2,
+                          factory.create(kfc::PieceColor::White, kfc::PieceKind::Pawn, {0, 2}));
+    const auto occupant_id = board.next_piece_id();
+    board.place_piece_at(0, 0,
+                          factory.create(kfc::PieceColor::Black, kfc::PieceKind::King, {0, 0}));
+
+    state.add_clock(3 * kfc::kMoveDurationMs);
+
+    CHECK_FALSE(state.is_piece_moving(0, 0));
+    CHECK_EQ(state.token_at(0, 0), "wR");
+    CHECK_EQ(board.piece_at(0, 0)->id, rook_id);
+    CHECK(kfc::test::GameStateTestAccess::piece_state(state, rook_id) == kfc::PieceState::Idle);
+    CHECK(kfc::test::GameStateTestAccess::piece_state(state, occupant_id) ==
+          kfc::PieceState::Captured);
+    CHECK(kfc::test::BoardModelTestAccess::find_piece_by_id(board, rook_id) != nullptr);
+    CHECK(kfc::test::BoardModelTestAccess::find_piece_by_id(board, occupant_id) != nullptr);
+    CHECK_EQ(state.token_at(0, 2), "wP");
+    CHECK_EQ(state.token_at(0, 3), ".");
 }

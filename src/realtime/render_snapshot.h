@@ -12,6 +12,8 @@ enum class RestKind { Short, Long };
 
 struct ActiveMoveSnapshot {
     Piece::Id piece_id = Piece::kInvalidId;
+    PieceKind kind = PieceKind::Pawn;
+    PieceColor color = PieceColor::White;
     std::size_t from_row = 0;
     std::size_t from_col = 0;
     std::size_t to_row = 0;
@@ -35,6 +37,8 @@ struct ActiveRestSnapshot {
 };
 
 struct AnimationSnapshot {
+    // Active move/jump/rest animations. In-flight pieces are drawn from moves/jumps only;
+    // the board grid may have an empty source cell while a move entry is present.
     std::vector<ActiveMoveSnapshot> moves;
     std::vector<ActiveJumpSnapshot> jumps;
     std::vector<ActiveRestSnapshot> rests;

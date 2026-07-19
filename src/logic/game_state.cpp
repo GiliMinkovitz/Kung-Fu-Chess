@@ -147,14 +147,7 @@ bool GameState::can_move_selected_to(std::size_t from_row, std::size_t from_col,
         return false;
     }
 
-    const Piece* destination = board_.piece_at(to_row, to_col);
-    const bool is_capture = destination != nullptr && destination->is_opponent_of(*moving);
-    const std::int64_t move_duration =
-        compute_move_duration(from_row, from_col, to_row, to_col, is_capture);
-
-    // Opposite-color moves sharing a route cannot both be in flight (Kung Fu Chess rule).
-    return !arbiter_.would_conflict_with_opposite_color_move(
-        moving->color, moving->id, {from_row, from_col}, {to_row, to_col}, move_duration);
+    return true;
 }
 
 void GameState::move_selected_to(std::size_t to_row, std::size_t to_col) {
@@ -174,9 +167,11 @@ void GameState::move_selected_to(std::size_t to_row, std::size_t to_col) {
         compute_move_duration(from_row, from_col, to_row, to_col, is_capture);
 
     board_.get_piece(moving->id).state = PieceState::Moving;
+    // Release the source cell immediately; PendingMove records the logical transition.
+    board_.clear_cell(from_row, from_col);
 
-    arbiter_.request_move(moving->id, moving->color, {from_row, from_col}, {to_row, to_col},
-                          move_duration);
+    arbiter_.request_move(moving->id, moving->color, moving->kind, {from_row, from_col},
+                          {to_row, to_col}, move_duration);
     clear_selection();
 }
 

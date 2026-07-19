@@ -8,45 +8,45 @@
 #include <vector>
 
 TEST_CASE("CollisionResolverTest - CollisionHasCommonRouteHorizontalParallel") {
-    const kfc::PendingMove left_to_right{1, kfc::PieceColor::White, {0, 0}, {0, 4}, 0, 1000};
-    const kfc::PendingMove middle_to_right{2, kfc::PieceColor::Black, {0, 2}, {0, 6}, 0, 1000};
+    const kfc::PendingMove left_to_right{1, kfc::PieceColor::White, kfc::PieceKind::Pawn, {0, 0}, {0, 4}, 0, 1000};
+    const kfc::PendingMove middle_to_right{2, kfc::PieceColor::Black, kfc::PieceKind::Pawn, {0, 2}, {0, 6}, 0, 1000};
     CHECK(kfc::CollisionResolver::has_common_route(left_to_right, middle_to_right));
 }
 
 TEST_CASE("CollisionResolverTest - CollisionHasCommonRouteVerticalParallel") {
-    const kfc::PendingMove top_to_bottom{1, kfc::PieceColor::White, {0, 0}, {4, 0}, 0, 1000};
-    const kfc::PendingMove middle_to_bottom{2, kfc::PieceColor::Black, {2, 0}, {6, 0}, 0, 1000};
+    const kfc::PendingMove top_to_bottom{1, kfc::PieceColor::White, kfc::PieceKind::Pawn, {0, 0}, {4, 0}, 0, 1000};
+    const kfc::PendingMove middle_to_bottom{2, kfc::PieceColor::Black, kfc::PieceKind::Pawn, {2, 0}, {6, 0}, 0, 1000};
     CHECK(kfc::CollisionResolver::has_common_route(top_to_bottom, middle_to_bottom));
 }
 
 TEST_CASE("CollisionResolverTest - CollisionHasCommonRouteVerticalParallelColumns") {
-    const kfc::PendingMove column_zero{1, kfc::PieceColor::White, {0, 0}, {4, 0}, 0, 1000};
-    const kfc::PendingMove column_two{2, kfc::PieceColor::Black, {0, 2}, {4, 2}, 0, 1000};
+    const kfc::PendingMove column_zero{1, kfc::PieceColor::White, kfc::PieceKind::Pawn, {0, 0}, {4, 0}, 0, 1000};
+    const kfc::PendingMove column_two{2, kfc::PieceColor::Black, kfc::PieceKind::Pawn, {0, 2}, {4, 2}, 0, 1000};
     CHECK(kfc::CollisionResolver::has_common_route(column_zero, column_two));
 }
 
 TEST_CASE("CollisionResolverTest - CollisionHasCommonRouteVerticalDisjointColumns") {
-    const kfc::PendingMove upper{1, kfc::PieceColor::White, {0, 0}, {2, 0}, 0, 1000};
-    const kfc::PendingMove lower{2, kfc::PieceColor::Black, {4, 2}, {6, 2}, 0, 1000};
+    const kfc::PendingMove upper{1, kfc::PieceColor::White, kfc::PieceKind::Pawn, {0, 0}, {2, 0}, 0, 1000};
+    const kfc::PendingMove lower{2, kfc::PieceColor::Black, kfc::PieceKind::Pawn, {4, 2}, {6, 2}, 0, 1000};
     CHECK_FALSE(kfc::CollisionResolver::has_common_route(upper, lower));
 }
 
 TEST_CASE("CollisionResolverTest - CollisionHasCommonRouteDisjoint") {
-    const kfc::PendingMove left{1, kfc::PieceColor::White, {0, 0}, {0, 1}, 0, 1000};
-    const kfc::PendingMove right{2, kfc::PieceColor::Black, {0, 3}, {0, 4}, 0, 1000};
+    const kfc::PendingMove left{1, kfc::PieceColor::White, kfc::PieceKind::Pawn, {0, 0}, {0, 1}, 0, 1000};
+    const kfc::PendingMove right{2, kfc::PieceColor::Black, kfc::PieceKind::Pawn, {0, 3}, {0, 4}, 0, 1000};
     CHECK_FALSE(kfc::CollisionResolver::has_common_route(left, right));
 }
 
 TEST_CASE("CollisionResolverTest - CollisionHasCommonRouteMixedOrientation") {
-    const kfc::PendingMove diagonal{1, kfc::PieceColor::White, {0, 0}, {2, 2}, 0, 1000};
-    const kfc::PendingMove horizontal{2, kfc::PieceColor::Black, {3, 0}, {3, 3}, 0, 1000};
+    const kfc::PendingMove diagonal{1, kfc::PieceColor::White, kfc::PieceKind::Pawn, {0, 0}, {2, 2}, 0, 1000};
+    const kfc::PendingMove horizontal{2, kfc::PieceColor::Black, kfc::PieceKind::Pawn, {3, 0}, {3, 3}, 0, 1000};
     CHECK_FALSE(kfc::CollisionResolver::has_common_route(diagonal, horizontal));
 }
 
 TEST_CASE("CollisionResolverTest - CollisionConflictsWithOppositeColorMove") {
     std::vector<kfc::PendingMove> pending;
-    pending.push_back({2, kfc::PieceColor::Black, {0, 2}, {0, 0}, 0, 1000});
-    const kfc::PendingMove proposed{1, kfc::PieceColor::White, {0, 0}, {0, 2}, 0, 1000};
+    pending.push_back({2, kfc::PieceColor::Black, kfc::PieceKind::Pawn, {0, 2}, {0, 0}, 0, 1000});
+    const kfc::PendingMove proposed{1, kfc::PieceColor::White, kfc::PieceKind::Pawn, {0, 0}, {0, 2}, 0, 1000};
     CHECK(kfc::CollisionResolver::conflicts_with_opposite_color_move(
         pending, 500, kfc::PieceColor::White, proposed));
     CHECK_FALSE(kfc::CollisionResolver::conflicts_with_opposite_color_move(
@@ -55,14 +55,14 @@ TEST_CASE("CollisionResolverTest - CollisionConflictsWithOppositeColorMove") {
 
 TEST_CASE("CollisionResolverTest - CollisionSkipsSameColorPendingWhenCheckingConflict") {
     std::vector<kfc::PendingMove> pending;
-    pending.push_back({1, kfc::PieceColor::White, {0, 0}, {0, 1}, 0, 1000});
-    pending.push_back({2, kfc::PieceColor::Black, {0, 2}, {0, 0}, 0, 1000});
-    const kfc::PendingMove proposed{3, kfc::PieceColor::White, {0, 0}, {0, 2}, 0, 1000};
+    pending.push_back({1, kfc::PieceColor::White, kfc::PieceKind::Pawn, {0, 0}, {0, 1}, 0, 1000});
+    pending.push_back({2, kfc::PieceColor::Black, kfc::PieceKind::Pawn, {0, 2}, {0, 0}, 0, 1000});
+    const kfc::PendingMove proposed{3, kfc::PieceColor::White, kfc::PieceKind::Pawn, {0, 0}, {0, 2}, 0, 1000};
     CHECK(kfc::CollisionResolver::conflicts_with_opposite_color_move(
         pending, 500, kfc::PieceColor::White, proposed));
 
     const std::vector<kfc::PendingMove> same_color_only{
-        {1, kfc::PieceColor::White, {0, 0}, {0, 2}, 0, 1000},
+        {1, kfc::PieceColor::White, kfc::PieceKind::Pawn, {0, 0}, {0, 2}, 0, 1000},
     };
     CHECK_FALSE(kfc::CollisionResolver::conflicts_with_opposite_color_move(
         same_color_only, 500, kfc::PieceColor::White, proposed));
@@ -70,7 +70,7 @@ TEST_CASE("CollisionResolverTest - CollisionSkipsSameColorPendingWhenCheckingCon
 
 TEST_CASE("CollisionResolverTest - CollisionSameColorDestinationClaimed") {
     std::vector<kfc::PendingMove> pending;
-    pending.push_back({1, kfc::PieceColor::White, {0, 0}, {0, 2}, 0, 1000});
+    pending.push_back({1, kfc::PieceColor::White, kfc::PieceKind::Pawn, {0, 0}, {0, 2}, 0, 1000});
     CHECK(kfc::CollisionResolver::is_same_color_destination_claimed(
         pending, 500, kfc::PieceColor::White, {0, 2}));
     CHECK_FALSE(kfc::CollisionResolver::is_same_color_destination_claimed(

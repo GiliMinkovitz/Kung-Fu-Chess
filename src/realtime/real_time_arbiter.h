@@ -19,7 +19,9 @@ struct GameRules;
 class RealTimeArbiter {
 public:
     void update_time(std::int64_t ms, BoardModel& board, const GameRules& rules, bool& game_over);
-    // Applies all moves whose arrival_time <= clock; may set game_over via capture rules.
+    // Applies all moves whose arrival_time <= clock. Revalidates each move against the
+    // current board and either places the piece at end_pos or restores it to start_pos.
+    // May set game_over via capture rules.
     void settle_pending_moves(BoardModel& board, const GameRules& rules, bool& game_over);
 
     [[nodiscard]] std::int64_t clock_ms() const noexcept { return clock_ms_; }
@@ -35,7 +37,7 @@ public:
         const std::pair<std::size_t, std::size_t>& end_pos,
         std::int64_t move_duration_ms) const;
 
-    void request_move(Piece::Id piece_id, PieceColor color,
+    void request_move(Piece::Id piece_id, PieceColor color, PieceKind kind,
                       const std::pair<std::size_t, std::size_t>& start_pos,
                       const std::pair<std::size_t, std::size_t>& end_pos,
                       std::int64_t move_duration_ms);

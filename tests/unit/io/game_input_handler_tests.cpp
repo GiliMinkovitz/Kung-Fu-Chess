@@ -11,6 +11,8 @@
 TEST_CASE("GameInputHandlerTest - GameInputHandlerClickSelectAndMove") {
     kfc::BoardModel board = kfc::test::make_board({{"wK", ".", "bK"}, {".", ".", "."}});
     kfc::GameState state(board);
+    const kfc::Piece::Id king_id =
+        kfc::test::GameStateTestAccess::board(state).piece_at(0, 0)->id;
     kfc::GameInputHandler processor(state);
     std::ostringstream sink;
 
@@ -24,8 +26,10 @@ TEST_CASE("GameInputHandlerTest - GameInputHandlerClickSelectAndMove") {
 
     processor.execute("click 150 150", sink);
     CHECK_FALSE(state.has_selection());
-    CHECK_EQ(state.token_at(0, 0), "wK");
+    CHECK_EQ(state.token_at(0, 0), ".");
     CHECK_EQ(state.token_at(1, 1), ".");
+    CHECK(kfc::test::GameStateTestAccess::piece_state(state, king_id) == kfc::PieceState::Moving);
+    CHECK(state.is_piece_moving(0, 0));
 
     processor.execute("wait 1000", sink);
     CHECK_EQ(state.token_at(0, 0), ".");
@@ -72,6 +76,8 @@ TEST_CASE("GameInputHandlerTest - GameInputHandlerPrintBoard") {
 TEST_CASE("GameInputHandlerTest - GameInputHandlerCapture") {
     kfc::BoardModel board = kfc::test::make_board({{"wR", ".", "bK"}});
     kfc::GameState state(board);
+    const kfc::Piece::Id rook_id =
+        kfc::test::GameStateTestAccess::board(state).piece_at(0, 0)->id;
     kfc::GameInputHandler processor(state);
     std::ostringstream sink;
 
@@ -80,8 +86,10 @@ TEST_CASE("GameInputHandlerTest - GameInputHandlerCapture") {
 
     processor.execute("click 250 50", sink);
     CHECK_FALSE(state.has_selection());
-    CHECK_EQ(state.token_at(0, 0), "wR");
+    CHECK_EQ(state.token_at(0, 0), ".");
     CHECK_EQ(state.token_at(0, 2), "bK");
+    CHECK(kfc::test::GameStateTestAccess::piece_state(state, rook_id) == kfc::PieceState::Moving);
+    CHECK(state.is_piece_moving(0, 0));
 
     processor.execute("wait 2000", sink);
     CHECK_EQ(state.token_at(0, 0), ".");
@@ -106,15 +114,22 @@ TEST_CASE("GameInputHandlerTest - GameInputHandlerRejectsIllegalMove") {
 TEST_CASE("GameInputHandlerTest - PendingMovePrintBeforeArrival") {
     kfc::BoardModel board = kfc::test::make_board({{"wK", ".", "bK"}, {".", ".", "."}});
     kfc::GameState state(board);
+    const kfc::Piece::Id king_id =
+        kfc::test::GameStateTestAccess::board(state).piece_at(0, 0)->id;
     kfc::GameInputHandler processor(state);
     std::ostringstream sink;
 
     processor.execute("click 50 50", sink);
     processor.execute("click 150 150", sink);
 
+    CHECK_EQ(state.token_at(0, 0), ".");
+    CHECK_EQ(state.token_at(1, 1), ".");
+    CHECK(kfc::test::GameStateTestAccess::piece_state(state, king_id) == kfc::PieceState::Moving);
+    CHECK(state.is_piece_moving(0, 0));
+
     std::ostringstream output;
     processor.execute("print board", output);
-    CHECK_EQ(output.str(), "wK . bK\n. . .\n");
+    CHECK_EQ(output.str(), ". . bK\n. . .\n");
 }
 
 TEST_CASE("GameInputHandlerTest - PendingMovePrintAfterArrival") {
@@ -135,6 +150,8 @@ TEST_CASE("GameInputHandlerTest - PendingMovePrintAfterArrival") {
 TEST_CASE("GameInputHandlerTest - TwoCellMoveBeforeAndAfterArrival") {
     kfc::BoardModel board = kfc::test::make_board({{"wR", ".", "."}});
     kfc::GameState state(board);
+    const kfc::Piece::Id rook_id =
+        kfc::test::GameStateTestAccess::board(state).piece_at(0, 0)->id;
     kfc::GameInputHandler processor(state);
     std::ostringstream sink;
 
@@ -142,9 +159,14 @@ TEST_CASE("GameInputHandlerTest - TwoCellMoveBeforeAndAfterArrival") {
     processor.execute("click 250 50", sink);
     processor.execute("wait 1000", sink);
 
+    CHECK_EQ(state.token_at(0, 0), ".");
+    CHECK_EQ(state.token_at(0, 2), ".");
+    CHECK(kfc::test::GameStateTestAccess::piece_state(state, rook_id) == kfc::PieceState::Moving);
+    CHECK(state.is_piece_moving(0, 0));
+
     std::ostringstream first_print;
     processor.execute("print board", first_print);
-    CHECK_EQ(first_print.str(), "wR . .\n");
+    CHECK_EQ(first_print.str(), ". . .\n");
 
     processor.execute("wait 1000", sink);
 
@@ -200,7 +222,7 @@ TEST_CASE("GameInputHandlerTest - PieceCanMoveAfterLongRestExpires") {
     CHECK_EQ(output.str(), ". . wR .\n");
 }
 
-TEST_CASE("GameInputHandlerTest - OppositeColorsDoNotMoveConcurrentlyInCommonRoute") {
+TEST_CASE("GameInputHandlerTest - OppositeColorsMoveConcurrentlyInCommonRoute") {
     kfc::BoardModel board = kfc::test::make_board({{"wR", ".", "."}, {".", ".", "."}, {"bR", ".", "."}});
     kfc::GameState state(board);
     kfc::GameInputHandler processor(state);
@@ -214,7 +236,7 @@ TEST_CASE("GameInputHandlerTest - OppositeColorsDoNotMoveConcurrentlyInCommonRou
 
     std::ostringstream output;
     processor.execute("print board", output);
-    CHECK_EQ(output.str(), ". . wR\n. . .\nbR . .\n");
+    CHECK_EQ(output.str(), ". . wR\n. . .\n. . bR\n");
 }
 
 TEST_CASE("GameInputHandlerTest - OppositeColorsCanMoveOnDisjointRoutes") {
@@ -564,6 +586,8 @@ TEST_CASE("GameInputHandlerTest - JumpWhilePieceRestingIgnored") {
 
 TEST_CASE("GameInputHandlerTest - MoveAttemptWhilePieceMovingIgnored") {
     kfc::GameState state(kfc::test::make_board({{"wR", ".", "bK"}}));
+    const kfc::Piece::Id rook_id =
+        kfc::test::GameStateTestAccess::board(state).piece_at(0, 0)->id;
     kfc::GameInputHandler processor(state);
     std::ostringstream sink;
 
@@ -574,5 +598,8 @@ TEST_CASE("GameInputHandlerTest - MoveAttemptWhilePieceMovingIgnored") {
     processor.execute("click 150 50", sink);
     CHECK(state.is_piece_moving(0, 0));
     CHECK(state.has_selection());
-    CHECK_EQ(state.token_at(0, 0), "wR");
+    CHECK_EQ(state.token_at(0, 0), ".");
+    CHECK_EQ(state.token_at(0, 1), ".");
+    CHECK_EQ(state.token_at(0, 2), "bK");
+    CHECK(kfc::test::GameStateTestAccess::piece_state(state, rook_id) == kfc::PieceState::Moving);
 }

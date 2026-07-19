@@ -318,11 +318,6 @@ void Ctd26Renderer::draw_static_board(const BoardViewModel& view) {
 
 void Ctd26Renderer::draw_moving_pieces(const BoardViewModel& view) {
     for (const ActiveMoveSnapshot& move : view.animations.moves) {
-        const std::optional<PieceView> piece = board_view_piece_at(view, move.from_row, move.from_col);
-        if (!piece.has_value()) {
-            continue;
-        }
-
         const float progress = std::clamp(move.progress, 0.0f, 1.0f);
         const float from_x = static_cast<float>(layout_.cell_origin_x(move.from_col));
         const float from_y = static_cast<float>(layout_.cell_origin_y(move.from_row));
@@ -331,8 +326,9 @@ void Ctd26Renderer::draw_moving_pieces(const BoardViewModel& view) {
 
         const int draw_x = static_cast<int>(from_x + (to_x - from_x) * progress);
         const int draw_y = static_cast<int>(from_y + (to_y - from_y) * progress);
-        draw_piece(PieceSpriteContext{*piece, true, false, false, RestKind::Short, progress}, draw_x,
-                    draw_y);
+        const PieceView piece{move.kind, move.color};
+        draw_piece(PieceSpriteContext{piece, true, false, false, RestKind::Short, progress}, draw_x,
+                   draw_y);
     }
 }
 

@@ -6,5 +6,7 @@ namespace kfc::piece_rules {
 
 [[nodiscard]] bool is_pawn_move(const BoardModel& board, int start_row, int start_col,
                                 int end_row, int end_col);
+[[nodiscard]] bool is_pawn_move_for_piece(const BoardModel& board, const Piece& piece,
+                                          int start_row, int start_col, int end_row, int end_col);
 
 }  // namespace kfc::piece_rules

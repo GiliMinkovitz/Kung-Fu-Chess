@@ -20,6 +20,7 @@ BoardViewModel BoardViewBuilder::build(const GameState& state) {
     }
 
     view.cells.reserve(view.height * view.width);
+    // Static grid from board occupancy only; in-flight pieces appear via view.animations.
     for (std::size_t row = 0; row < view.height; ++row) {
         for (std::size_t col = 0; col < view.width; ++col) {
             CellView cell;

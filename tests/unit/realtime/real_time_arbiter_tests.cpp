@@ -23,7 +23,7 @@ TEST_CASE("RealTimeArbiterTest - RequestMoveSchedulesInTransitState") {
     kfc::RealTimeArbiter arbiter;
     const auto piece_id = piece_id_at(board, 0, 0);
 
-    arbiter.request_move(piece_id, kfc::PieceColor::White, {0, 0}, {0, 2}, kfc::kMoveDurationMs);
+    arbiter.request_move(piece_id, kfc::PieceColor::White, kfc::PieceKind::Rook, {0, 0}, {0, 2}, kfc::kMoveDurationMs);
 
     CHECK(arbiter.is_piece_moving(0, 0));
     CHECK_FALSE(arbiter.is_piece_moving(0, 2));
@@ -48,7 +48,7 @@ TEST_CASE("RealTimeArbiterTest - RequestMoveSettlesOnBoardAfterDuration") {
     const auto piece_id = piece_id_at(board, 0, 0);
 
     board.get_piece(piece_id).state = kfc::PieceState::Moving;
-    arbiter.request_move(piece_id, kfc::PieceColor::White, {0, 0}, {0, 2},
+    arbiter.request_move(piece_id, kfc::PieceColor::White, kfc::PieceKind::Rook, {0, 0}, {0, 2},
                          2 * kfc::kMoveDurationMs);
 
     arbiter.update_time(2 * kfc::kMoveDurationMs, board, rules, game_over);
@@ -74,7 +74,7 @@ TEST_CASE("RealTimeArbiterTest - RequestJumpExpiresAfterDuration") {
     CHECK_FALSE(arbiter.is_piece_jumping(0, 0));
 }
 
-TEST_CASE("RealTimeArbiterTest - MoveAbortedIfStartCellClearedBeforeArrival") {
+TEST_CASE("RealTimeArbiterTest - MoveSettlesWhenStartCellClearedBeforeArrival") {
     kfc::BoardModel board = kfc::test::make_board({{"wR", ".", "."}});
     kfc::RealTimeArbiter arbiter;
     kfc::GameRules rules = kfc::KungFuChessRules::standard();
@@ -82,7 +82,7 @@ TEST_CASE("RealTimeArbiterTest - MoveAbortedIfStartCellClearedBeforeArrival") {
     const auto piece_id = piece_id_at(board, 0, 0);
 
     board.get_piece(piece_id).state = kfc::PieceState::Moving;
-    arbiter.request_move(piece_id, kfc::PieceColor::White, {0, 0}, {0, 2}, 2 * kfc::kMoveDurationMs);
+    arbiter.request_move(piece_id, kfc::PieceColor::White, kfc::PieceKind::Rook, {0, 0}, {0, 2}, 2 * kfc::kMoveDurationMs);
 
     board.clear_cell(0, 0);
 
@@ -90,7 +90,8 @@ TEST_CASE("RealTimeArbiterTest - MoveAbortedIfStartCellClearedBeforeArrival") {
 
     CHECK_FALSE(arbiter.is_piece_moving(0, 0));
     CHECK_EQ(board.token_at(0, 0), ".");
-    CHECK_EQ(board.token_at(0, 2), ".");
+    CHECK_EQ(board.token_at(0, 2), "wR");
+    CHECK_EQ(board.get_piece(piece_id).state, kfc::PieceState::Idle);
 }
 
 TEST_CASE("RealTimeArbiterTest - MoveAbortedIfFriendlyOccupiesTargetBeforeArrival") {
@@ -101,7 +102,7 @@ TEST_CASE("RealTimeArbiterTest - MoveAbortedIfFriendlyOccupiesTargetBeforeArriva
     const auto piece_id = piece_id_at(board, 0, 0);
 
     board.get_piece(piece_id).state = kfc::PieceState::Moving;
-    arbiter.request_move(piece_id, kfc::PieceColor::White, {0, 0}, {0, 2}, 2 * kfc::kMoveDurationMs);
+    arbiter.request_move(piece_id, kfc::PieceColor::White, kfc::PieceKind::Rook, {0, 0}, {0, 2}, 2 * kfc::kMoveDurationMs);
 
     kfc::PieceFactory factory(board.next_piece_id());
     board.place_piece_at(0, 2,
@@ -123,7 +124,7 @@ TEST_CASE("RealTimeArbiterTest - WouldConflictWithOppositeColorMove") {
     const auto white_id = piece_id_at(board, 0, 0);
     const auto black_id = piece_id_at(board, 0, 2);
 
-    arbiter.request_move(black_id, kfc::PieceColor::Black, {0, 2}, {0, 0}, kfc::kMoveDurationMs);
+    arbiter.request_move(black_id, kfc::PieceColor::Black, kfc::PieceKind::Rook, {0, 2}, {0, 0}, kfc::kMoveDurationMs);
 
     CHECK(arbiter.would_conflict_with_opposite_color_move(kfc::PieceColor::White, white_id, {0, 0},
                                                           {0, 2}, kfc::kMoveDurationMs));
@@ -137,7 +138,7 @@ TEST_CASE("RealTimeArbiterTest - WouldConflictWithOppositeColorMove") {
 TEST_CASE("RealTimeArbiterTest - SameColorDestinationClaimed") {
     kfc::RealTimeArbiter arbiter;
 
-    arbiter.request_move(1, kfc::PieceColor::White, {0, 0}, {0, 2}, kfc::kMoveDurationMs);
+    arbiter.request_move(1, kfc::PieceColor::White, kfc::PieceKind::Rook, {0, 0}, {0, 2}, kfc::kMoveDurationMs);
 
     CHECK(arbiter.is_same_color_destination_claimed(kfc::PieceColor::White, {0, 2}));
     CHECK_FALSE(arbiter.is_same_color_destination_claimed(kfc::PieceColor::Black, {0, 2}));
@@ -150,13 +151,15 @@ TEST_CASE("RealTimeArbiterTest - AnimationsForRenderTracksMoveProgress") {
     bool game_over = false;
     const auto piece_id = piece_id_at(board, 0, 0);
 
-    arbiter.request_move(piece_id, kfc::PieceColor::White, {0, 0}, {0, 2},
+    arbiter.request_move(piece_id, kfc::PieceColor::White, kfc::PieceKind::Rook, {0, 0}, {0, 2},
                          2 * kfc::kMoveDurationMs);
     arbiter.update_time(kfc::kMoveDurationMs, board, rules, game_over);
 
     const kfc::AnimationSnapshot snapshot = arbiter.animations_for_render();
     REQUIRE(snapshot.moves.size() == 1);
     CHECK_EQ(snapshot.moves[0].piece_id, piece_id);
+    CHECK(snapshot.moves[0].kind == kfc::PieceKind::Rook);
+    CHECK(snapshot.moves[0].color == kfc::PieceColor::White);
     CHECK_EQ(snapshot.moves[0].from_row, 0);
     CHECK_EQ(snapshot.moves[0].from_col, 0);
     CHECK_EQ(snapshot.moves[0].to_row, 0);
@@ -192,7 +195,7 @@ TEST_CASE("RealTimeArbiterTest - RequestMoveSchedulesLongRestAfterSettlement") {
     const auto piece_id = piece_id_at(board, 0, 0);
 
     board.get_piece(piece_id).state = kfc::PieceState::Moving;
-    arbiter.request_move(piece_id, kfc::PieceColor::White, {0, 0}, {0, 1}, kfc::kMoveDurationMs);
+    arbiter.request_move(piece_id, kfc::PieceColor::White, kfc::PieceKind::Rook, {0, 0}, {0, 1}, kfc::kMoveDurationMs);
 
     arbiter.update_time(kfc::kMoveDurationMs, board, rules, game_over);
 
@@ -217,21 +220,59 @@ TEST_CASE("RealTimeArbiterTest - RequestJumpSchedulesShortRestAfterCompletion") 
     CHECK_FALSE(arbiter.is_piece_resting(piece_id));
 }
 
+TEST_CASE("RealTimeArbiterTest - AbortedMoveRestoresOverOccupiedStartCell") {
+    kfc::BoardModel board = kfc::test::make_board({{"wR", ".", ".", "."}});
+    kfc::RealTimeArbiter arbiter;
+    kfc::GameRules rules = kfc::KungFuChessRules::standard();
+    bool game_over = false;
+    const auto rook_id = piece_id_at(board, 0, 0);
+
+    board.get_piece(rook_id).state = kfc::PieceState::Moving;
+    arbiter.request_move(rook_id, kfc::PieceColor::White, kfc::PieceKind::Rook, {0, 0}, {0, 3}, 3 * kfc::kMoveDurationMs);
+
+    board.clear_cell(0, 0);
+
+    kfc::PieceFactory factory(board.next_piece_id());
+    board.place_piece_at(0, 2,
+                          factory.create(kfc::PieceColor::White, kfc::PieceKind::Pawn, {0, 2}));
+    const auto occupant_id = board.next_piece_id();
+    board.place_piece_at(0, 0,
+                          factory.create(kfc::PieceColor::Black, kfc::PieceKind::King, {0, 0}));
+
+    arbiter.update_time(3 * kfc::kMoveDurationMs, board, rules, game_over);
+
+    CHECK_FALSE(arbiter.is_piece_resting(rook_id));
+    CHECK_EQ(board.get_piece(rook_id).state, kfc::PieceState::Idle);
+    CHECK_EQ(board.token_at(0, 0), "wR");
+    CHECK_EQ(board.piece_at(0, 0)->id, rook_id);
+    CHECK_EQ(board.get_piece(occupant_id).state, kfc::PieceState::Captured);
+    CHECK(kfc::test::BoardModelTestAccess::find_piece_by_id(board, occupant_id) != nullptr);
+    CHECK_EQ(board.token_at(0, 2), "wP");
+    CHECK_EQ(board.token_at(0, 3), ".");
+}
+
 TEST_CASE("RealTimeArbiterTest - AbortedMoveDoesNotScheduleRest") {
-    kfc::BoardModel board = kfc::test::make_board({{"wR", ".", "."}});
+    kfc::BoardModel board = kfc::test::make_board({{"wR", ".", ".", "."}});
     kfc::RealTimeArbiter arbiter;
     kfc::GameRules rules = kfc::KungFuChessRules::standard();
     bool game_over = false;
     const auto piece_id = piece_id_at(board, 0, 0);
 
     board.get_piece(piece_id).state = kfc::PieceState::Moving;
-    arbiter.request_move(piece_id, kfc::PieceColor::White, {0, 0}, {0, 2}, 2 * kfc::kMoveDurationMs);
+    arbiter.request_move(piece_id, kfc::PieceColor::White, kfc::PieceKind::Rook, {0, 0}, {0, 3}, 3 * kfc::kMoveDurationMs);
 
     board.clear_cell(0, 0);
 
-    arbiter.update_time(2 * kfc::kMoveDurationMs, board, rules, game_over);
+    kfc::PieceFactory factory(board.next_piece_id());
+    board.place_piece_at(0, 2,
+                          factory.create(kfc::PieceColor::White, kfc::PieceKind::Pawn, {0, 2}));
+
+    arbiter.update_time(3 * kfc::kMoveDurationMs, board, rules, game_over);
 
     CHECK_FALSE(arbiter.is_piece_resting(piece_id));
+    CHECK_EQ(board.get_piece(piece_id).state, kfc::PieceState::Idle);
+    CHECK_EQ(board.token_at(0, 0), "wR");
+    CHECK_EQ(board.token_at(0, 3), ".");
 }
 
 TEST_CASE("RealTimeArbiterTest - AnimationsForRenderEmptyAfterArrival") {
@@ -242,7 +283,7 @@ TEST_CASE("RealTimeArbiterTest - AnimationsForRenderEmptyAfterArrival") {
     const auto piece_id = piece_id_at(board, 0, 0);
 
     board.get_piece(piece_id).state = kfc::PieceState::Moving;
-    arbiter.request_move(piece_id, kfc::PieceColor::White, {0, 0}, {0, 2}, kfc::kMoveDurationMs);
+    arbiter.request_move(piece_id, kfc::PieceColor::White, kfc::PieceKind::Rook, {0, 0}, {0, 2}, kfc::kMoveDurationMs);
     arbiter.update_time(kfc::kMoveDurationMs, board, rules, game_over);
 
     const kfc::AnimationSnapshot snapshot = arbiter.animations_for_render();

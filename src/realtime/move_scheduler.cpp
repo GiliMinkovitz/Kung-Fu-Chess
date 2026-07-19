@@ -9,7 +9,8 @@ namespace kfc {
 bool MoveScheduler::is_piece_moving(uint64_t current_time_ms, std::size_t row,
                                     std::size_t col) const {
     const auto clock_ms = static_cast<std::int64_t>(current_time_ms);
-    // Until settlement, the piece still occupies its start cell on the board.
+    // True when a pending move's logical start_pos matches this cell. The source cell may
+    // already be empty on the board; use AnimationSnapshot for visual placement.
     for (const PendingMove& move : pending_moves_) {
         if (clock_ms < move.arrival_time && move.start_pos.first == row &&
             move.start_pos.second == col) {
@@ -109,6 +110,8 @@ std::optional<RestKind> MoveScheduler::rest_kind(uint64_t current_time_ms,
 }
 
 AnimationSnapshot MoveScheduler::animations_at(std::int64_t clock_ms) const {
+    // In-flight pieces are off the board grid; snapshots are the sole render-time source
+    // for their position between start_pos and end_pos.
     AnimationSnapshot snapshot;
 
     for (const PendingMove& move : pending_moves_) {
@@ -120,6 +123,8 @@ AnimationSnapshot MoveScheduler::animations_at(std::int64_t clock_ms) const {
         const auto [to_row, to_col] = move.end_pos;
         snapshot.moves.push_back({
             move.piece_id,
+            move.kind,
+            move.color,
             from_row,
             from_col,
             to_row,

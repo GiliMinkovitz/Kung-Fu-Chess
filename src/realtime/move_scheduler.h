@@ -13,11 +13,14 @@
 
 namespace kfc {
 
-// A move in flight: the piece remains at start_pos on the board until settlement.
+// A move in flight: records the logical transition from start_pos to end_pos while the piece
+// remains in the piece store with PieceState::Moving. The source cell is cleared when the
+// move starts; board occupancy is reconciled at settlement (place or restore).
 // Invariant: start_time <= arrival_time; only moves with clock < arrival_time are active.
 struct PendingMove {
     Piece::Id piece_id = Piece::kInvalidId;
     PieceColor color = PieceColor::White;
+    PieceKind kind = PieceKind::Pawn;
     std::pair<std::size_t, std::size_t> start_pos;
     std::pair<std::size_t, std::size_t> end_pos;
     std::int64_t start_time = 0;
@@ -47,8 +50,10 @@ struct GameRules;
 struct ArrivingPieceInfo;
 
 // Time-indexed queues for in-flight moves and jumps. Stores schedules and answers
-// temporal queries; does not interpret chess rules except by forwarding to
-// CollisionResolver. Board mutation happens only in RealTimeArbiter's settle callback.
+// temporal queries; does not mutate board occupancy for moves (GameState clears the source
+// cell on request; RealTimeArbiter places or restores at arrival). Forwards collision
+// checks to CollisionResolver. Board mutation at arrival happens only in RealTimeArbiter's
+// settle callback. Visual position while in transit comes from AnimationSnapshot entries.
 class MoveScheduler {
 public:
     // Invokes fn for each due move and removes them from pending_moves_.

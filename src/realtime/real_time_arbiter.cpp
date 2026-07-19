@@ -2,26 +2,63 @@
 
 #include "../model/board_model.h"
 #include "../rules/game_rules.h"
+#include "../rules/rules_registry.h"
+#include "../rules/piece_rules/pawn_rules.h"
 
 namespace kfc {
 
 namespace {
 
 // Re-validated at arrival because the board may have changed while the move was in flight
-// (e.g. another piece moved onto the path or the start cell was cleared unexpectedly).
-[[nodiscard]] bool can_settle_move(const BoardModel& board, const GameRules& rules,
-                                   const PendingMove& move) {
+// (e.g. another piece moved onto the path or a friendly piece claimed the destination).
+// The source cell is cleared when the move starts; validate the moving piece by id.
+[[nodiscard]] bool can_settle_move(const BoardModel& board, const PendingMove& move) {
     const auto [start_row, start_col] = move.start_pos;
     const auto [end_row, end_col] = move.end_pos;
 
-    const Piece* piece = board.piece_at(start_row, start_col);
-    if (piece == nullptr || piece->id != move.piece_id) {
+    const Piece& piece = board.get_piece(move.piece_id);
+
+    const piece_rules::PieceRuleEntry rule = piece_rules::get_rule_entry(piece.kind);
+    if (rule.validator == nullptr) {
         return false;
     }
+    if (piece.kind == PieceKind::Pawn) {
+        if (!piece_rules::is_pawn_move_for_piece(board, piece, static_cast<int>(start_row),
+                                                 static_cast<int>(start_col),
+                                                 static_cast<int>(end_row),
+                                                 static_cast<int>(end_col))) {
+            return false;
+        }
+    } else if (!rule.validator(board, static_cast<int>(start_row), static_cast<int>(start_col),
+                               static_cast<int>(end_row), static_cast<int>(end_col))) {
+        return false;
+    }
+    if (rule.requires_destination_check) {
+        const Piece* dest = board.piece_at(end_row, end_col);
+        if (dest != nullptr && !piece.is_opponent_of(*dest)) {
+            return false;
+        }
+    }
+    return true;
+}
 
-    return rules.is_legal_move(board, piece->kind, static_cast<int>(start_row),
-                               static_cast<int>(start_col), static_cast<int>(end_row),
-                               static_cast<int>(end_col));
+void restore_aborted_move(BoardModel& board, const PendingMove& move) {
+    const auto [start_row, start_col] = move.start_pos;
+    Piece& piece = board.get_piece(move.piece_id);
+    piece.state = PieceState::Idle;
+
+    if (const Piece* at_start = board.piece_at(start_row, start_col);
+        at_start != nullptr && at_start->id == move.piece_id) {
+        return;
+    }
+
+    if (!board.is_empty(start_row, start_col)) {
+        board.remove_piece_at(start_row, start_col);
+    }
+
+    Piece updated = board.get_piece(move.piece_id);
+    updated.cell = Position{static_cast<int>(start_row), static_cast<int>(start_col)};
+    board.place_piece_at(start_row, start_col, std::move(updated));
 }
 
 }  // namespace
@@ -39,19 +76,19 @@ void RealTimeArbiter::settle_pending_moves(BoardModel& board, const GameRules& r
     // this callback owns all board mutations for that arrival.
     scheduler_.for_each_pending_due(current_time_ms, [this, &board, &rules, &game_over,
                                                       current_time_ms](const PendingMove& move) {
-        if (!can_settle_move(board, rules, move)) {
-            const auto [start_row, start_col] = move.start_pos;
-            if (Piece* piece = board.piece_at(start_row, start_col);
-                piece != nullptr && piece->id == move.piece_id) {
-                piece->state = PieceState::Idle;
-            }
+        if (!can_settle_move(board, move)) {
+            restore_aborted_move(board, move);
             return;
         }
 
         const auto [start_row, start_col] = move.start_pos;
         const auto [end_row, end_col] = move.end_pos;
 
-        board.clear_cell(start_row, start_col);
+        if (const Piece* at_start = board.piece_at(start_row, start_col);
+            at_start != nullptr && at_start->id == move.piece_id) {
+            // Legacy path: source still occupied (direct arbiter calls without early release).
+            board.clear_cell(start_row, start_col);
+        }
 
         const ArrivingPieceInfo arriving_piece_info{
             move.piece_id,
@@ -59,11 +96,10 @@ void RealTimeArbiter::settle_pending_moves(BoardModel& board, const GameRules& r
             move.end_pos,
         };
 
-        const Piece* arriving_piece = board.piece_at(start_row, start_col);
+        const Piece& arriving_piece = board.get_piece(move.piece_id);
         const Piece* opponent_before = board.piece_at(end_row, end_col);
         const Piece::Id captured_opponent_id =
-            opponent_before != nullptr && arriving_piece != nullptr &&
-                    opponent_before->is_opponent_of(*arriving_piece)
+            opponent_before != nullptr && opponent_before->is_opponent_of(arriving_piece)
                 ? opponent_before->id
                 : Piece::kInvalidId;
 
@@ -131,6 +167,7 @@ bool RealTimeArbiter::would_conflict_with_opposite_color_move(
     const PendingMove proposed{
         piece_id,
         moving_color,
+        PieceKind::Pawn,
         start_pos,
         end_pos,
         clock_ms_,
@@ -140,13 +177,14 @@ bool RealTimeArbiter::would_conflict_with_opposite_color_move(
                                                          moving_color, proposed);
 }
 
-void RealTimeArbiter::request_move(Piece::Id piece_id, PieceColor color,
+void RealTimeArbiter::request_move(Piece::Id piece_id, PieceColor color, PieceKind kind,
                                    const std::pair<std::size_t, std::size_t>& start_pos,
                                    const std::pair<std::size_t, std::size_t>& end_pos,
                                    std::int64_t move_duration_ms) {
     scheduler_.schedule_move(PendingMove{
         piece_id,
         color,
+        kind,
         start_pos,
         end_pos,
         clock_ms_,

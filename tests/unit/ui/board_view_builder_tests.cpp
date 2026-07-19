@@ -79,12 +79,15 @@ TEST_CASE("BoardViewBuilderTest - ActiveMoveAnimationDuringTransit") {
 
     REQUIRE_EQ(view.animations.moves.size(), 1u);
     const kfc::ActiveMoveSnapshot& move = view.animations.moves.front();
+    CHECK(move.kind == kfc::PieceKind::Rook);
+    CHECK(move.color == kfc::PieceColor::White);
     CHECK_EQ(move.from_row, 0u);
     CHECK_EQ(move.from_col, 0u);
     CHECK_EQ(move.to_row, 0u);
     CHECK_EQ(move.to_col, 2u);
     CHECK(move.progress > 0.0f);
     CHECK(move.progress < 1.0f);
+    CHECK_FALSE(kfc::board_view_piece_at(view, 0, 0).has_value());
     CHECK(kfc::board_view_is_move_origin(view, 0, 0));
     CHECK_FALSE(kfc::board_view_is_move_origin(view, 0, 2));
 }

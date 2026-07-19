@@ -3,9 +3,28 @@
 
 #include <doctest/doctest.h>
 
+TEST_CASE("MoveSchedulerTest - AnimationsAtIncludesActiveMoveWithPieceIdentity") {
+    kfc::MoveScheduler scheduler;
+    scheduler.schedule_move(
+        {1, kfc::PieceColor::White, kfc::PieceKind::Rook, {0, 0}, {0, 2}, 0, 100});
+
+    const kfc::AnimationSnapshot snapshot = scheduler.animations_at(50);
+
+    REQUIRE_EQ(snapshot.moves.size(), 1u);
+    const kfc::ActiveMoveSnapshot& move = snapshot.moves.front();
+    CHECK_EQ(move.piece_id, 1u);
+    CHECK(move.kind == kfc::PieceKind::Rook);
+    CHECK(move.color == kfc::PieceColor::White);
+    CHECK_EQ(move.from_row, 0u);
+    CHECK_EQ(move.from_col, 0u);
+    CHECK_EQ(move.to_row, 0u);
+    CHECK_EQ(move.to_col, 2u);
+    CHECK(move.progress == doctest::Approx(0.5f));
+}
+
 TEST_CASE("MoveSchedulerTest - AnimationsAtSkipsExpiredMoves") {
     kfc::MoveScheduler scheduler;
-    scheduler.schedule_move({1, kfc::PieceColor::White, {0, 0}, {0, 2}, 0, 100});
+    scheduler.schedule_move({1, kfc::PieceColor::White, kfc::PieceKind::Rook, {0, 0}, {0, 2}, 0, 100});
 
     const kfc::AnimationSnapshot snapshot = scheduler.animations_at(100);
 

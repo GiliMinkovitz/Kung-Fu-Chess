@@ -29,7 +29,7 @@ TEST_CASE("IntegrationTest - CommandSequenceWriteBoardGroundTruth") {
 
         processor.execute("click 50 50", sink);
         processor.execute("click 150 150", sink);
-        CHECK_EQ(capture_board(state), "wK . bK\n. . .");
+        CHECK_EQ(capture_board(state), ". . bK\n. . .");
 
         processor.execute("wait 1000", sink);
         CHECK_EQ(capture_board(state), ". . bK\n. wK .");
@@ -43,7 +43,7 @@ TEST_CASE("IntegrationTest - CommandSequenceWriteBoardGroundTruth") {
 
         processor.execute("click 50 50", sink);
         processor.execute("click 250 50", sink);
-        CHECK_EQ(capture_board(state), "wR . bK");
+        CHECK_EQ(capture_board(state), ". . bK");
 
         processor.execute("wait 2000", sink);
         CHECK_EQ(capture_board(state), ". . wR");

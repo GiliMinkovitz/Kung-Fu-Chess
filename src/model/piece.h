@@ -10,7 +10,11 @@ enum class PieceColor { White, Black };
 
 enum class PieceKind { King, Queen, Rook, Bishop, Knight, Pawn, Count };
 
-enum class PieceState { Idle, Moving, Captured };
+enum class PieceState {
+    Idle,     // On the board grid at piece.cell.
+    Moving,   // In transit: may be off-grid; PendingMove + AnimationSnapshot track the move.
+    Captured  // Removed from play.
+};
 
 class Piece {
 public:
