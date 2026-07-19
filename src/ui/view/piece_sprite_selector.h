@@ -1,5 +1,6 @@
 #pragma once
 
+#include "ui/assets/sprite_animation_constants.h"
 #include "ui/view/piece_sprite_context.h"
 
 #include <string_view>
@@ -16,7 +17,6 @@ public:
     [[nodiscard]] PieceSpriteSelection select(const PieceSpriteContext& context) const;
 
 private:
-    static constexpr int kMoveFrameCount = 5;
     [[nodiscard]] static int frame_from_progress(float progress);
 };
 

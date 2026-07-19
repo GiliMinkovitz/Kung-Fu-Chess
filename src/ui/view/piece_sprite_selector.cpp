@@ -6,23 +6,24 @@ namespace kfc {
 
 int PieceSpriteSelector::frame_from_progress(float progress) {
     const float clamped = std::clamp(progress, 0.0f, 1.0f);
-    const int frame_index =
-        std::min(static_cast<int>(clamped * kMoveFrameCount), kMoveFrameCount - 1);
+    const int frame_index = std::min(static_cast<int>(clamped * kSpriteAnimationFrameCount),
+                                     kSpriteAnimationFrameCount - 1);
     return frame_index + 1;
 }
 
 PieceSpriteSelection PieceSpriteSelector::select(const PieceSpriteContext& context) const {
     if (context.moving) {
-        return {"move", frame_from_progress(context.progress)};
+        return {kSpriteStateMove, frame_from_progress(context.progress)};
     }
     if (context.jumping) {
-        return {"jump", frame_from_progress(context.progress)};
+        return {kSpriteStateJump, frame_from_progress(context.progress)};
     }
     if (context.resting) {
-        const char* state = context.rest_kind == RestKind::Long ? "long_rest" : "short_rest";
+        const std::string_view state =
+            context.rest_kind == RestKind::Long ? kSpriteStateLongRest : kSpriteStateShortRest;
         return {state, frame_from_progress(context.progress)};
     }
-    return {"idle", 1};
+    return {kSpriteStateIdle, kSpriteIdleFrame};
 }
 
 }  // namespace kfc

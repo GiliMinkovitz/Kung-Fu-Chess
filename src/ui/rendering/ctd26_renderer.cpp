@@ -2,6 +2,7 @@
 
 #include "ui/assets/asset_paths.h"
 #include "ui/assets/image_loader.h"
+#include "ui/assets/sprite_animation_constants.h"
 #include "ui/rendering/i_ui_input_sink.h"
 #include "model/piece_token.h"
 
@@ -134,43 +135,48 @@ void Ctd26Renderer::reload_piece_sprites() {
              ++kind_index) {
             const auto kind = static_cast<PieceKind>(kind_index);
 
-            const PieceSpriteCacheKey idle_key{color, kind, "idle", 1};
+            const PieceSpriteCacheKey idle_key{color, kind, std::string(kSpriteStateIdle),
+                                               kSpriteIdleFrame};
             try {
-                impl_->piece_sprites[idle_key] =
-                    image_loader.load_piece_sprite(color, kind, "idle", 1, sprite_size);
+                impl_->piece_sprites[idle_key] = image_loader.load_piece_sprite(
+                    color, kind, std::string(kSpriteStateIdle), kSpriteIdleFrame, sprite_size);
             } catch (const std::exception&) {
                 impl_->piece_sprites[idle_key] = std::nullopt;
             }
 
-            for (int frame = 1; frame <= 5; ++frame) {
-                const PieceSpriteCacheKey move_key{color, kind, "move", frame};
+            for (int frame = 1; frame <= kSpriteAnimationFrameCount; ++frame) {
+                const PieceSpriteCacheKey move_key{color, kind, std::string(kSpriteStateMove),
+                                                   frame};
                 try {
-                    impl_->piece_sprites[move_key] =
-                        image_loader.load_piece_sprite(color, kind, "move", frame, sprite_size);
+                    impl_->piece_sprites[move_key] = image_loader.load_piece_sprite(
+                        color, kind, std::string(kSpriteStateMove), frame, sprite_size);
                 } catch (const std::exception&) {
                     impl_->piece_sprites[move_key] = std::nullopt;
                 }
 
-                const PieceSpriteCacheKey jump_key{color, kind, "jump", frame};
+                const PieceSpriteCacheKey jump_key{color, kind, std::string(kSpriteStateJump),
+                                                 frame};
                 try {
-                    impl_->piece_sprites[jump_key] =
-                        image_loader.load_piece_sprite(color, kind, "jump", frame, sprite_size);
+                    impl_->piece_sprites[jump_key] = image_loader.load_piece_sprite(
+                        color, kind, std::string(kSpriteStateJump), frame, sprite_size);
                 } catch (const std::exception&) {
                     impl_->piece_sprites[jump_key] = std::nullopt;
                 }
 
-                const PieceSpriteCacheKey short_rest_key{color, kind, "short_rest", frame};
+                const PieceSpriteCacheKey short_rest_key{color, kind,
+                                                         std::string(kSpriteStateShortRest), frame};
                 try {
                     impl_->piece_sprites[short_rest_key] = image_loader.load_piece_sprite(
-                        color, kind, "short_rest", frame, sprite_size);
+                        color, kind, std::string(kSpriteStateShortRest), frame, sprite_size);
                 } catch (const std::exception&) {
                     impl_->piece_sprites[short_rest_key] = std::nullopt;
                 }
 
-                const PieceSpriteCacheKey long_rest_key{color, kind, "long_rest", frame};
+                const PieceSpriteCacheKey long_rest_key{color, kind,
+                                                        std::string(kSpriteStateLongRest), frame};
                 try {
                     impl_->piece_sprites[long_rest_key] = image_loader.load_piece_sprite(
-                        color, kind, "long_rest", frame, sprite_size);
+                        color, kind, std::string(kSpriteStateLongRest), frame, sprite_size);
                 } catch (const std::exception&) {
                     impl_->piece_sprites[long_rest_key] = std::nullopt;
                 }
