@@ -17,7 +17,7 @@ namespace {
     if (pawn_color == PieceColor::White) {
         return start_row == rows - 2;
     }
-    return start_row == rows - 4;
+    return start_row == 1;
 }
 
 }  // namespace

@@ -146,26 +146,52 @@ TEST_CASE("MoveValidatorTest - PawnDoubleMoveFromStartRow") {
     CHECK(kfc::is_legal_move(white_board, kfc::PieceKind::Pawn, 2, 1, 0, 1));
     CHECK_FALSE(kfc::is_legal_move(white_board, kfc::PieceKind::Pawn, 3, 1, 1, 1));
 
-    const kfc::BoardModel black_board = kfc::test::make_board({{".", "bP", "."},
-                                    {".", ".", "."},
+    const kfc::BoardModel black_board = kfc::test::make_board({{".", ".", "."},
+                                    {".", "bP", "."},
                                     {".", ".", "."},
                                     {".", ".", "."}});
-    CHECK(kfc::is_legal_move(black_board, kfc::PieceKind::Pawn, 0, 1, 2, 1));
-    CHECK_FALSE(kfc::is_legal_move(black_board, kfc::PieceKind::Pawn, 1, 1, 3, 1));
+    CHECK(kfc::is_legal_move(black_board, kfc::PieceKind::Pawn, 1, 1, 3, 1));
+    CHECK_FALSE(kfc::is_legal_move(black_board, kfc::PieceKind::Pawn, 2, 1, 4, 1));
+}
+
+TEST_CASE("MoveValidatorTest - BlackPawnDoubleMoveOnStandardBoard") {
+    const kfc::BoardModel board = kfc::test::make_board({
+        {"bR", "bN", "bB", "bQ", "bK", "bB", "bN", "bR"},
+        {"bP", "bP", "bP", "bP", "bP", "bP", "bP", "bP"},
+        {".", ".", ".", ".", ".", ".", ".", "."},
+        {".", ".", ".", ".", ".", ".", ".", "."},
+        {".", ".", ".", ".", ".", ".", ".", "."},
+        {".", ".", ".", ".", ".", ".", ".", "."},
+        {"wP", "wP", "wP", "wP", "wP", "wP", "wP", "wP"},
+        {"wR", "wN", "wB", "wQ", "wK", "wB", "wN", "wR"},
+    });
+    CHECK(kfc::is_legal_move(board, kfc::PieceKind::Pawn, 1, 4, 3, 4));
+
+    const kfc::BoardModel blocked_intermediate = kfc::test::make_board({
+        {"bR", "bN", "bB", "bQ", "bK", "bB", "bN", "bR"},
+        {"bP", "bP", "bP", "bP", "bP", "bP", "bP", "bP"},
+        {".", ".", ".", ".", "wN", ".", ".", "."},
+        {".", ".", ".", ".", ".", ".", ".", "."},
+        {".", ".", ".", ".", ".", ".", ".", "."},
+        {".", ".", ".", ".", ".", ".", ".", "."},
+        {"wP", "wP", "wP", "wP", "wP", "wP", "wP", "wP"},
+        {"wR", "wN", "wB", "wQ", "wK", "wB", "wN", "wR"},
+    });
+    CHECK_FALSE(kfc::is_legal_move(blocked_intermediate, kfc::PieceKind::Pawn, 1, 4, 3, 4));
 }
 
 TEST_CASE("MoveValidatorTest - PawnDoubleMoveBlockedByIntermediatePiece") {
-    const kfc::BoardModel blocked_intermediate = kfc::test::make_board({{".", "bP", "."},
+    const kfc::BoardModel blocked_intermediate = kfc::test::make_board({{".", ".", "."},
+                                             {".", "bP", "."},
                                              {".", "wN", "."},
-                                             {".", ".", "."},
                                              {".", ".", "."}});
-    CHECK_FALSE(kfc::is_legal_move(blocked_intermediate, kfc::PieceKind::Pawn, 0, 1, 2, 1));
+    CHECK_FALSE(kfc::is_legal_move(blocked_intermediate, kfc::PieceKind::Pawn, 1, 1, 3, 1));
 
-    const kfc::BoardModel blocked_dest = kfc::test::make_board({{".", "bP", "."},
+    const kfc::BoardModel blocked_dest = kfc::test::make_board({{".", ".", "."},
+                                     {".", "bP", "."},
                                      {".", ".", "."},
-                                     {".", "wR", "."},
-                                     {".", ".", "."}});
-    CHECK_FALSE(kfc::is_legal_move(blocked_dest, kfc::PieceKind::Pawn, 0, 1, 2, 1));
+                                     {".", "wR", "."}});
+    CHECK_FALSE(kfc::is_legal_move(blocked_dest, kfc::PieceKind::Pawn, 1, 1, 3, 1));
 }
 
 TEST_CASE("MoveValidatorTest - BishopDiagonalMove") {
