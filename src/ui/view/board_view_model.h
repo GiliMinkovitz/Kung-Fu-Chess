@@ -45,9 +45,6 @@ struct BoardViewModel {
 [[nodiscard]] bool board_view_is_jump_origin(const BoardViewModel& view, std::size_t row,
                                              std::size_t col);
 
-[[nodiscard]] bool board_view_is_jumping_cell(const BoardViewModel& view, std::size_t row,
-                                              std::size_t col);
-
 [[nodiscard]] float board_view_jump_progress_at(const BoardViewModel& view, std::size_t row,
                                                 std::size_t col);
 

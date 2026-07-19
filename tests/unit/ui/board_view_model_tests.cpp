@@ -39,7 +39,6 @@ TEST_CASE("BoardViewModelTest - AnimationQueriesReturnDefaultsWhenMissing") {
 
     CHECK_FALSE(kfc::board_view_is_move_origin(view, 0, 0));
     CHECK_FALSE(kfc::board_view_is_jump_origin(view, 0, 0));
-    CHECK_FALSE(kfc::board_view_is_jumping_cell(view, 0, 0));
     CHECK(kfc::board_view_jump_progress_at(view, 0, 0) == doctest::Approx(0.0f));
     CHECK_FALSE(kfc::board_view_is_resting_cell(view, 0, 0));
     CHECK(kfc::board_view_rest_progress_at(view, 0, 0) == doctest::Approx(0.0f));
@@ -55,7 +54,6 @@ TEST_CASE("BoardViewModelTest - AnimationQueriesMatchSnapshots") {
 
     CHECK(kfc::board_view_is_move_origin(view, 0, 0));
     CHECK(kfc::board_view_is_jump_origin(view, 1, 1));
-    CHECK(kfc::board_view_is_jumping_cell(view, 1, 1));
     CHECK(kfc::board_view_jump_progress_at(view, 1, 1) == doctest::Approx(0.75f));
     CHECK(kfc::board_view_is_resting_cell(view, 0, 1));
     CHECK(kfc::board_view_rest_progress_at(view, 0, 1) == doctest::Approx(0.25f));

@@ -110,7 +110,6 @@ TEST_CASE("BoardViewBuilderTest - ActiveJumpAnimationDuringTransit") {
     CHECK(jump.color == kfc::PieceColor::White);
     CHECK_FALSE(kfc::board_view_piece_at(view, 0, 0).has_value());
     CHECK(kfc::board_view_is_jump_origin(view, 0, 0));
-    CHECK(kfc::board_view_is_jumping_cell(view, 0, 0));
     CHECK(kfc::board_view_jump_progress_at(view, 0, 0) == doctest::Approx(jump.progress));
 }
 

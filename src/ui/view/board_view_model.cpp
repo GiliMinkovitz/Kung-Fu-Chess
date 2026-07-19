@@ -48,15 +48,6 @@ bool board_view_is_jump_origin(const BoardViewModel& view, std::size_t row, std:
     return false;
 }
 
-bool board_view_is_jumping_cell(const BoardViewModel& view, std::size_t row, std::size_t col) {
-    for (const ActiveJumpSnapshot& jump : view.animations.jumps) {
-        if (jump.row == row && jump.col == col) {
-            return true;
-        }
-    }
-    return false;
-}
-
 float board_view_jump_progress_at(const BoardViewModel& view, std::size_t row, std::size_t col) {
     for (const ActiveJumpSnapshot& jump : view.animations.jumps) {
         if (jump.row == row && jump.col == col) {
