@@ -42,32 +42,13 @@ namespace {
     return true;
 }
 
-void restore_aborted_move(BoardModel& board, const PendingMove& move) {
-    const auto [start_row, start_col] = move.start_pos;
-    Piece& piece = board.get_piece(move.piece_id);
-    piece.state = PieceState::Idle;
-
-    if (const Piece* at_start = board.piece_at(start_row, start_col);
-        at_start != nullptr && at_start->id == move.piece_id) {
-        return;
-    }
-
-    if (!board.is_empty(start_row, start_col)) {
-        board.remove_piece_at(start_row, start_col);
-    }
-
-    Piece updated = board.get_piece(move.piece_id);
-    updated.cell = Position{static_cast<int>(start_row), static_cast<int>(start_col)};
-    board.place_piece_at(start_row, start_col, std::move(updated));
-}
-
-void restore_jumper(BoardModel& board, const JumpState& jump) {
-    const auto [row, col] = jump.cell;
-    Piece& piece = board.get_piece(jump.piece_id);
+void restore_piece_to_cell(BoardModel& board, Piece::Id piece_id, std::size_t row,
+                           std::size_t col) {
+    Piece& piece = board.get_piece(piece_id);
     piece.state = PieceState::Idle;
 
     if (const Piece* at_cell = board.piece_at(row, col);
-        at_cell != nullptr && at_cell->id == jump.piece_id) {
+        at_cell != nullptr && at_cell->id == piece_id) {
         return;
     }
 
@@ -75,9 +56,19 @@ void restore_jumper(BoardModel& board, const JumpState& jump) {
         board.remove_piece_at(row, col);
     }
 
-    Piece updated = board.get_piece(jump.piece_id);
+    Piece updated = board.get_piece(piece_id);
     updated.cell = Position{static_cast<int>(row), static_cast<int>(col)};
     board.place_piece_at(row, col, std::move(updated));
+}
+
+void restore_aborted_move(BoardModel& board, const PendingMove& move) {
+    const auto [start_row, start_col] = move.start_pos;
+    restore_piece_to_cell(board, move.piece_id, start_row, start_col);
+}
+
+void restore_jumper(BoardModel& board, const JumpState& jump) {
+    const auto [row, col] = jump.cell;
+    restore_piece_to_cell(board, jump.piece_id, row, col);
 }
 
 }  // namespace
