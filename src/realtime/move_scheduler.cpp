@@ -141,6 +141,8 @@ AnimationSnapshot MoveScheduler::animations_at(std::int64_t clock_ms) const {
         const auto [row, col] = jump.cell;
         snapshot.jumps.push_back({
             jump.piece_id,
+            jump.kind,
+            jump.color,
             row,
             col,
             compute_animation_progress(clock_ms, jump.start_time, jump.arrival_time),

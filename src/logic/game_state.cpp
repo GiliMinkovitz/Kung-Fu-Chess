@@ -200,7 +200,12 @@ void GameState::jump_at(std::size_t row, std::size_t col) {
         return;
     }
 
-    arbiter_.request_jump(piece->id, piece->color, {row, col}, rules_.jump_duration_ms);
+    board_.get_piece(piece->id).state = PieceState::Moving;
+    // Release the source cell immediately; JumpState records the logical cell.
+    board_.clear_cell(row, col);
+
+    arbiter_.request_jump(piece->id, piece->color, piece->kind, {row, col},
+                          rules_.jump_duration_ms);
 }
 
 // --- Output ---

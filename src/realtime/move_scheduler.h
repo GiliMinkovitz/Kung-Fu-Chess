@@ -28,9 +28,11 @@ struct PendingMove {
 };
 
 // Jump invulnerability window at a fixed cell; checked at move arrival, not on request.
+// The source cell is cleared when the jump starts; board occupancy is reconciled at expiry.
 struct JumpState {
     Piece::Id piece_id = Piece::kInvalidId;
     PieceColor color = PieceColor::White;
+    PieceKind kind = PieceKind::Pawn;
     std::pair<std::size_t, std::size_t> cell;
     std::int64_t start_time = 0;
     std::int64_t arrival_time = 0;
@@ -50,9 +52,9 @@ struct GameRules;
 struct ArrivingPieceInfo;
 
 // Time-indexed queues for in-flight moves and jumps. Stores schedules and answers
-// temporal queries; does not mutate board occupancy for moves (GameState clears the source
-// cell on request; RealTimeArbiter places or restores at arrival). Forwards collision
-// checks to CollisionResolver. Board mutation at arrival happens only in RealTimeArbiter's
+// temporal queries; does not mutate board occupancy (GameState clears the source cell on
+// request; RealTimeArbiter places or restores at arrival/expiry). Forwards collision checks
+// to CollisionResolver. Board mutation at arrival/expiry happens only in RealTimeArbiter's
 // settle callback. Visual position while in transit comes from AnimationSnapshot entries.
 class MoveScheduler {
 public:

@@ -72,11 +72,17 @@ TEST_CASE("GameStateTest - JumpCaptureInterceptsArrivingEnemy") {
     state.select(1, 0);
     state.jump_selected();
     CHECK(state.is_piece_jumping(1, 0));
+    CHECK_EQ(state.token_at(1, 0), ".");
 
     state.add_clock(500);
 
     CHECK_EQ(state.token_at(2, 0), ".");
+    CHECK_EQ(state.token_at(1, 0), ".");
+    CHECK(state.is_piece_jumping(1, 0));
+
+    state.add_clock(500);
     CHECK_EQ(state.token_at(1, 0), "wR");
+    CHECK_FALSE(state.is_piece_jumping(1, 0));
 }
 
 TEST_CASE("GameStateTest - MovingPieceCannotJump") {
@@ -309,6 +315,30 @@ TEST_CASE("GameStateTest - AbortedMoveResetsPieceStateToIdle") {
     CHECK_EQ(kfc::test::GameStateTestAccess::piece_state(state, piece_id), kfc::PieceState::Idle);
     CHECK_EQ(state.token_at(0, 0), "wR");
     CHECK_EQ(state.token_at(0, 2), "wK");
+}
+
+TEST_CASE("GameStateTest - SourceCellReleasedDuringJump") {
+    kfc::GameState state(kfc::test::make_board({{"wR", ".", "."}}));
+    kfc::BoardModel& board = kfc::test::GameStateTestAccess::board(state);
+    const kfc::Piece::Id piece_id = board.piece_at(0, 0)->id;
+
+    state.select(0, 0);
+    state.jump_selected();
+
+    CHECK(board.piece_at(0, 0) == nullptr);
+    CHECK(kfc::test::GameStateTestAccess::piece_state(state, piece_id) == kfc::PieceState::Moving);
+    CHECK(kfc::test::BoardModelTestAccess::find_piece_by_id(board, piece_id) != nullptr);
+    CHECK(state.is_piece_jumping(0, 0));
+
+    state.add_clock(kfc::kJumpDurationMs - 1);
+    CHECK(board.piece_at(0, 0) == nullptr);
+    CHECK(kfc::test::GameStateTestAccess::piece_state(state, piece_id) == kfc::PieceState::Moving);
+    CHECK(state.is_piece_jumping(0, 0));
+
+    state.add_clock(1);
+    CHECK_EQ(state.token_at(0, 0), "wR");
+    CHECK(kfc::test::GameStateTestAccess::piece_state(state, piece_id) == kfc::PieceState::Idle);
+    CHECK_FALSE(state.is_piece_jumping(0, 0));
 }
 
 TEST_CASE("GameStateTest - SourceCellReleasedDuringMovement") {

@@ -61,6 +61,25 @@ void restore_aborted_move(BoardModel& board, const PendingMove& move) {
     board.place_piece_at(start_row, start_col, std::move(updated));
 }
 
+void restore_jumper(BoardModel& board, const JumpState& jump) {
+    const auto [row, col] = jump.cell;
+    Piece& piece = board.get_piece(jump.piece_id);
+    piece.state = PieceState::Idle;
+
+    if (const Piece* at_cell = board.piece_at(row, col);
+        at_cell != nullptr && at_cell->id == jump.piece_id) {
+        return;
+    }
+
+    if (!board.is_empty(row, col)) {
+        board.remove_piece_at(row, col);
+    }
+
+    Piece updated = board.get_piece(jump.piece_id);
+    updated.cell = Position{static_cast<int>(row), static_cast<int>(col)};
+    board.place_piece_at(row, col, std::move(updated));
+}
+
 }  // namespace
 
 void RealTimeArbiter::update_time(std::int64_t ms, BoardModel& board, const GameRules& rules,
@@ -133,7 +152,8 @@ void RealTimeArbiter::settle_pending_moves(BoardModel& board, const GameRules& r
         }
     });
 
-    scheduler_.expire_jumps(current_time_ms, [this, &rules](const JumpState& jump) {
+    scheduler_.expire_jumps(current_time_ms, [this, &board, &rules](const JumpState& jump) {
+        restore_jumper(board, jump);
         scheduler_.schedule_rest(jump.piece_id, RestKind::Short,
                                  static_cast<int>(jump.arrival_time),
                                  static_cast<int>(jump.arrival_time + rules.short_rest_duration_ms),
@@ -192,12 +212,13 @@ void RealTimeArbiter::request_move(Piece::Id piece_id, PieceColor color, PieceKi
     });
 }
 
-void RealTimeArbiter::request_jump(Piece::Id piece_id, PieceColor color,
+void RealTimeArbiter::request_jump(Piece::Id piece_id, PieceColor color, PieceKind kind,
                                    const std::pair<std::size_t, std::size_t>& cell,
                                    std::int64_t jump_duration_ms) {
     scheduler_.schedule_jump(JumpState{
         piece_id,
         color,
+        kind,
         cell,
         clock_ms_,
         clock_ms_ + jump_duration_ms,

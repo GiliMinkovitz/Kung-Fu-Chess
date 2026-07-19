@@ -41,7 +41,7 @@ public:
                       const std::pair<std::size_t, std::size_t>& start_pos,
                       const std::pair<std::size_t, std::size_t>& end_pos,
                       std::int64_t move_duration_ms);
-    void request_jump(Piece::Id piece_id, PieceColor color,
+    void request_jump(Piece::Id piece_id, PieceColor color, PieceKind kind,
                       const std::pair<std::size_t, std::size_t>& cell,
                       std::int64_t jump_duration_ms);
 

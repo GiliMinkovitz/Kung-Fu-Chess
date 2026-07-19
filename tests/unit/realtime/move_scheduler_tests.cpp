@@ -32,9 +32,26 @@ TEST_CASE("MoveSchedulerTest - AnimationsAtSkipsExpiredMoves") {
     CHECK(snapshot.jumps.empty());
 }
 
+TEST_CASE("MoveSchedulerTest - AnimationsAtIncludesActiveJumpWithPieceIdentity") {
+    kfc::MoveScheduler scheduler;
+    scheduler.schedule_jump(
+        {1, kfc::PieceColor::White, kfc::PieceKind::King, {0, 0}, 0, 100});
+
+    const kfc::AnimationSnapshot snapshot = scheduler.animations_at(50);
+
+    REQUIRE_EQ(snapshot.jumps.size(), 1u);
+    const kfc::ActiveJumpSnapshot& jump = snapshot.jumps.front();
+    CHECK_EQ(jump.piece_id, 1u);
+    CHECK(jump.kind == kfc::PieceKind::King);
+    CHECK(jump.color == kfc::PieceColor::White);
+    CHECK_EQ(jump.row, 0u);
+    CHECK_EQ(jump.col, 0u);
+    CHECK(jump.progress == doctest::Approx(0.5f));
+}
+
 TEST_CASE("MoveSchedulerTest - AnimationsAtSkipsExpiredJumps") {
     kfc::MoveScheduler scheduler;
-    scheduler.schedule_jump({1, kfc::PieceColor::White, {0, 0}, 0, 100});
+    scheduler.schedule_jump({1, kfc::PieceColor::White, kfc::PieceKind::Rook, {0, 0}, 0, 100});
 
     const kfc::AnimationSnapshot snapshot = scheduler.animations_at(100);
 

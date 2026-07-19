@@ -34,7 +34,8 @@ TEST_CASE("RealTimeArbiterTest - RequestJumpSchedulesJumpState") {
     kfc::RealTimeArbiter arbiter;
     const auto piece_id = piece_id_at(board, 0, 0);
 
-    arbiter.request_jump(piece_id, kfc::PieceColor::White, {0, 0}, kfc::kJumpDurationMs);
+    arbiter.request_jump(piece_id, kfc::PieceColor::White, kfc::PieceKind::Rook, {0, 0},
+                         kfc::kJumpDurationMs);
 
     CHECK(arbiter.is_piece_jumping(0, 0));
     CHECK_FALSE(arbiter.is_piece_moving(0, 0));
@@ -65,7 +66,8 @@ TEST_CASE("RealTimeArbiterTest - RequestJumpExpiresAfterDuration") {
     bool game_over = false;
     const auto piece_id = piece_id_at(board, 0, 0);
 
-    arbiter.request_jump(piece_id, kfc::PieceColor::White, {0, 0}, kfc::kJumpDurationMs);
+    arbiter.request_jump(piece_id, kfc::PieceColor::White, kfc::PieceKind::Rook, {0, 0},
+                         kfc::kJumpDurationMs);
 
     CHECK(arbiter.is_piece_jumping(0, 0));
 
@@ -168,6 +170,53 @@ TEST_CASE("RealTimeArbiterTest - AnimationsForRenderTracksMoveProgress") {
     CHECK(snapshot.jumps.empty());
 }
 
+TEST_CASE("RealTimeArbiterTest - JumpSettlesWhenStartCellClearedBeforeExpiry") {
+    kfc::BoardModel board = kfc::test::make_board({{"wR", ".", "."}});
+    kfc::RealTimeArbiter arbiter;
+    kfc::GameRules rules = kfc::KungFuChessRules::standard();
+    bool game_over = false;
+    const auto piece_id = piece_id_at(board, 0, 0);
+
+    board.get_piece(piece_id).state = kfc::PieceState::Moving;
+    arbiter.request_jump(piece_id, kfc::PieceColor::White, kfc::PieceKind::Rook, {0, 0},
+                         kfc::kJumpDurationMs);
+
+    board.clear_cell(0, 0);
+
+    arbiter.update_time(kfc::kJumpDurationMs, board, rules, game_over);
+
+    CHECK_FALSE(arbiter.is_piece_jumping(0, 0));
+    CHECK_EQ(board.token_at(0, 0), "wR");
+    CHECK_EQ(board.get_piece(piece_id).state, kfc::PieceState::Idle);
+}
+
+TEST_CASE("RealTimeArbiterTest - JumpRestoresOverOccupiedCellOnExpiry") {
+    kfc::BoardModel board = kfc::test::make_board({{"wR", ".", "."}});
+    kfc::RealTimeArbiter arbiter;
+    kfc::GameRules rules = kfc::KungFuChessRules::standard();
+    bool game_over = false;
+    const auto rook_id = piece_id_at(board, 0, 0);
+
+    board.get_piece(rook_id).state = kfc::PieceState::Moving;
+    arbiter.request_jump(rook_id, kfc::PieceColor::White, kfc::PieceKind::Rook, {0, 0},
+                         kfc::kJumpDurationMs);
+
+    board.clear_cell(0, 0);
+
+    kfc::PieceFactory factory(board.next_piece_id());
+    board.place_piece_at(0, 0,
+                          factory.create(kfc::PieceColor::Black, kfc::PieceKind::King, {0, 0}));
+    const auto occupant_id = board.piece_at(0, 0)->id;
+
+    arbiter.update_time(kfc::kJumpDurationMs, board, rules, game_over);
+
+    CHECK_FALSE(arbiter.is_piece_jumping(0, 0));
+    CHECK_EQ(board.token_at(0, 0), "wR");
+    CHECK_EQ(board.piece_at(0, 0)->id, rook_id);
+    CHECK_EQ(board.get_piece(rook_id).state, kfc::PieceState::Idle);
+    CHECK_EQ(board.get_piece(occupant_id).state, kfc::PieceState::Captured);
+}
+
 TEST_CASE("RealTimeArbiterTest - AnimationsForRenderTracksJumpProgress") {
     kfc::BoardModel board = kfc::test::make_board({{"wR", ".", "."}});
     kfc::RealTimeArbiter arbiter;
@@ -175,12 +224,15 @@ TEST_CASE("RealTimeArbiterTest - AnimationsForRenderTracksJumpProgress") {
     bool game_over = false;
     const auto piece_id = piece_id_at(board, 0, 0);
 
-    arbiter.request_jump(piece_id, kfc::PieceColor::White, {0, 0}, kfc::kJumpDurationMs);
+    arbiter.request_jump(piece_id, kfc::PieceColor::White, kfc::PieceKind::Rook, {0, 0},
+                         kfc::kJumpDurationMs);
     arbiter.update_time(kfc::kJumpDurationMs / 2, board, rules, game_over);
 
     const kfc::AnimationSnapshot snapshot = arbiter.animations_for_render();
     REQUIRE(snapshot.jumps.size() == 1);
     CHECK_EQ(snapshot.jumps[0].piece_id, piece_id);
+    CHECK(snapshot.jumps[0].kind == kfc::PieceKind::Rook);
+    CHECK(snapshot.jumps[0].color == kfc::PieceColor::White);
     CHECK_EQ(snapshot.jumps[0].row, 0);
     CHECK_EQ(snapshot.jumps[0].col, 0);
     CHECK(snapshot.jumps[0].progress == doctest::Approx(0.5f));
@@ -211,7 +263,8 @@ TEST_CASE("RealTimeArbiterTest - RequestJumpSchedulesShortRestAfterCompletion") 
     bool game_over = false;
     const auto piece_id = piece_id_at(board, 0, 0);
 
-    arbiter.request_jump(piece_id, kfc::PieceColor::White, {0, 0}, kfc::kJumpDurationMs);
+    arbiter.request_jump(piece_id, kfc::PieceColor::White, kfc::PieceKind::Rook, {0, 0},
+                         kfc::kJumpDurationMs);
 
     arbiter.update_time(kfc::kJumpDurationMs, board, rules, game_over);
 

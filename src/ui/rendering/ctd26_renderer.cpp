@@ -199,6 +199,7 @@ UiFrameResult Ctd26Renderer::present(const BoardViewModel& view) {
 
     draw_static_board(view);
     draw_moving_pieces(view);
+    draw_jumping_pieces(view);
     draw_game_over_banner(view.game_over);
 
     impl_->frame->show_in(kWindowName);
@@ -284,26 +285,19 @@ void Ctd26Renderer::draw_static_board(const BoardViewModel& view) {
                 draw_selection_highlight(x, y);
             }
 
-            if (board_view_is_jumping_cell(view, row, col)) {
-                draw_jump_effect(x, y, board_view_jump_progress_at(view, row, col));
-            }
-
             if (board_view_is_resting_cell(view, row, col)) {
                 draw_rest_cooldown_overlay(x, y, board_view_rest_progress_at(view, row, col),
                                            board_view_rest_kind_at(view, row, col));
             }
 
-            if (board_view_is_move_origin(view, row, col)) {
+            if (board_view_is_move_origin(view, row, col) ||
+                board_view_is_jump_origin(view, row, col)) {
                 continue;
             }
 
             if (const std::optional<PieceView> piece = board_view_piece_at(view, row, col);
                 piece.has_value()) {
-                if (board_view_is_jumping_cell(view, row, col)) {
-                    const float progress = board_view_jump_progress_at(view, row, col);
-                    draw_piece(PieceSpriteContext{*piece, false, true, false, RestKind::Short, progress},
-                                x, y);
-                } else if (board_view_is_resting_cell(view, row, col)) {
+                if (board_view_is_resting_cell(view, row, col)) {
                     const float progress = board_view_rest_progress_at(view, row, col);
                     const RestKind rest_kind = board_view_rest_kind_at(view, row, col);
                     draw_piece(PieceSpriteContext{*piece, false, false, true, rest_kind, progress}, x,
@@ -313,6 +307,17 @@ void Ctd26Renderer::draw_static_board(const BoardViewModel& view) {
                 }
             }
         }
+    }
+}
+
+void Ctd26Renderer::draw_jumping_pieces(const BoardViewModel& view) {
+    for (const ActiveJumpSnapshot& jump : view.animations.jumps) {
+        const float progress = std::clamp(jump.progress, 0.0f, 1.0f);
+        const int x = layout_.cell_origin_x(jump.col);
+        const int y = layout_.cell_origin_y(jump.row);
+        draw_jump_effect(x, y, progress);
+        const PieceView piece{jump.kind, jump.color};
+        draw_piece(PieceSpriteContext{piece, false, true, false, RestKind::Short, progress}, x, y);
     }
 }
 

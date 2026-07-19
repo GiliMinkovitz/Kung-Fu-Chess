@@ -20,9 +20,9 @@ struct BoardModelTestAccess;
 // move legality, advance time, or interpret game rules.
 //
 // Invariant: cells_[row][col] and pieces_[id-1].cell agree on occupancy once the board is
-// settled (no in-transit PieceState::Moving pieces off-grid). While a piece is moving, its
-// source cell may be empty even though the piece remains in pieces_ with state Moving;
-// rendering uses animation snapshots until settlement places or restores the piece.
+// settled (no in-transit PieceState::Moving pieces off-grid). While a piece is moving or
+// jumping, its cell may be empty even though the piece remains in pieces_ with state Moving;
+// rendering uses animation snapshots until settlement or jump expiry places or restores it.
 class BoardModel {
     friend struct test::BoardModelTestAccess;
 public:

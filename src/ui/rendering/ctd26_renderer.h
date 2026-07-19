@@ -39,6 +39,7 @@ private:
     void draw_piece(const PieceSpriteContext& context, int x, int y);
     void draw_static_board(const BoardViewModel& view);
     void draw_moving_pieces(const BoardViewModel& view);
+    void draw_jumping_pieces(const BoardViewModel& view);
     void draw_game_over_banner(bool game_over);
 
     ThemeConfig theme_config_;

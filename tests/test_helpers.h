@@ -87,7 +87,7 @@ inline JumpState make_jump_state(const BoardModel& board, std::size_t row, std::
                                  std::int64_t arrival_time) {
     const Piece* piece = board.piece_at(row, col);
     assert(piece != nullptr);
-    return JumpState{piece->id, piece->color, {row, col}, 0, arrival_time};
+    return JumpState{piece->id, piece->color, piece->kind, {row, col}, 0, arrival_time};
 }
 
 inline ArrivingPieceInfo make_arriving_info(const BoardModel& board, std::size_t start_row,
