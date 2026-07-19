@@ -6,6 +6,16 @@ namespace {
 
 CellView kEmptyCellView{};
 
+const ActiveRestSnapshot* find_rest_at(const BoardViewModel& view, std::size_t row,
+                                     std::size_t col) {
+    for (const ActiveRestSnapshot& rest : view.animations.rests) {
+        if (rest.row == row && rest.col == col) {
+            return &rest;
+        }
+    }
+    return nullptr;
+}
+
 }  // namespace
 
 std::size_t board_view_cell_index(std::size_t row, std::size_t col, std::size_t width) noexcept {
@@ -58,30 +68,17 @@ float board_view_jump_progress_at(const BoardViewModel& view, std::size_t row, s
 }
 
 bool board_view_is_resting_cell(const BoardViewModel& view, std::size_t row, std::size_t col) {
-    for (const ActiveRestSnapshot& rest : view.animations.rests) {
-        if (rest.row == row && rest.col == col) {
-            return true;
-        }
-    }
-    return false;
+    return find_rest_at(view, row, col) != nullptr;
 }
 
 float board_view_rest_progress_at(const BoardViewModel& view, std::size_t row, std::size_t col) {
-    for (const ActiveRestSnapshot& rest : view.animations.rests) {
-        if (rest.row == row && rest.col == col) {
-            return rest.progress;
-        }
-    }
-    return 0.0f;
+    const ActiveRestSnapshot* rest = find_rest_at(view, row, col);
+    return rest != nullptr ? rest->progress : 0.0f;
 }
 
 RestKind board_view_rest_kind_at(const BoardViewModel& view, std::size_t row, std::size_t col) {
-    for (const ActiveRestSnapshot& rest : view.animations.rests) {
-        if (rest.row == row && rest.col == col) {
-            return rest.kind;
-        }
-    }
-    return RestKind::Short;
+    const ActiveRestSnapshot* rest = find_rest_at(view, row, col);
+    return rest != nullptr ? rest->kind : RestKind::Short;
 }
 
 }  // namespace kfc
