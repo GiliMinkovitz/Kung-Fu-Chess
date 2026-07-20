@@ -1,6 +1,8 @@
 #include "game_state.h"
 
 #include <algorithm>
+#include <type_traits>
+#include <variant>
 
 namespace kfc {
 
@@ -206,6 +208,27 @@ void GameState::jump_at(std::size_t row, std::size_t col) {
 
     arbiter_.request_jump(piece->id, piece->color, piece->kind, {row, col},
                           rules_.jump_duration_ms);
+}
+
+void GameState::apply_action(const GameAction& action) {
+    std::visit(
+        [this](const auto& a) {
+            using T = std::decay_t<decltype(a)>;
+            if constexpr (std::is_same_v<T, Select>) {
+                select(a.row, a.col);
+            } else if constexpr (std::is_same_v<T, ClearSelection>) {
+                clear_selection();
+            } else if constexpr (std::is_same_v<T, MoveSelected>) {
+                move_selected_to(a.to_row, a.to_col);
+            } else if constexpr (std::is_same_v<T, JumpSelected>) {
+                jump_selected();
+            } else if constexpr (std::is_same_v<T, JumpAt>) {
+                jump_at(a.row, a.col);
+            } else if constexpr (std::is_same_v<T, AdvanceClock>) {
+                add_clock(a.milliseconds);
+            }
+        },
+        action);
 }
 
 // --- Output ---
