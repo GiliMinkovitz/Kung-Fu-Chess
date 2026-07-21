@@ -50,13 +50,15 @@ void WebSocketClient::connect() {
 }
 
 void WebSocketClient::disconnect() {
-    if (!connected_ || !ws_) {
+    if (!ws_) {
         connected_ = false;
         return;
     }
 
+    // Close the TCP socket directly. A graceful websocket close would block until
+    // the peer reads and responds, which our server only does in its poll loop.
     beast::error_code close_ec;
-    ws_->close(websocket::close_code::normal, close_ec);
+    beast::get_lowest_layer(*ws_).close(close_ec);
     ws_.reset();
     connected_ = false;
 }
@@ -91,26 +93,21 @@ std::optional<std::string> WebSocketClient::try_receive_snapshot() {
         return std::nullopt;
     }
 
-    beast::error_code avail_ec;
-    if (beast::get_lowest_layer(*ws_).available(avail_ec) == 0) {
-        return std::nullopt;
-    }
-    if (avail_ec) {
-        std::cerr << "[CLIENT-DIAG] try_receive_snapshot() available error: "
-                  << avail_ec.message() << " (" << avail_ec.value() << ")\n";
-        connected_ = false;
-        return std::nullopt;
-    }
-
     beast::flat_buffer buffer;
     beast::error_code read_ec;
+
+    auto& socket = beast::get_lowest_layer(*ws_);
+    const bool was_non_blocking = socket.non_blocking();
+    socket.non_blocking(true);
     ws_->read(buffer, read_ec);
+    socket.non_blocking(was_non_blocking);
 
     if (read_ec == net::error::would_block) {
         return std::nullopt;
     }
 
-    if (read_ec == websocket::error::closed || read_ec == net::error::eof) {
+    if (read_ec == websocket::error::closed || read_ec == net::error::eof ||
+        read_ec == net::error::connection_reset) {
         std::cerr << "[CLIENT-DIAG] try_receive_snapshot() websocket closed/error: "
                   << read_ec.message() << " (" << read_ec.value() << ")\n";
         connected_ = false;
