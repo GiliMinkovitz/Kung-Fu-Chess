@@ -13,4 +13,5 @@ cmake_install.cmake
 Makefile
 third_party/
 build-win/
+vcpkg_installed/
 

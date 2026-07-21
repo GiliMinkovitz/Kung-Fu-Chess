@@ -1,4 +1,9 @@
 cmake_minimum_required(VERSION 3.16)
+
+# vcpkg manifest mode (Windows): configure with CMakePresets.json preset
+# "windows-vcpkg", or pass -DCMAKE_TOOLCHAIN_FILE=%VCPKG_ROOT%/scripts/buildsystems/vcpkg.cmake
+# before the first project() call. Linux/WSL builds omit the vcpkg toolchain and use system Boost.
+
 project(KungFuChess VERSION 0.1.0 LANGUAGES CXX)
 
 message(STATUS "Source directory is: ${CMAKE_SOURCE_DIR}")
@@ -112,6 +117,7 @@ target_include_directories(KungFuChessServer PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/src/ui
 )
 
+# Boost (Asio/Beast). On Windows, vcpkg.json supplies these via manifest mode.
 # Boost 1.89+ removed the boost_system CMake package (header-only since 1.69).
 find_package(Boost 1.74 REQUIRED CONFIG OPTIONAL_COMPONENTS system)
 

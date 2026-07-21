@@ -1,0 +1,11 @@
+{
+  "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
+  "name": "kung-fu-chess",
+  "version-string": "0.1.0",
+  "description": "Boost dependencies for Kung Fu Chess networking (Asio/Beast).",
+  "dependencies": [
+    "boost-beast",
+    "boost-system"
+  ],
+  "builtin-baseline": "3ddaad9be959816602453ecb05533f8732464ef4"
+}
