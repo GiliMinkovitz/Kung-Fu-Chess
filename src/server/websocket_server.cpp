@@ -3,7 +3,6 @@
 #include <iostream>
 
 namespace beast = boost::beast;
-namespace websocket = beast::websocket;
 namespace net = boost::asio;
 using tcp = net::ip::tcp;
 
@@ -18,7 +17,7 @@ WebSocketServer::WebSocketServer(unsigned short port)
 }
 
 void WebSocketServer::try_accept() {
-    if (ws_) {
+    if (clients_.size() >= kMaxClients) {
         return;
     }
 
@@ -27,72 +26,36 @@ void WebSocketServer::try_accept() {
     acceptor_.accept(socket, accept_ec);
 
     if (!accept_ec) {
-        ws_ = std::make_unique<websocket::stream<tcp::socket>>(std::move(socket));
-
-        beast::error_code handshake_ec;
-        ws_->accept(handshake_ec);
-        if (handshake_ec) {
-            ws_.reset();
-            throw beast::system_error{handshake_ec};
-        }
-
-        beast::get_lowest_layer(*ws_).non_blocking(true);
-
-        if (!client_connected_logged_) {
-            std::cout << "Client connected\n";
-            client_connected_logged_ = true;
-        }
+        clients_.emplace_back(std::move(socket));
+        std::cout << "Client connected (" << clients_.size() << "/"
+                  << kMaxClients << ")\n";
     } else if (accept_ec != net::error::would_block) {
         throw beast::system_error{accept_ec};
     }
 }
 
-std::optional<std::string> WebSocketServer::try_read() {
-    if (!ws_) {
-        return std::nullopt;
-    }
+void WebSocketServer::prune_disconnected() {
+    const std::size_t before = clients_.size();
 
-    beast::flat_buffer buffer;
-    beast::error_code read_ec;
-    ws_->read(buffer, read_ec);
-
-    if (read_ec == net::error::would_block) {
-        return std::nullopt;
-    }
-
-    if (read_ec == websocket::error::closed) {
-        if (!client_disconnected_logged_) {
-            std::cout << "Client disconnected\n";
-            client_disconnected_logged_ = true;
+    std::vector<ClientConnection> kept;
+    kept.reserve(clients_.size());
+    for (ClientConnection& client : clients_) {
+        if (client.is_open()) {
+            kept.emplace_back(std::move(client));
         }
-        ws_.reset();
-        return std::nullopt;
     }
+    clients_ = std::move(kept);
 
-    if (read_ec) {
-        throw beast::system_error{read_ec};
+    if (clients_.size() < before) {
+        std::cout << "Client disconnected (" << clients_.size() << "/"
+                  << kMaxClients << ")\n";
     }
-
-    return beast::buffers_to_string(buffer.data());
 }
 
-bool WebSocketServer::try_send(const std::string& message) {
-    if (!ws_) {
-        return false;
+void WebSocketServer::broadcast(const std::string& message) {
+    for (ClientConnection& client : clients_) {
+        client.try_send(message);
     }
-
-    beast::error_code write_ec;
-    ws_->write(net::buffer(message), write_ec);
-
-    if (write_ec == net::error::would_block) {
-        return false;
-    }
-
-    if (write_ec) {
-        throw beast::system_error{write_ec};
-    }
-
-    return true;
 }
 
 }  // namespace kfc

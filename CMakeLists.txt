@@ -83,6 +83,7 @@ target_include_directories(${PROJECT_NAME} PUBLIC
 
 add_executable(KungFuChessServer
     src/main_server.cpp
+    src/server/client_connection.cpp
     src/server/snapshot_writer.cpp
     src/server/websocket_server.cpp
     ${KFC_SOURCES}

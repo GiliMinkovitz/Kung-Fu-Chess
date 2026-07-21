@@ -144,23 +144,29 @@ int main() {
                 std::cout << "GameOver: " << (match.is_game_over() ? "true" : "false")
                           << '\n';
 
-                if (server.is_connected()) {
+                if (!server.clients().empty()) {
                     const kfc::BoardViewModel view =
                         kfc::BoardViewBuilder::build(match.state());
                     const std::string snapshot = kfc::write_snapshot(view);
-                    server.try_send(snapshot);
+                    server.broadcast(snapshot);
                 }
 
                 last_tick = now;
             }
 
-            if (!server.is_connected()) {
+            if (server.clients().size() < kfc::WebSocketServer::kMaxClients) {
                 server.try_accept();
-            } else if (const auto raw_message = server.try_read()) {
-                if (const auto action = parse_message(*raw_message)) {
-                    match.submit_action(*action);
+            }
+
+            for (kfc::ClientConnection& client : server.clients()) {
+                if (const auto raw_message = client.try_read()) {
+                    if (const auto action = parse_message(*raw_message)) {
+                        match.submit_action(*action);
+                    }
                 }
             }
+
+            server.prune_disconnected();
 
             if (elapsed < kfc::kTargetFrameMs) {
                 std::this_thread::sleep_for(std::chrono::milliseconds(1));
