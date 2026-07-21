@@ -98,6 +98,19 @@ target_include_directories(KungFuChessServer PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/src/ui
 )
 
+find_package(Boost 1.74 REQUIRED COMPONENTS system CONFIG)
+
+if(TARGET Boost::headers)
+    target_link_libraries(KungFuChessServer PRIVATE Boost::headers Boost::system)
+else()
+    target_include_directories(KungFuChessServer PRIVATE ${Boost_INCLUDE_DIRS})
+    target_link_libraries(KungFuChessServer PRIVATE Boost::system)
+endif()
+
+if(WIN32)
+    target_link_libraries(KungFuChessServer PRIVATE ws2_32 wsock32)
+endif()
+
 if(MSVC)
     target_compile_options(KungFuChessServer PRIVATE /W4 /permissive-)
 else()
