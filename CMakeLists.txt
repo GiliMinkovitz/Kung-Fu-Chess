@@ -83,6 +83,8 @@ target_include_directories(${PROJECT_NAME} PUBLIC
 
 add_executable(KungFuChessServer
     src/main_server.cpp
+    src/server/snapshot_writer.cpp
+    src/server/websocket_server.cpp
     ${KFC_SOURCES}
 )
 
@@ -98,12 +100,16 @@ target_include_directories(KungFuChessServer PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/src/ui
 )
 
-find_package(Boost 1.74 REQUIRED COMPONENTS system CONFIG)
+# Boost 1.89+ removed the boost_system CMake package (header-only since 1.69).
+find_package(Boost 1.74 REQUIRED CONFIG OPTIONAL_COMPONENTS system)
 
 if(TARGET Boost::headers)
-    target_link_libraries(KungFuChessServer PRIVATE Boost::headers Boost::system)
+    target_link_libraries(KungFuChessServer PRIVATE Boost::headers)
 else()
     target_include_directories(KungFuChessServer PRIVATE ${Boost_INCLUDE_DIRS})
+endif()
+
+if(TARGET Boost::system)
     target_link_libraries(KungFuChessServer PRIVATE Boost::system)
 endif()
 
