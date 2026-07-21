@@ -13,11 +13,7 @@ WebSocketClient::WebSocketClient(std::string host, std::uint16_t port)
     : host_{std::move(host)}, port_{port} {}
 
 void WebSocketClient::connect() {
-    std::cerr << "[DIAG] WebSocketClient::connect() before connect to " << host_
-              << ':' << port_ << '\n';
-
     if (connected_) {
-        std::cerr << "[DIAG] WebSocketClient::connect() skipped (already connected)\n";
         return;
     }
 
@@ -44,7 +40,6 @@ void WebSocketClient::connect() {
             throw beast::system_error{handshake_ec};
         }
 
-        beast::get_lowest_layer(*ws_).non_blocking(true);
         connected_ = true;
         std::cerr << "[DIAG] WebSocketClient::connect() succeeded\n";
     } catch (const std::exception& ex) {
@@ -96,6 +91,17 @@ std::optional<std::string> WebSocketClient::try_receive_snapshot() {
         return std::nullopt;
     }
 
+    beast::error_code avail_ec;
+    if (beast::get_lowest_layer(*ws_).available(avail_ec) == 0) {
+        return std::nullopt;
+    }
+    if (avail_ec) {
+        std::cerr << "[CLIENT-DIAG] try_receive_snapshot() available error: "
+                  << avail_ec.message() << " (" << avail_ec.value() << ")\n";
+        connected_ = false;
+        return std::nullopt;
+    }
+
     beast::flat_buffer buffer;
     beast::error_code read_ec;
     ws_->read(buffer, read_ec);
@@ -105,11 +111,15 @@ std::optional<std::string> WebSocketClient::try_receive_snapshot() {
     }
 
     if (read_ec == websocket::error::closed || read_ec == net::error::eof) {
+        std::cerr << "[CLIENT-DIAG] try_receive_snapshot() websocket closed/error: "
+                  << read_ec.message() << " (" << read_ec.value() << ")\n";
         connected_ = false;
         return std::nullopt;
     }
 
     if (read_ec) {
+        std::cerr << "[CLIENT-DIAG] try_receive_snapshot() websocket read error: "
+                  << read_ec.message() << " (" << read_ec.value() << ")\n";
         connected_ = false;
         throw beast::system_error{read_ec};
     }

@@ -21,6 +21,7 @@ public:
 private:
     boost::beast::websocket::stream<boost::asio::ip::tcp::socket> ws_;
     bool open_ = true;
+    bool initial_snapshot_sent_ = false;
 };
 
 }  // namespace kfc

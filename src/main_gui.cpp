@@ -208,10 +208,7 @@ int run_offline_gui() {
 }
 
 int run_network_gui() {
-    std::cerr << "[DIAG] run_network_gui() entered (--network mode)\n";
     kfc::WebSocketClient client("127.0.0.1", kServerPort);
-    std::cerr << "[DIAG] calling WebSocketClient::connect() to 127.0.0.1:"
-              << kServerPort << '\n';
     client.connect();
 
     auto renderer = std::make_unique<kfc::Ctd26Renderer>();

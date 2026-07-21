@@ -22,8 +22,6 @@ unsigned short WebSocketServer::port() const {
 }
 
 void WebSocketServer::try_accept() {
-    std::cerr << "[DIAG] WebSocketServer::try_accept() entering\n";
-
     if (clients_.size() >= kMaxClients) {
         return;
     }
@@ -33,7 +31,6 @@ void WebSocketServer::try_accept() {
     acceptor_.accept(socket, accept_ec);
 
     if (!accept_ec) {
-        std::cerr << "[DIAG] WebSocketServer::try_accept() accept succeeded\n";
         try {
             clients_.emplace_back(std::move(socket));
             std::cerr << "[DIAG] WebSocketServer::try_accept() handshake succeeded\n";
