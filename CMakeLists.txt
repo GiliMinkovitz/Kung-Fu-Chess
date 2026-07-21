@@ -33,6 +33,17 @@ set(KFC_GUI_SOURCES
     third_party/CTD26/cpp/src/img.cpp
 )
 
+set(KFC_NETWORK_SOURCES
+    src/network/websocket_client.cpp
+    src/network/snapshot_reader.cpp
+    src/network/network_input_handler.cpp
+)
+
+set(KFC_SERVER_WEBSOCKET_SOURCES
+    src/server/client_connection.cpp
+    src/server/websocket_server.cpp
+)
+
 set(KFC_CTD26_INCLUDE_DIR "${CMAKE_SOURCE_DIR}/third_party/CTD26/cpp/src")
 
 set(KFC_SOURCES
@@ -118,6 +129,22 @@ if(WIN32)
     target_link_libraries(KungFuChessServer PRIVATE ws2_32 wsock32)
 endif()
 
+function(kfc_link_boost target)
+    if(TARGET Boost::headers)
+        target_link_libraries(${target} PRIVATE Boost::headers)
+    else()
+        target_include_directories(${target} PRIVATE ${Boost_INCLUDE_DIRS})
+    endif()
+
+    if(TARGET Boost::system)
+        target_link_libraries(${target} PRIVATE Boost::system)
+    endif()
+
+    if(WIN32)
+        target_link_libraries(${target} PRIVATE ws2_32 wsock32)
+    endif()
+endfunction()
+
 if(MSVC)
     target_compile_options(KungFuChessServer PRIVATE /W4 /permissive-)
 else()
@@ -147,6 +174,7 @@ if(KFC_BUILD_GUI)
         src/main_gui.cpp
         ${KFC_SOURCES}
         ${KFC_GUI_SOURCES}
+        ${KFC_NETWORK_SOURCES}
     )
 
     target_include_directories(KungFuChessGui PRIVATE
@@ -167,6 +195,8 @@ if(KFC_BUILD_GUI)
         $<$<NOT:$<CONFIG:Debug>>:${KFC_OPENCV_LIB_DIR}/opencv_world451.dll>
         $<TARGET_FILE_DIR:KungFuChessGui>
     )
+
+    kfc_link_boost(KungFuChessGui)
 
     if(MSVC)
         target_compile_options(KungFuChessGui PRIVATE /W4 /permissive-)
@@ -202,18 +232,26 @@ set(KFC_TEST_SOURCES
     tests/unit/ui/asset_paths_tests.cpp
     tests/unit/ui/piece_sprite_selector_tests.cpp
     tests/unit/ui/ui_controller_tests.cpp
+    tests/unit/network/websocket_client_tests.cpp
+    tests/unit/network/snapshot_reader_tests.cpp
+    tests/unit/network/network_input_handler_tests.cpp
     tests/integration/integration_test.cpp
 )
 
 add_executable(KungFuChessTests
     ${KFC_TEST_SOURCES}
     ${KFC_SOURCES}
+    ${KFC_NETWORK_SOURCES}
+    ${KFC_SERVER_WEBSOCKET_SOURCES}
+    src/server/snapshot_writer.cpp
 )
 
 target_include_directories(KungFuChessTests PRIVATE
     ${CMAKE_SOURCE_DIR}/src
     ${CMAKE_SOURCE_DIR}/tests
 )
+
+kfc_link_boost(KungFuChessTests)
 
 if(MSVC)
     target_compile_options(${PROJECT_NAME} PRIVATE /W4 /permissive-)

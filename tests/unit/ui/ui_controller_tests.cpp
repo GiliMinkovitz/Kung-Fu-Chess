@@ -3,6 +3,7 @@
 #include "ui/rendering/headless_renderer.h"
 #include "ui/controller/ui_controller.h"
 #include "ui/layout/ui_window_config.h"
+#include "ui/view/board_view_model.h"
 
 #include <doctest/doctest.h>
 #include <memory>
@@ -72,6 +73,47 @@ TEST_CASE("UiControllerTest - PixelJumpRoutesThroughController") {
 
     CHECK(state.is_piece_jumping(0, 0));
     CHECK_FALSE(state.has_selection());
+}
+
+TEST_CASE("UiControllerTest - PresentRendersViewWithoutMutatingGameState") {
+    kfc::GameState state(kfc::test::make_board({{"wK", ".", "bK"}}));
+    auto renderer = std::make_unique<kfc::HeadlessRenderer>();
+    kfc::HeadlessRenderer* renderer_ptr = renderer.get();
+    kfc::UiController controller(state, std::move(renderer));
+
+    kfc::BoardViewModel view;
+    view.height = 1;
+    view.width = 3;
+    view.clock_ms = 999;
+    view.cells = {
+        kfc::CellView{kfc::PieceView{kfc::PieceKind::King, kfc::PieceColor::White}},
+        kfc::CellView{},
+        kfc::CellView{kfc::PieceView{kfc::PieceKind::King, kfc::PieceColor::Black}},
+    };
+
+    const std::int64_t clock_before = state.clock_ms();
+    const kfc::UiFrameResult result = controller.present(view);
+
+    CHECK(result.should_continue);
+    CHECK_EQ(state.clock_ms(), clock_before);
+    CHECK_EQ(renderer_ptr->present_count(), 1u);
+    CHECK_EQ(renderer_ptr->last_view().clock_ms, 999);
+    CHECK_EQ(renderer_ptr->last_view().cells.size(), 3u);
+}
+
+TEST_CASE("UiControllerTest - NetworkConstructorInitializesWithoutGameState") {
+    auto renderer = std::make_unique<kfc::HeadlessRenderer>();
+    kfc::HeadlessRenderer* renderer_ptr = renderer.get();
+
+    kfc::UiController controller(8, 8, std::move(renderer));
+
+    CHECK(renderer_ptr->initialized());
+    CHECK_EQ(renderer_ptr->rows(), 8u);
+    CHECK_EQ(renderer_ptr->cols(), 8u);
+    const kfc::UiWindowDimensions window = kfc::default_initial_window_size(8u, 8u);
+    CHECK_EQ(renderer_ptr->window_width(), window.width);
+    CHECK_EQ(renderer_ptr->window_height(), window.height);
+    CHECK_EQ(renderer_ptr->input_sink(), &controller);
 }
 
 TEST_CASE("UiControllerTest - ShutdownDelegatesToRenderer") {

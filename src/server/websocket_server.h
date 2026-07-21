@@ -16,6 +16,8 @@ public:
 
     explicit WebSocketServer(unsigned short port);
 
+    [[nodiscard]] unsigned short port() const;
+
     void try_accept();
     void prune_disconnected();
 

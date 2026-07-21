@@ -140,10 +140,6 @@ int main() {
             if (elapsed >= kfc::kTargetFrameMs) {
                 match.tick(elapsed);
 
-                std::cout << "Clock: " << match.state().clock_ms() << '\n';
-                std::cout << "GameOver: " << (match.is_game_over() ? "true" : "false")
-                          << '\n';
-
                 if (!server.clients().empty()) {
                     const kfc::BoardViewModel view =
                         kfc::BoardViewBuilder::build(match.state());

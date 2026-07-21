@@ -4,7 +4,9 @@
 #include "ui/rendering/i_ui_renderer.h"
 #include "io/game_input_handler.h"
 #include "logic/game_state.h"
+#include "ui/view/board_view_model.h"
 
+#include <cstddef>
 #include <cstdint>
 #include <memory>
 
@@ -17,12 +19,14 @@ namespace kfc {
 class UiController final : public IUiInputSink {
 public:
     UiController(GameState& state, std::unique_ptr<IUiRenderer> renderer);
+    UiController(std::size_t rows, std::size_t cols, std::unique_ptr<IUiRenderer> renderer);
 
     UiController(const UiController&) = delete;
     UiController& operator=(const UiController&) = delete;
 
     // Unlike CLI "wait" commands, the GUI drives time continuously via delta_ms.
     [[nodiscard]] UiFrameResult frame(std::int64_t delta_ms);
+    [[nodiscard]] UiFrameResult present(const BoardViewModel& view);
     void on_pixel_click(int x, int y) override;
     void on_pixel_jump(int x, int y) override;
     void shutdown();
@@ -30,8 +34,8 @@ public:
 private:
     void sync_input_layout();
 
-    GameState& state_;
-    GameInputHandler processor_;
+    GameState* state_ = nullptr;
+    std::unique_ptr<GameInputHandler> processor_;
     std::unique_ptr<IUiRenderer> renderer_;
 };
 

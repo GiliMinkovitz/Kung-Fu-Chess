@@ -13,10 +13,17 @@ WebSocketServer::WebSocketServer(unsigned short port)
           io_context_,
           tcp::endpoint{net::ip::make_address("127.0.0.1"), port},
       } {
+    acceptor_.set_option(net::socket_base::reuse_address{true});
     acceptor_.non_blocking(true);
 }
 
+unsigned short WebSocketServer::port() const {
+    return acceptor_.local_endpoint().port();
+}
+
 void WebSocketServer::try_accept() {
+    std::cerr << "[DIAG] WebSocketServer::try_accept() entering\n";
+
     if (clients_.size() >= kMaxClients) {
         return;
     }
@@ -26,10 +33,20 @@ void WebSocketServer::try_accept() {
     acceptor_.accept(socket, accept_ec);
 
     if (!accept_ec) {
-        clients_.emplace_back(std::move(socket));
-        std::cout << "Client connected (" << clients_.size() << "/"
-                  << kMaxClients << ")\n";
+        std::cerr << "[DIAG] WebSocketServer::try_accept() accept succeeded\n";
+        try {
+            clients_.emplace_back(std::move(socket));
+            std::cerr << "[DIAG] WebSocketServer::try_accept() handshake succeeded\n";
+            std::cout << "Client connected (" << clients_.size() << "/"
+                      << kMaxClients << ")\n";
+        } catch (const std::exception& ex) {
+            std::cerr << "[DIAG] WebSocketServer::try_accept() handshake failed: "
+                      << ex.what() << '\n';
+            throw;
+        }
     } else if (accept_ec != net::error::would_block) {
+        std::cerr << "[DIAG] WebSocketServer::try_accept() accept failed: "
+                  << accept_ec.message() << '\n';
         throw beast::system_error{accept_ec};
     }
 }
