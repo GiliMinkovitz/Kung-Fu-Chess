@@ -6,7 +6,7 @@
 
 namespace kfc {
 
-GameEngine::GameEngine(BoardModel board) : state_(std::move(board)), processor_(state_) {}
+GameEngine::GameEngine(BoardModel board) : match_(std::move(board)), processor_(match_.state()) {}
 
 void GameEngine::execute(const std::string& command, std::ostream& out) {
     processor_.execute(command, out);

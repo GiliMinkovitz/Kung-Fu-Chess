@@ -60,6 +60,7 @@ set(KFC_SOURCES
     src/io/game_input_handler.cpp
     src/rules/move_validator.cpp
     src/engine/game_engine.cpp
+    src/server/match.cpp
     ${KFC_UI_SOURCES}
 )
 
@@ -76,8 +77,32 @@ target_include_directories(${PROJECT_NAME} PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/src/rules
     ${CMAKE_CURRENT_SOURCE_DIR}/src/io
     ${CMAKE_CURRENT_SOURCE_DIR}/src/engine
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/server
     ${CMAKE_CURRENT_SOURCE_DIR}/src/ui
 )
+
+add_executable(KungFuChessServer
+    src/main_server.cpp
+    ${KFC_SOURCES}
+)
+
+target_include_directories(KungFuChessServer PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}/src
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/model
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/logic
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/realtime
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/rules
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/io
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/engine
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/server
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/ui
+)
+
+if(MSVC)
+    target_compile_options(KungFuChessServer PRIVATE /W4 /permissive-)
+else()
+    target_compile_options(KungFuChessServer PRIVATE -Wall -Wextra -Wpedantic)
+endif()
 
 # ---------------------------------------------------------------------------
 # Windows GUI (OpenCV + CTD26)
