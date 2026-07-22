@@ -93,15 +93,58 @@ std::optional<std::string> WebSocketClient::try_receive_snapshot() {
         return std::nullopt;
     }
 
+    auto& socket = beast::get_lowest_layer(*ws_);
+
     beast::error_code avail_ec;
-    if (beast::get_lowest_layer(*ws_).available(avail_ec) == 0) {
-        return std::nullopt;
-    }
+    const std::size_t available_bytes = socket.available(avail_ec);
     if (avail_ec) {
         std::cerr << "[CLIENT-DIAG] try_receive_snapshot() available error: "
                   << avail_ec.message() << " (" << avail_ec.value() << ")\n";
         connected_ = false;
         return std::nullopt;
+    }
+
+    if (available_bytes == 0) {
+        // Avoid synchronous websocket reads on an empty buffer (that poisons Beast
+        // stream state). Probe closure at the TCP layer instead.
+        const bool was_non_blocking = socket.non_blocking();
+        if (!was_non_blocking) {
+            beast::error_code nb_ec;
+            socket.non_blocking(true, nb_ec);
+            if (nb_ec) {
+                connected_ = false;
+                return std::nullopt;
+            }
+        }
+
+        beast::error_code peek_ec;
+        char byte = 0;
+        const std::size_t peeked = socket.receive(
+            net::buffer(&byte, 1), net::socket_base::message_peek, peek_ec);
+
+        if (!was_non_blocking) {
+            beast::error_code blocking_ec;
+            socket.non_blocking(false, blocking_ec);
+        }
+
+        if (peek_ec == net::error::would_block) {
+            return std::nullopt;
+        }
+
+        if (peek_ec == net::error::eof || peek_ec == net::error::connection_reset ||
+            peeked == 0) {
+            std::cerr << "[CLIENT-DIAG] try_receive_snapshot() websocket closed/error: "
+                      << peek_ec.message() << " (" << peek_ec.value() << ")\n";
+            connected_ = false;
+            return std::nullopt;
+        }
+
+        if (peek_ec) {
+            std::cerr << "[CLIENT-DIAG] try_receive_snapshot() peek error: "
+                      << peek_ec.message() << " (" << peek_ec.value() << ")\n";
+            connected_ = false;
+            return std::nullopt;
+        }
     }
 
     beast::flat_buffer buffer;
