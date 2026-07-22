@@ -51,6 +51,7 @@ set(KFC_SERVER_WEBSOCKET_SOURCES
 
 set(KFC_SERVER_ARCH_SOURCES
     src/server/player.cpp
+    src/server/player_session.cpp
     src/server/matchmaking.cpp
     src/server/game_room.cpp
     src/server/game_server.cpp
@@ -58,6 +59,7 @@ set(KFC_SERVER_ARCH_SOURCES
 
 set(KFC_DATABASE_SOURCES
     src/database/sqlite_database.cpp
+    src/database/player_repository.cpp
 )
 
 set(KFC_CTD26_INCLUDE_DIR "${CMAKE_SOURCE_DIR}/third_party/CTD26/cpp/src")
@@ -114,6 +116,7 @@ add_executable(KungFuChessServer
     src/server/snapshot_writer.cpp
     src/server/websocket_server.cpp
     ${KFC_SERVER_ARCH_SOURCES}
+    ${KFC_DATABASE_SOURCES}
     ${KFC_SOURCES}
 )
 
@@ -196,6 +199,8 @@ function(kfc_link_sqlite target)
         "SQLite3 not found. Install libsqlite3-dev (Linux/WSL), add sqlite3 via vcpkg (Windows), "
         "or vendor the amalgamation at third_party/sqlite/sqlite3.c")
 endfunction()
+
+kfc_link_sqlite(KungFuChessServer)
 
 if(MSVC)
     target_compile_options(KungFuChessServer PRIVATE /W4 /permissive-)
@@ -288,6 +293,7 @@ set(KFC_TEST_SOURCES
     tests/unit/network/snapshot_reader_tests.cpp
     tests/unit/network/network_input_handler_tests.cpp
     tests/unit/database/sqlite_database_tests.cpp
+    tests/unit/database/player_repository_tests.cpp
     tests/integration/integration_test.cpp
 )
 

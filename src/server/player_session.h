@@ -1,5 +1,6 @@
 #pragma once
 
+#include "database/player_repository.h"
 #include "server/client_connection.h"
 #include "server/player.h"
 
@@ -16,7 +17,7 @@ enum class PlayerSessionState {
 
 class PlayerSession {
 public:
-    PlayerSession(std::size_t id, ClientConnection* connection);
+    PlayerSession(std::size_t id, ClientConnection* connection, PlayerRepository& player_repository);
 
     [[nodiscard]] std::size_t id() const noexcept;
     [[nodiscard]] PlayerSessionState state() const noexcept;
@@ -28,27 +29,14 @@ public:
     [[nodiscard]] const ClientConnection* connection() const noexcept;
 
 private:
-    static int next_player_id();
-    static Player create_player();
+    static std::string next_username();
+    static Player load_or_create_player(PlayerRepository& player_repository);
 
     std::size_t id_;
     PlayerSessionState state_ = PlayerSessionState::Connected;
     Player player_;
     ClientConnection* connection_;
 };
-
-inline Player PlayerSession::create_player() {
-    const int player_id = next_player_id();
-    return Player(player_id, "Player" + std::to_string(player_id), 1000);
-}
-
-inline PlayerSession::PlayerSession(std::size_t id, ClientConnection* connection)
-    : id_(id), player_(create_player()), connection_(connection) {}
-
-inline int PlayerSession::next_player_id() {
-    static int next = 1;
-    return next++;
-}
 
 inline std::size_t PlayerSession::id() const noexcept {
     return id_;

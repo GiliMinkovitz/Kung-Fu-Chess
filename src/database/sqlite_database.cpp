@@ -1,5 +1,7 @@
 #include "sqlite_database.h"
 
+#include <string>
+
 namespace kfc {
 
 namespace {
@@ -7,9 +9,13 @@ namespace {
 constexpr const char* kPlayersTableSql = R"(
 CREATE TABLE IF NOT EXISTS players (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    username TEXT NOT NULL UNIQUE
+    username TEXT NOT NULL UNIQUE,
+    rating INTEGER NOT NULL DEFAULT 1000
 );
 )";
+
+constexpr const char* kPlayersRatingMigrationSql =
+    "ALTER TABLE players ADD COLUMN rating INTEGER NOT NULL DEFAULT 1000;";
 
 constexpr const char* kGamesTableSql = R"(
 CREATE TABLE IF NOT EXISTS games (
@@ -30,6 +36,20 @@ bool exec_sql(sqlite3* db, const char* sql) {
         return false;
     }
     return true;
+}
+
+bool exec_sql_ignore_duplicate_column(sqlite3* db, const char* sql) {
+    char* err_msg = nullptr;
+    const int rc = sqlite3_exec(db, sql, nullptr, nullptr, &err_msg);
+    if (rc == SQLITE_OK) {
+        return true;
+    }
+
+    const bool duplicate_column =
+        err_msg != nullptr &&
+        std::string(err_msg).find("duplicate column name") != std::string::npos;
+    sqlite3_free(err_msg);
+    return duplicate_column;
 }
 
 }  // namespace
@@ -57,7 +77,9 @@ bool SqliteDatabase::initialize_schema() {
         return false;
     }
 
-    return exec_sql(db_, kPlayersTableSql) && exec_sql(db_, kGamesTableSql);
+    return exec_sql(db_, kPlayersTableSql) &&
+           exec_sql_ignore_duplicate_column(db_, kPlayersRatingMigrationSql) &&
+           exec_sql(db_, kGamesTableSql);
 }
 
 sqlite3* SqliteDatabase::connection() {

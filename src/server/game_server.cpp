@@ -9,6 +9,7 @@
 #include <cctype>
 #include <iostream>
 #include <optional>
+#include <stdexcept>
 #include <string_view>
 #include <thread>
 
@@ -115,8 +116,15 @@ void process_session_messages(kfc::PlayerSession& session, kfc::Match& match) {
 
 namespace kfc {
 
-GameServer::GameServer(unsigned short port, BoardModel default_board)
-    : websocket_server_(port), room_(std::move(default_board)) {}
+GameServer::GameServer(unsigned short port, BoardModel default_board, const std::string& db_path)
+    : websocket_server_(port),
+      room_(std::move(default_board)),
+      database_(db_path),
+      player_repository_(database_) {
+    if (!database_.open() || !database_.initialize_schema()) {
+        throw std::runtime_error("Failed to initialize database");
+    }
+}
 
 WebSocketServer& GameServer::websocket_server() noexcept {
     return websocket_server_;
@@ -128,6 +136,14 @@ Matchmaking& GameServer::matchmaking() noexcept {
 
 GameRoom& GameServer::room() noexcept {
     return room_;
+}
+
+SqliteDatabase& GameServer::database() noexcept {
+    return database_;
+}
+
+PlayerRepository& GameServer::player_repository() noexcept {
+    return player_repository_;
 }
 
 void GameServer::accept_new_clients() {
@@ -142,7 +158,7 @@ void GameServer::accept_new_clients() {
     }
 
     ClientConnection& connection = websocket_server_.clients().back();
-    sessions_.emplace_back(next_session_id_++, &connection);
+    sessions_.emplace_back(next_session_id_++, &connection, player_repository_);
     PlayerSession& session = sessions_.back();
     session.request_play();
     if (session.state() == PlayerSessionState::Searching) {
