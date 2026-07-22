@@ -103,12 +103,20 @@ std::optional<kfc::GameAction> parse_message(std::string_view message) {
     return std::nullopt;
 }
 
+void process_session_messages(kfc::PlayerSession& session, kfc::Match& match) {
+    if (const auto raw_message = session.connection()->try_read()) {
+        if (const auto action = parse_message(*raw_message)) {
+            match.submit_action(*action);
+        }
+    }
+}
+
 }  // namespace
 
 namespace kfc {
 
 GameServer::GameServer(unsigned short port, BoardModel default_board)
-    : websocket_server_(port), room_(std::move(default_board), {}) {}
+    : websocket_server_(port), room_(std::move(default_board)) {}
 
 WebSocketServer& GameServer::websocket_server() noexcept {
     return websocket_server_;
@@ -122,43 +130,77 @@ GameRoom& GameServer::room() noexcept {
     return room_;
 }
 
-void GameServer::run() {
+void GameServer::accept_new_clients() {
+    if (websocket_server_.clients().size() >= WebSocketServer::kMaxClients) {
+        return;
+    }
+
+    const std::size_t before = websocket_server_.clients().size();
+    websocket_server_.try_accept();
+    if (websocket_server_.clients().size() <= before) {
+        return;
+    }
+
+    ClientConnection& connection = websocket_server_.clients().back();
+    sessions_.emplace_back(next_session_id_++, &connection);
+    matchmaking_.enqueue(sessions_.back());
+
+    if (const auto matched = matchmaking_.try_create_match()) {
+        room_.activate((*matched)[0], (*matched)[1]);
+    }
+}
+
+void GameServer::prune_sessions() {
+    websocket_server_.prune_disconnected();
+
+    for (auto it = sessions_.begin(); it != sessions_.end();) {
+        if (!it->connection()->is_open()) {
+            matchmaking_.remove(*it);
+            it = sessions_.erase(it);
+        } else {
+            ++it;
+        }
+    }
+}
+
+void GameServer::process_active_room(std::int64_t elapsed,
+                                       std::chrono::steady_clock::time_point& last_tick) {
     Match& match = room_.match();
 
+    if (elapsed >= kTargetFrameMs && !match.is_game_over()) {
+        match.tick(elapsed);
+
+        const BoardViewModel view = BoardViewBuilder::build(match.state());
+        const std::string snapshot = write_snapshot(view);
+        room_.white_player()->connection()->try_send(snapshot);
+        room_.black_player()->connection()->try_send(snapshot);
+
+        last_tick = std::chrono::steady_clock::now();
+    }
+
+    if (!match.is_game_over()) {
+        process_session_messages(*room_.white_player(), match);
+        process_session_messages(*room_.black_player(), match);
+    }
+}
+
+void GameServer::run() {
     std::cout << "Server started\n";
 
     auto last_tick = std::chrono::steady_clock::now();
 
-    while (!match.is_game_over()) {
+    while (!room_.active() || !room_.match().is_game_over()) {
+        accept_new_clients();
+
         const auto now = std::chrono::steady_clock::now();
         const auto elapsed =
             std::chrono::duration_cast<std::chrono::milliseconds>(now - last_tick).count();
 
-        if (elapsed >= kTargetFrameMs) {
-            match.tick(elapsed);
-
-            if (!websocket_server_.clients().empty()) {
-                const BoardViewModel view = BoardViewBuilder::build(match.state());
-                const std::string snapshot = write_snapshot(view);
-                websocket_server_.broadcast(snapshot);
-            }
-
-            last_tick = now;
+        if (room_.active()) {
+            process_active_room(elapsed, last_tick);
         }
 
-        if (websocket_server_.clients().size() < WebSocketServer::kMaxClients) {
-            websocket_server_.try_accept();
-        }
-
-        for (ClientConnection& client : websocket_server_.clients()) {
-            if (const auto raw_message = client.try_read()) {
-                if (const auto action = parse_message(*raw_message)) {
-                    match.submit_action(*action);
-                }
-            }
-        }
-
-        websocket_server_.prune_disconnected();
+        prune_sessions();
 
         if (elapsed < kTargetFrameMs) {
             std::this_thread::sleep_for(std::chrono::milliseconds(1));

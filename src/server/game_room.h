@@ -4,21 +4,29 @@
 #include "server/match.h"
 #include "server/player_session.h"
 
-#include <vector>
-
 namespace kfc {
 
 class GameRoom {
 public:
-    GameRoom(BoardModel board, std::vector<PlayerSession*> players);
+    explicit GameRoom(BoardModel board);
+
+    [[nodiscard]] bool active() const noexcept;
+    void activate(PlayerSession* white, PlayerSession* black);
+
+    [[nodiscard]] bool contains(const PlayerSession* session) const noexcept;
+    [[nodiscard]] PlayerSession* white_player() noexcept;
+    [[nodiscard]] PlayerSession* black_player() noexcept;
+    [[nodiscard]] const PlayerSession* white_player() const noexcept;
+    [[nodiscard]] const PlayerSession* black_player() const noexcept;
 
     [[nodiscard]] Match& match() noexcept;
     [[nodiscard]] const Match& match() const noexcept;
-    [[nodiscard]] const std::vector<PlayerSession*>& players() const noexcept;
 
 private:
     Match match_;
-    std::vector<PlayerSession*> players_;
+    bool active_ = false;
+    PlayerSession* white_player_ = nullptr;
+    PlayerSession* black_player_ = nullptr;
 };
 
 }  // namespace kfc

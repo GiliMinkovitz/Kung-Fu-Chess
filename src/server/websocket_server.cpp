@@ -51,14 +51,13 @@ void WebSocketServer::try_accept() {
 void WebSocketServer::prune_disconnected() {
     const std::size_t before = clients_.size();
 
-    std::vector<ClientConnection> kept;
-    kept.reserve(clients_.size());
-    for (ClientConnection& client : clients_) {
-        if (client.is_open()) {
-            kept.emplace_back(std::move(client));
+    for (auto it = clients_.begin(); it != clients_.end();) {
+        if (!it->is_open()) {
+            it = clients_.erase(it);
+        } else {
+            ++it;
         }
     }
-    clients_ = std::move(kept);
 
     if (clients_.size() < before) {
         std::cout << "Client disconnected (" << clients_.size() << "/"

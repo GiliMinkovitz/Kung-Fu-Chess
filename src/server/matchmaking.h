@@ -10,6 +10,7 @@ namespace kfc {
 class Matchmaking {
 public:
     void enqueue(PlayerSession& session);
+    void remove(PlayerSession& session);
     [[nodiscard]] std::optional<std::vector<PlayerSession*>> try_create_match();
 
 private:

@@ -5,8 +5,8 @@
 #include <boost/asio/ip/tcp.hpp>
 
 #include <cstddef>
+#include <list>
 #include <string>
-#include <vector>
 
 namespace kfc {
 
@@ -21,11 +21,11 @@ public:
     void try_accept();
     void prune_disconnected();
 
-    [[nodiscard]] std::vector<ClientConnection>& clients() noexcept {
+    [[nodiscard]] std::list<ClientConnection>& clients() noexcept {
         return clients_;
     }
 
-    [[nodiscard]] const std::vector<ClientConnection>& clients() const noexcept {
+    [[nodiscard]] const std::list<ClientConnection>& clients() const noexcept {
         return clients_;
     }
 
@@ -34,7 +34,7 @@ public:
 private:
     boost::asio::io_context io_context_;
     boost::asio::ip::tcp::acceptor acceptor_;
-    std::vector<ClientConnection> clients_;
+    std::list<ClientConnection> clients_;
 };
 
 }  // namespace kfc

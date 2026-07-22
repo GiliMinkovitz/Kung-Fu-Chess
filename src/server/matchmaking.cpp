@@ -1,9 +1,17 @@
 #include "server/matchmaking.h"
 
+#include <algorithm>
+
 namespace kfc {
 
 void Matchmaking::enqueue(PlayerSession& session) {
     waiting_.push_back(&session);
+}
+
+void Matchmaking::remove(PlayerSession& session) {
+    waiting_.erase(
+        std::remove(waiting_.begin(), waiting_.end(), &session),
+        waiting_.end());
 }
 
 std::optional<std::vector<PlayerSession*>> Matchmaking::try_create_match() {
