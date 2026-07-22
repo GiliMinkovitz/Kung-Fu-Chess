@@ -50,6 +50,7 @@ set(KFC_SERVER_WEBSOCKET_SOURCES
 )
 
 set(KFC_SERVER_ARCH_SOURCES
+    src/server/player.cpp
     src/server/matchmaking.cpp
     src/server/game_room.cpp
     src/server/game_server.cpp

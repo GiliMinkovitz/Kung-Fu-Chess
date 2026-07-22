@@ -26,20 +26,36 @@ bool GameRoom::contains(const PlayerSession* session) const noexcept {
     return session == white_player_ || session == black_player_;
 }
 
-PlayerSession* GameRoom::white_player() noexcept {
+PlayerSession* GameRoom::white_session() noexcept {
     return white_player_;
 }
 
-PlayerSession* GameRoom::black_player() noexcept {
+PlayerSession* GameRoom::black_session() noexcept {
     return black_player_;
 }
 
-const PlayerSession* GameRoom::white_player() const noexcept {
+const PlayerSession* GameRoom::white_session() const noexcept {
     return white_player_;
 }
 
-const PlayerSession* GameRoom::black_player() const noexcept {
+const PlayerSession* GameRoom::black_session() const noexcept {
     return black_player_;
+}
+
+Player* GameRoom::white_player() noexcept {
+    return white_player_ != nullptr ? &white_player_->player() : nullptr;
+}
+
+Player* GameRoom::black_player() noexcept {
+    return black_player_ != nullptr ? &black_player_->player() : nullptr;
+}
+
+const Player* GameRoom::white_player() const noexcept {
+    return white_player_ != nullptr ? &white_player_->player() : nullptr;
+}
+
+const Player* GameRoom::black_player() const noexcept {
+    return black_player_ != nullptr ? &black_player_->player() : nullptr;
 }
 
 Match& GameRoom::match() noexcept {

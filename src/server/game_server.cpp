@@ -143,9 +143,15 @@ void GameServer::accept_new_clients() {
 
     ClientConnection& connection = websocket_server_.clients().back();
     sessions_.emplace_back(next_session_id_++, &connection);
-    matchmaking_.enqueue(sessions_.back());
+    PlayerSession& session = sessions_.back();
+    session.request_play();
+    if (session.state() == PlayerSessionState::Searching) {
+        matchmaking_.enqueue(session);
+    }
 
     if (const auto matched = matchmaking_.try_create_match()) {
+        (*matched)[0]->set_playing();
+        (*matched)[1]->set_playing();
         room_.activate((*matched)[0], (*matched)[1]);
     }
 }
@@ -172,21 +178,21 @@ void GameServer::process_active_room(std::int64_t elapsed,
 
         const BoardViewModel view = BoardViewBuilder::build(match.state());
         const std::string snapshot = write_snapshot(view);
-        room_.white_player()->connection()->try_send(snapshot);
-        room_.black_player()->connection()->try_send(snapshot);
+        room_.white_session()->connection()->try_send(snapshot);
+        room_.black_session()->connection()->try_send(snapshot);
 
         last_tick = std::chrono::steady_clock::now();
     }
 
     if (!match.is_game_over()) {
-        process_session_messages(*room_.white_player(), match);
-        process_session_messages(*room_.black_player(), match);
+        process_session_messages(*room_.white_session(), match);
+        process_session_messages(*room_.black_session(), match);
     }
 }
 
 void GameServer::finish_active_room() {
-    PlayerSession* white = room_.white_player();
-    PlayerSession* black = room_.black_player();
+    PlayerSession* white = room_.white_session();
+    PlayerSession* black = room_.black_session();
 
     room_.reset();
 

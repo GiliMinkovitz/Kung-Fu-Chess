@@ -15,10 +15,14 @@ public:
     void reset();
 
     [[nodiscard]] bool contains(const PlayerSession* session) const noexcept;
-    [[nodiscard]] PlayerSession* white_player() noexcept;
-    [[nodiscard]] PlayerSession* black_player() noexcept;
-    [[nodiscard]] const PlayerSession* white_player() const noexcept;
-    [[nodiscard]] const PlayerSession* black_player() const noexcept;
+    [[nodiscard]] Player* white_player() noexcept;
+    [[nodiscard]] Player* black_player() noexcept;
+    [[nodiscard]] const Player* white_player() const noexcept;
+    [[nodiscard]] const Player* black_player() const noexcept;
+    [[nodiscard]] PlayerSession* white_session() noexcept;
+    [[nodiscard]] PlayerSession* black_session() noexcept;
+    [[nodiscard]] const PlayerSession* white_session() const noexcept;
+    [[nodiscard]] const PlayerSession* black_session() const noexcept;
 
     [[nodiscard]] Match& match() noexcept;
     [[nodiscard]] const Match& match() const noexcept;
