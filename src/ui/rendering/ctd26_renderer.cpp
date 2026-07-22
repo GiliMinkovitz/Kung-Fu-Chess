@@ -12,9 +12,12 @@
 #include <array>
 #include <cmath>
 #include <exception>
+#include <iostream>
 #include <optional>
 #include <string>
+#include <typeinfo>
 #include <unordered_map>
+#include <unordered_set>
 
 namespace kfc {
 
@@ -56,6 +59,50 @@ constexpr float kPi = 3.14159265f;
 
 cv::Scalar to_scalar(const UiColor& color) {
     return cv::Scalar(color.b, color.g, color.r);
+}
+
+const char* diag_rest_kind_name(RestKind rest_kind) {
+    return rest_kind == RestKind::Long ? "Long" : "Short";
+}
+
+void log_render_diag_exception(const char* function_name, const std::exception& ex,
+                               std::optional<Piece::Id> piece_id = std::nullopt,
+                               std::optional<std::size_t> row = std::nullopt,
+                               std::optional<std::size_t> col = std::nullopt,
+                               std::optional<RestKind> rest_kind = std::nullopt,
+                               std::optional<float> progress = std::nullopt) {
+    std::cerr << "[REST-RENDER-DIAG] EXCEPTION"
+              << " function=" << function_name << " type=" << typeid(ex).name()
+              << " what=" << ex.what();
+    if (piece_id.has_value()) {
+        std::cerr << " piece_id=" << *piece_id;
+    }
+    if (row.has_value()) {
+        std::cerr << " row=" << *row;
+    }
+    if (col.has_value()) {
+        std::cerr << " col=" << *col;
+    }
+    if (rest_kind.has_value()) {
+        std::cerr << " rest_kind=" << diag_rest_kind_name(*rest_kind);
+    }
+    if (progress.has_value()) {
+        std::cerr << " progress=" << *progress;
+    }
+    std::cerr << '\n';
+}
+
+std::unordered_set<Piece::Id>& logged_rest_piece_ids() {
+    static std::unordered_set<Piece::Id> ids;
+    return ids;
+}
+
+bool should_log_rest_diagnostics(Piece::Id piece_id) {
+    return logged_rest_piece_ids().insert(piece_id).second;
+}
+
+void clear_rest_diagnostic_state() {
+    logged_rest_piece_ids().clear();
 }
 
 void on_mouse(int event, int x, int y, int /*flags*/, void* userdata) {
@@ -176,10 +223,30 @@ UiFrameResult Ctd26Renderer::present(const BoardViewModel& view) {
 
     impl_->frame->create(window_width_, window_height_, to_scalar(theme_.frame_background));
 
-    draw_static_board(view);
-    draw_moving_pieces(view);
-    draw_jumping_pieces(view);
-    draw_game_over_banner(view.game_over);
+    try {
+        draw_static_board(view);
+    } catch (const std::exception& ex) {
+        log_render_diag_exception("Ctd26Renderer::present->draw_static_board", ex);
+        throw;
+    }
+    try {
+        draw_moving_pieces(view);
+    } catch (const std::exception& ex) {
+        log_render_diag_exception("Ctd26Renderer::present->draw_moving_pieces", ex);
+        throw;
+    }
+    try {
+        draw_jumping_pieces(view);
+    } catch (const std::exception& ex) {
+        log_render_diag_exception("Ctd26Renderer::present->draw_jumping_pieces", ex);
+        throw;
+    }
+    try {
+        draw_game_over_banner(view.game_over);
+    } catch (const std::exception& ex) {
+        log_render_diag_exception("Ctd26Renderer::present->draw_game_over_banner", ex);
+        throw;
+    }
 
     impl_->frame->show_in(kWindowName);
     return {Img::poll_key(1) != 27};
@@ -209,83 +276,164 @@ void Ctd26Renderer::draw_jump_effect(int x, int y, float jump_progress) {
 }
 
 void Ctd26Renderer::draw_rest_cooldown_overlay(int x, int y, float progress, RestKind rest_kind) {
-    const float remaining = 1.0f - std::clamp(progress, 0.0f, 1.0f);
-    if (remaining <= 0.0f) {
-        return;
+    try {
+        const float remaining = 1.0f - std::clamp(progress, 0.0f, 1.0f);
+        if (remaining <= 0.0f) {
+            return;
+        }
+
+        const int inset = std::max(1, layout_.cell_size / 16);
+        const int inner_size = layout_.cell_size - 2 * inset;
+        if (inner_size <= 0) {
+            return;
+        }
+
+        const int overlay_height =
+            std::max(1, static_cast<int>(std::ceil(static_cast<float>(inner_size) * remaining)));
+        const int overlay_x = x + inset;
+        const int overlay_y = y + layout_.cell_size - inset - overlay_height;
+
+        const int intensity = static_cast<int>(40.0f + 70.0f * remaining);
+        const cv::Scalar color =
+            rest_kind == RestKind::Long ? cv::Scalar(intensity + 15, intensity - 10, intensity - 30)
+                                        : cv::Scalar(intensity + 25, intensity + 8, intensity - 15);
+
+        impl_->frame->rectangle(overlay_x, overlay_y, inner_size, overlay_height, color, -1);
+    } catch (const std::exception& ex) {
+        log_render_diag_exception("Ctd26Renderer::draw_rest_cooldown_overlay", ex, std::nullopt,
+                                  std::nullopt, std::nullopt, rest_kind, progress);
+        throw;
     }
-
-    const int inset = std::max(1, layout_.cell_size / 16);
-    const int inner_size = layout_.cell_size - 2 * inset;
-    if (inner_size <= 0) {
-        return;
-    }
-
-    const int overlay_height =
-        std::max(1, static_cast<int>(std::ceil(static_cast<float>(inner_size) * remaining)));
-    const int overlay_x = x + inset;
-    const int overlay_y = y + layout_.cell_size - inset - overlay_height;
-
-    const int intensity = static_cast<int>(40.0f + 70.0f * remaining);
-    const cv::Scalar color =
-        rest_kind == RestKind::Long ? cv::Scalar(intensity + 15, intensity - 10, intensity - 30)
-                                    : cv::Scalar(intensity + 25, intensity + 8, intensity - 15);
-
-    impl_->frame->rectangle(overlay_x, overlay_y, inner_size, overlay_height, color, -1);
 }
 
 void Ctd26Renderer::draw_piece(const PieceSpriteContext& context, int x, int y) {
-    const PieceSpriteSelection selection = sprite_selector_.select(context);
-    const PieceView& piece = context.piece;
-    const PieceSpriteCacheKey key{piece.color, piece.kind, std::string(selection.state),
-                                  selection.frame};
-    const auto cached_sprite = impl_->piece_sprites.find(key);
-    if (cached_sprite != impl_->piece_sprites.end() && cached_sprite->second.has_value() &&
-        cached_sprite->second->is_loaded()) {
-        cached_sprite->second->draw_on(*impl_->frame, x, y);
-        return;
-    }
+    try {
+        const PieceSpriteSelection selection = sprite_selector_.select(context);
+        const PieceView& piece = context.piece;
+        const PieceSpriteCacheKey key{piece.color, piece.kind, std::string(selection.state),
+                                      selection.frame};
+        const auto cached_sprite = impl_->piece_sprites.find(key);
+        if (cached_sprite != impl_->piece_sprites.end() && cached_sprite->second.has_value() &&
+            cached_sprite->second->is_loaded()) {
+            cached_sprite->second->draw_on(*impl_->frame, x, y);
+            return;
+        }
 
-    const std::string label = std::string{color_to_char(piece.color), kind_to_char(piece.kind)};
-    const cv::Scalar color =
-        piece.color == PieceColor::White ? to_scalar(theme_.white_token) : to_scalar(theme_.black_token);
-    impl_->frame->put_text(label, layout_.piece_text_x(x), layout_.piece_text_y(y), layout_.piece_font_scale(),
-                           color, layout_.piece_font_thickness());
+        const std::string label =
+            std::string{color_to_char(piece.color), kind_to_char(piece.kind)};
+        const cv::Scalar color = piece.color == PieceColor::White ? to_scalar(theme_.white_token)
+                                                                   : to_scalar(theme_.black_token);
+        impl_->frame->put_text(label, layout_.piece_text_x(x), layout_.piece_text_y(y),
+                               layout_.piece_font_scale(), color, layout_.piece_font_thickness());
+    } catch (const std::exception& ex) {
+        log_render_diag_exception("Ctd26Renderer::draw_piece", ex, std::nullopt, std::nullopt,
+                                  std::nullopt, context.rest_kind, context.progress);
+        throw;
+    }
 }
 
 void Ctd26Renderer::draw_static_board(const BoardViewModel& view) {
-    draw_board_background();
+    const bool has_active_rests = !view.animations.rests.empty();
+    if (!has_active_rests) {
+        clear_rest_diagnostic_state();
+    } else if (logged_rest_piece_ids().empty()) {
+        std::cerr << "[REST-RENDER-DIAG] entering rest rendering path, active_rests="
+                  << view.animations.rests.size() << '\n';
+    }
+    try {
+        draw_board_background();
 
-    for (std::size_t row = 0; row < view.height; ++row) {
-        for (std::size_t col = 0; col < view.width; ++col) {
-            const int x = layout_.cell_origin_x(col);
-            const int y = layout_.cell_origin_y(row);
+        for (std::size_t row = 0; row < view.height; ++row) {
+            for (std::size_t col = 0; col < view.width; ++col) {
+                const int x = layout_.cell_origin_x(col);
+                const int y = layout_.cell_origin_y(row);
 
-            if (view.selection && view.selection->first == row && view.selection->second == col) {
-                draw_selection_highlight(x, y);
-            }
+                if (view.selection && view.selection->first == row &&
+                    view.selection->second == col) {
+                    draw_selection_highlight(x, y);
+                }
 
-            if (board_view_is_resting_cell(view, row, col)) {
-                draw_rest_cooldown_overlay(x, y, board_view_rest_progress_at(view, row, col),
-                                           board_view_rest_kind_at(view, row, col));
-            }
-
-            if (board_view_is_move_origin(view, row, col) ||
-                board_view_is_jump_origin(view, row, col)) {
-                continue;
-            }
-
-            if (const std::optional<PieceView> piece = board_view_piece_at(view, row, col);
-                piece.has_value()) {
                 if (board_view_is_resting_cell(view, row, col)) {
                     const float progress = board_view_rest_progress_at(view, row, col);
                     const RestKind rest_kind = board_view_rest_kind_at(view, row, col);
-                    draw_piece(PieceSpriteContext{*piece, false, false, true, rest_kind, progress}, x,
-                                y);
-                } else {
-                    draw_piece(PieceSpriteContext{*piece}, x, y);
+                    std::optional<Piece::Id> piece_id;
+                    for (const ActiveRestSnapshot& rest : view.animations.rests) {
+                        if (rest.row == row && rest.col == col) {
+                            piece_id = rest.piece_id;
+                            break;
+                        }
+                    }
+                    try {
+                        draw_rest_cooldown_overlay(x, y, progress, rest_kind);
+                    } catch (const std::exception& ex) {
+                        log_render_diag_exception("Ctd26Renderer::draw_static_board->draw_rest_cooldown_overlay",
+                                                  ex, piece_id, row, col, rest_kind, progress);
+                        throw;
+                    }
+                }
+
+                if (board_view_is_move_origin(view, row, col) ||
+                    board_view_is_jump_origin(view, row, col)) {
+                    continue;
+                }
+
+                if (const std::optional<PieceView> piece = board_view_piece_at(view, row, col);
+                    piece.has_value()) {
+                    if (board_view_is_resting_cell(view, row, col)) {
+                        const float progress = board_view_rest_progress_at(view, row, col);
+                        const RestKind rest_kind = board_view_rest_kind_at(view, row, col);
+                        std::optional<Piece::Id> piece_id;
+                        for (const ActiveRestSnapshot& rest : view.animations.rests) {
+                            if (rest.row == row && rest.col == col) {
+                                piece_id = rest.piece_id;
+                                break;
+                            }
+                        }
+                        if (has_active_rests && piece_id.has_value() &&
+                            should_log_rest_diagnostics(*piece_id)) {
+                            const PieceSpriteContext rest_context{*piece, false, false, true,
+                                                                  rest_kind, progress};
+                            const PieceSpriteSelection selection =
+                                sprite_selector_.select(rest_context);
+                            const PieceSpriteCacheKey key{
+                                piece->color, piece->kind, std::string(selection.state),
+                                selection.frame};
+                            const auto cached_sprite = impl_->piece_sprites.find(key);
+                            const bool cache_hit =
+                                cached_sprite != impl_->piece_sprites.end() &&
+                                cached_sprite->second.has_value() &&
+                                cached_sprite->second->is_loaded();
+                            std::cerr << "[REST-RENDER-DIAG] resting cell piece_id=" << *piece_id
+                                      << " row=" << row << " col=" << col
+                                      << " rest_kind=" << diag_rest_kind_name(rest_kind)
+                                      << " progress=" << progress << " state=" << selection.state
+                                      << " frame=" << selection.frame
+                                      << " cache=" << (cache_hit ? "hit" : "miss");
+                            if (cache_hit) {
+                                const cv::Mat& sprite_mat = cached_sprite->second->get_mat();
+                                std::cerr << " sprite=" << sprite_mat.cols << "x"
+                                          << sprite_mat.rows;
+                            }
+                            std::cerr << " dest_x=" << x << " dest_y=" << y << '\n';
+                        }
+                        try {
+                            draw_piece(
+                                PieceSpriteContext{*piece, false, false, true, rest_kind, progress},
+                                x, y);
+                        } catch (const std::exception& ex) {
+                            log_render_diag_exception("Ctd26Renderer::draw_static_board->draw_piece",
+                                                      ex, piece_id, row, col, rest_kind, progress);
+                            throw;
+                        }
+                    } else {
+                        draw_piece(PieceSpriteContext{*piece}, x, y);
+                    }
                 }
             }
         }
+    } catch (const std::exception& ex) {
+        log_render_diag_exception("Ctd26Renderer::draw_static_board", ex);
+        throw;
     }
 }
 

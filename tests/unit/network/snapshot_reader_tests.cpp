@@ -32,6 +32,43 @@ void check_view_matches(const kfc::BoardViewModel& expected, const kfc::BoardVie
             CHECK(actual_cell.piece->kind == expected_cell.piece->kind);
         }
     }
+
+    REQUIRE_EQ(actual.animations.moves.size(), expected.animations.moves.size());
+    for (std::size_t index = 0; index < expected.animations.moves.size(); ++index) {
+        const kfc::ActiveMoveSnapshot& expected_move = expected.animations.moves[index];
+        const kfc::ActiveMoveSnapshot& actual_move = actual.animations.moves[index];
+        CHECK_EQ(actual_move.piece_id, expected_move.piece_id);
+        CHECK(actual_move.kind == expected_move.kind);
+        CHECK(actual_move.color == expected_move.color);
+        CHECK_EQ(actual_move.from_row, expected_move.from_row);
+        CHECK_EQ(actual_move.from_col, expected_move.from_col);
+        CHECK_EQ(actual_move.to_row, expected_move.to_row);
+        CHECK_EQ(actual_move.to_col, expected_move.to_col);
+        CHECK(actual_move.progress == doctest::Approx(expected_move.progress));
+    }
+
+    REQUIRE_EQ(actual.animations.jumps.size(), expected.animations.jumps.size());
+    for (std::size_t index = 0; index < expected.animations.jumps.size(); ++index) {
+        const kfc::ActiveJumpSnapshot& expected_jump = expected.animations.jumps[index];
+        const kfc::ActiveJumpSnapshot& actual_jump = actual.animations.jumps[index];
+        CHECK_EQ(actual_jump.piece_id, expected_jump.piece_id);
+        CHECK(actual_jump.kind == expected_jump.kind);
+        CHECK(actual_jump.color == expected_jump.color);
+        CHECK_EQ(actual_jump.row, expected_jump.row);
+        CHECK_EQ(actual_jump.col, expected_jump.col);
+        CHECK(actual_jump.progress == doctest::Approx(expected_jump.progress));
+    }
+
+    REQUIRE_EQ(actual.animations.rests.size(), expected.animations.rests.size());
+    for (std::size_t index = 0; index < expected.animations.rests.size(); ++index) {
+        const kfc::ActiveRestSnapshot& expected_rest = expected.animations.rests[index];
+        const kfc::ActiveRestSnapshot& actual_rest = actual.animations.rests[index];
+        CHECK_EQ(actual_rest.piece_id, expected_rest.piece_id);
+        CHECK_EQ(actual_rest.row, expected_rest.row);
+        CHECK_EQ(actual_rest.col, expected_rest.col);
+        CHECK(actual_rest.kind == expected_rest.kind);
+        CHECK(actual_rest.progress == doctest::Approx(expected_rest.progress));
+    }
 }
 
 }  // namespace
@@ -94,6 +131,28 @@ TEST_CASE("SnapshotReaderTest - ParsesMinimalSnapshot") {
     REQUIRE(parsed->cells[0].piece.has_value());
     CHECK(parsed->cells[0].piece->color == kfc::PieceColor::White);
     CHECK(parsed->cells[0].piece->kind == kfc::PieceKind::King);
+    CHECK(parsed->animations.moves.empty());
+    CHECK(parsed->animations.jumps.empty());
+    CHECK(parsed->animations.rests.empty());
+}
+
+TEST_CASE("SnapshotReaderTest - RoundTripPreservesAnimations") {
+    kfc::BoardViewModel original;
+    original.height = 2;
+    original.width = 2;
+    original.clock_ms = 100;
+    original.cells = {{}, {}, {}, {}};
+    original.animations.moves.push_back(
+        {1, kfc::PieceKind::Rook, kfc::PieceColor::White, 0, 0, 0, 1, 0.5f});
+    original.animations.jumps.push_back(
+        {2, kfc::PieceKind::King, kfc::PieceColor::Black, 1, 1, 0.75f});
+    original.animations.rests.push_back({3, 0, 1, kfc::RestKind::Long, 0.25f});
+
+    const std::optional<kfc::BoardViewModel> parsed =
+        kfc::read_snapshot(kfc::write_snapshot(original));
+
+    REQUIRE(parsed.has_value());
+    check_view_matches(original, *parsed);
 }
 
 TEST_CASE("SnapshotReaderTest - RejectsInvalidSnapshot") {
