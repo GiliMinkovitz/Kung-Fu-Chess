@@ -13,11 +13,19 @@ void GameRoom::activate(PlayerSession* white, PlayerSession* black,
                         GameRepository& game_repository) {
     white_player_ = white;
     black_player_ = black;
+    white->set_side(PieceColor::White);
+    black->set_side(PieceColor::Black);
     active_ = true;
     db_game_id_ = game_repository.create_game(white->player().id(), black->player().id());
 }
 
 void GameRoom::reset() {
+    if (white_player_ != nullptr) {
+        white_player_->clear_side();
+    }
+    if (black_player_ != nullptr) {
+        black_player_->clear_side();
+    }
     active_ = false;
     white_player_ = nullptr;
     black_player_ = nullptr;

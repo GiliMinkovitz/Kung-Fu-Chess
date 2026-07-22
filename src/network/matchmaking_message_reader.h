@@ -10,6 +10,9 @@ enum class MatchmakingState {
     Searching,
     MatchedWhite,
     MatchedBlack,
+    GameStartingWhite,
+    GameStartingBlack,
+    Playing,
     Timeout,
 };
 

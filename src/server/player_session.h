@@ -1,6 +1,7 @@
 #pragma once
 
 #include "database/player_repository.h"
+#include "model/piece.h"
 #include "server/client_connection.h"
 #include "server/player.h"
 
@@ -27,6 +28,10 @@ public:
     void request_play();
     void cancel_search();
     void set_playing();
+    void set_side(PieceColor side);
+    void clear_side();
+    [[nodiscard]] bool has_side() const noexcept;
+    [[nodiscard]] PieceColor side() const;
     [[nodiscard]] Player& player() noexcept;
     [[nodiscard]] const Player& player() const noexcept;
     [[nodiscard]] ClientConnection* connection() noexcept;
@@ -39,6 +44,7 @@ private:
     std::size_t id_;
     PlayerSessionState state_ = PlayerSessionState::Connected;
     std::optional<Player> player_;
+    std::optional<PieceColor> side_;
     ClientConnection* connection_;
 };
 
@@ -68,6 +74,22 @@ inline void PlayerSession::cancel_search() {
 
 inline void PlayerSession::set_playing() {
     state_ = PlayerSessionState::Playing;
+}
+
+inline void PlayerSession::set_side(PieceColor side) {
+    side_ = side;
+}
+
+inline void PlayerSession::clear_side() {
+    side_.reset();
+}
+
+inline bool PlayerSession::has_side() const noexcept {
+    return side_.has_value();
+}
+
+inline PieceColor PlayerSession::side() const {
+    return *side_;
 }
 
 inline Player& PlayerSession::player() noexcept {

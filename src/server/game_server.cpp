@@ -3,6 +3,7 @@
 #include "logic/game_action.h"
 #include "model/game_config.h"
 #include "model/piece.h"
+#include "model/piece_token.h"
 #include "server/snapshot_writer.h"
 #include "ui/view/board_view_builder.h"
 
@@ -13,6 +14,8 @@
 #include <stdexcept>
 #include <string_view>
 #include <thread>
+#include <type_traits>
+#include <variant>
 
 namespace {
 
@@ -156,10 +159,63 @@ std::optional<kfc::GameAction> parse_message(std::string_view message) {
     return std::nullopt;
 }
 
+std::optional<kfc::PieceColor> piece_color_at(const kfc::GameState& state, std::size_t row,
+                                             std::size_t col) {
+    if (!state.is_piece(row, col)) {
+        return std::nullopt;
+    }
+
+    const std::optional<kfc::PieceDescriptor> descriptor =
+        kfc::descriptor_from_token(state.token_at(row, col));
+    if (!descriptor) {
+        return std::nullopt;
+    }
+    return descriptor->color;
+}
+
+bool is_action_allowed(const kfc::PlayerSession& session, const kfc::Match& match,
+                       const kfc::GameAction& action) {
+    if (!session.has_side()) {
+        return false;
+    }
+
+    const kfc::PieceColor player_side = session.side();
+    const kfc::GameState& state = match.state();
+
+    return std::visit(
+        [&](const auto& a) -> bool {
+            using T = std::decay_t<decltype(a)>;
+            if constexpr (std::is_same_v<T, kfc::ClearSelection>) {
+                return true;
+            }
+            if constexpr (std::is_same_v<T, kfc::AdvanceClock>) {
+                return false;
+            }
+            if constexpr (std::is_same_v<T, kfc::Select> || std::is_same_v<T, kfc::JumpAt>) {
+                const std::optional<kfc::PieceColor> piece_color =
+                    piece_color_at(state, a.row, a.col);
+                return piece_color.has_value() && *piece_color == player_side;
+            }
+            if constexpr (std::is_same_v<T, kfc::MoveSelected> || std::is_same_v<T, kfc::JumpSelected>) {
+                std::size_t row = 0;
+                std::size_t col = 0;
+                if (!state.selection(row, col)) {
+                    return false;
+                }
+                const std::optional<kfc::PieceColor> piece_color = piece_color_at(state, row, col);
+                return piece_color.has_value() && *piece_color == player_side;
+            }
+            return false;
+        },
+        action);
+}
+
 void process_session_messages(kfc::PlayerSession& session, kfc::Match& match) {
     if (const auto raw_message = session.connection()->try_read()) {
         if (const auto action = parse_message(*raw_message)) {
-            match.submit_action(*action);
+            if (is_action_allowed(session, match, *action)) {
+                match.submit_action(*action);
+            }
         }
     }
 }
@@ -248,6 +304,8 @@ void GameServer::process_pending_logins() {
                         (*matched)[0]->set_playing();
                         (*matched)[1]->set_playing();
                         room_.activate((*matched)[0], (*matched)[1], game_repository_);
+                        (*matched)[0]->connection()->try_send("game_start white");
+                        (*matched)[1]->connection()->try_send("game_start black");
                     } else {
                         session.connection()->try_send("searching");
                     }
@@ -306,7 +364,17 @@ void GameServer::finish_active_room() {
         if (const std::optional<PieceColor> winner_color = room_.match().state().winning_color()) {
             const Player* winner =
                 *winner_color == PieceColor::White ? room_.white_player() : room_.black_player();
+            const Player* loser =
+                *winner_color == PieceColor::White ? room_.black_player() : room_.white_player();
             if (winner != nullptr) {
+                player_repository_.update_rating(winner->id(), winner->rating() + 25);
+                if (loser != nullptr) {
+                    int loser_rating = loser->rating() - 25;
+                    if (loser_rating < 0) {
+                        loser_rating = 0;
+                    }
+                    player_repository_.update_rating(loser->id(), loser_rating);
+                }
                 game_repository_.finish_game(*game_id, winner->id());
             }
         }

@@ -54,6 +54,14 @@ std::optional<MatchmakingState> read_matchmaking_message(std::string_view text) 
             return MatchmakingState::MatchedBlack;
         }
     }
+    if (tokens[0] == "game_start" && tokens.size() >= 2) {
+        if (tokens[1] == "white") {
+            return MatchmakingState::GameStartingWhite;
+        }
+        if (tokens[1] == "black") {
+            return MatchmakingState::GameStartingBlack;
+        }
+    }
 
     return std::nullopt;
 }

@@ -200,6 +200,12 @@ struct NetworkGuiState {
             return "Match found - You are White";
         case kfc::MatchmakingState::MatchedBlack:
             return "Match found - You are Black";
+        case kfc::MatchmakingState::GameStartingWhite:
+            return "Game starting - You are White";
+        case kfc::MatchmakingState::GameStartingBlack:
+            return "Game starting - You are Black";
+        case kfc::MatchmakingState::Playing:
+            return std::nullopt;
         case kfc::MatchmakingState::Timeout:
             return "No players available";
     }
@@ -219,6 +225,7 @@ void handle_network_message(const std::string& message,
                             NetworkGuiState& gui_state) {
     if (const std::optional<kfc::BoardViewModel> view = kfc::read_snapshot(message)) {
         latest_view = view;
+        gui_state.matchmaking = kfc::MatchmakingState::Playing;
         return;
     }
 
