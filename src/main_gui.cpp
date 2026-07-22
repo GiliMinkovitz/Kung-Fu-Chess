@@ -3,6 +3,7 @@
 #include "engine/game_engine.h"
 #include "model/board_model.h"
 #include "model/game_config.h"
+#include "network/matchmaking_message_reader.h"
 #include "network/network_input_handler.h"
 #include "network/snapshot_reader.h"
 #include "network/websocket_client.h"
@@ -184,6 +185,24 @@ private:
     kfc::BoardLayout layout_;
 };
 
+struct NetworkGuiState {
+    kfc::MatchmakingState matchmaking{kfc::MatchmakingState::Idle};
+};
+
+void handle_network_message(const std::string& message,
+                            std::optional<kfc::BoardViewModel>& latest_view,
+                            NetworkGuiState& gui_state) {
+    if (const std::optional<kfc::BoardViewModel> view = kfc::read_snapshot(message)) {
+        latest_view = view;
+        return;
+    }
+
+    if (const std::optional<kfc::MatchmakingState> matchmaking =
+            kfc::read_matchmaking_message(message)) {
+        gui_state.matchmaking = *matchmaking;
+    }
+}
+
 int run_offline_gui() {
     kfc::GameEngine engine(default_board());
     kfc::UiController controller(engine.state(), std::make_unique<kfc::Ctd26Renderer>());
@@ -222,11 +241,10 @@ int run_network_gui() {
     kfc::UiController controller(kDefaultBoardRows, kDefaultBoardCols, std::move(renderer));
 
     std::optional<kfc::BoardViewModel> latest_view;
+    NetworkGuiState gui_state;
     while (!latest_view.has_value()) {
-        if (const std::optional<std::string> snapshot = client.try_receive_snapshot()) {
-            if (const std::optional<kfc::BoardViewModel> view = kfc::read_snapshot(*snapshot)) {
-                latest_view = view;
-            }
+        if (const std::optional<std::string> message = client.try_receive_snapshot()) {
+            handle_network_message(*message, latest_view, gui_state);
         }
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
     }
@@ -238,10 +256,8 @@ int run_network_gui() {
     auto last_frame = std::chrono::steady_clock::now();
 
     while (true) {
-        if (const std::optional<std::string> snapshot = client.try_receive_snapshot()) {
-            if (const std::optional<kfc::BoardViewModel> view = kfc::read_snapshot(*snapshot)) {
-                latest_view = view;
-            }
+        if (const std::optional<std::string> message = client.try_receive_snapshot()) {
+            handle_network_message(*message, latest_view, gui_state);
         }
 
         input_sink.update_view(*latest_view);

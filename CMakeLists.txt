@@ -41,6 +41,7 @@ set(KFC_GUI_SOURCES
 set(KFC_NETWORK_SOURCES
     src/network/websocket_client.cpp
     src/network/snapshot_reader.cpp
+    src/network/matchmaking_message_reader.cpp
     src/network/network_input_handler.cpp
 )
 
