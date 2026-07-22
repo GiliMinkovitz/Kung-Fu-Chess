@@ -237,9 +237,13 @@ void GameServer::process_pending_logins() {
                 if (session.state() == PlayerSessionState::Searching) {
                     const auto now = std::chrono::steady_clock::now();
                     if (const auto matched = matchmaking_.enqueue(session, now)) {
+                        (*matched)[0]->connection()->try_send("match_found white");
+                        (*matched)[1]->connection()->try_send("match_found black");
                         (*matched)[0]->set_playing();
                         (*matched)[1]->set_playing();
                         room_.activate((*matched)[0], (*matched)[1]);
+                    } else {
+                        session.connection()->try_send("searching");
                     }
                 }
             }
@@ -252,6 +256,7 @@ void GameServer::process_matchmaking_timeouts() {
     for (PlayerSession* session : matchmaking_.check_timeouts(now)) {
         std::cout << "Matchmaking timeout for session " << session->id() << " (player "
                   << session->player().username() << ")\n";
+        session->connection()->try_send("search_timeout");
         session->cancel_search();
     }
 }
