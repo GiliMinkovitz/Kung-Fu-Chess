@@ -30,6 +30,8 @@ public:
 
 private:
     void accept_new_clients();
+    void process_pending_logins();
+    void process_matchmaking_timeouts();
     void prune_sessions();
     void process_active_room(std::int64_t elapsed, std::chrono::steady_clock::time_point& last_tick);
     void finish_active_room();

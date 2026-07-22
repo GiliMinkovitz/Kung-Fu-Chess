@@ -5,6 +5,7 @@
 #include "server/player.h"
 
 #include <cstddef>
+#include <optional>
 #include <string>
 
 namespace kfc {
@@ -17,11 +18,14 @@ enum class PlayerSessionState {
 
 class PlayerSession {
 public:
-    PlayerSession(std::size_t id, ClientConnection* connection, PlayerRepository& player_repository);
+    PlayerSession(std::size_t id, ClientConnection* connection);
 
     [[nodiscard]] std::size_t id() const noexcept;
     [[nodiscard]] PlayerSessionState state() const noexcept;
+    [[nodiscard]] bool has_player() const noexcept;
+    bool login(const std::string& username, PlayerRepository& player_repository);
     void request_play();
+    void cancel_search();
     void set_playing();
     [[nodiscard]] Player& player() noexcept;
     [[nodiscard]] const Player& player() const noexcept;
@@ -29,12 +33,12 @@ public:
     [[nodiscard]] const ClientConnection* connection() const noexcept;
 
 private:
-    static std::string next_username();
-    static Player load_or_create_player(PlayerRepository& player_repository);
+    static Player load_or_create_player(const std::string& username,
+                                        PlayerRepository& player_repository);
 
     std::size_t id_;
     PlayerSessionState state_ = PlayerSessionState::Connected;
-    Player player_;
+    std::optional<Player> player_;
     ClientConnection* connection_;
 };
 
@@ -46,9 +50,19 @@ inline PlayerSessionState PlayerSession::state() const noexcept {
     return state_;
 }
 
+inline bool PlayerSession::has_player() const noexcept {
+    return player_.has_value();
+}
+
 inline void PlayerSession::request_play() {
-    if (state_ == PlayerSessionState::Connected) {
+    if (state_ == PlayerSessionState::Connected && has_player()) {
         state_ = PlayerSessionState::Searching;
+    }
+}
+
+inline void PlayerSession::cancel_search() {
+    if (state_ == PlayerSessionState::Searching) {
+        state_ = PlayerSessionState::Connected;
     }
 }
 
@@ -57,11 +71,11 @@ inline void PlayerSession::set_playing() {
 }
 
 inline Player& PlayerSession::player() noexcept {
-    return player_;
+    return *player_;
 }
 
 inline const Player& PlayerSession::player() const noexcept {
-    return player_;
+    return *player_;
 }
 
 inline ClientConnection* PlayerSession::connection() noexcept {

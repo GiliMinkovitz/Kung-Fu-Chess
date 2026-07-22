@@ -4,19 +4,20 @@
 
 namespace kfc {
 
-PlayerSession::PlayerSession(std::size_t id,
-                             ClientConnection* connection,
-                             PlayerRepository& player_repository)
-    : id_(id), player_(load_or_create_player(player_repository)), connection_(connection) {}
+PlayerSession::PlayerSession(std::size_t id, ClientConnection* connection)
+    : id_(id), connection_(connection) {}
 
-std::string PlayerSession::next_username() {
-    static int next = 1;
-    return "Player" + std::to_string(next++);
+bool PlayerSession::login(const std::string& username, PlayerRepository& player_repository) {
+    if (has_player() || username.empty()) {
+        return false;
+    }
+
+    player_ = load_or_create_player(username, player_repository);
+    return true;
 }
 
-Player PlayerSession::load_or_create_player(PlayerRepository& player_repository) {
-    const std::string username = next_username();
-
+Player PlayerSession::load_or_create_player(const std::string& username,
+                                            PlayerRepository& player_repository) {
     if (const auto existing = player_repository.find_by_username(username)) {
         return *existing;
     }

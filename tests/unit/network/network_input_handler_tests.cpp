@@ -58,6 +58,24 @@ struct ConnectedSession {
 
 }  // namespace
 
+TEST_CASE("NetworkInputHandlerTest - SendsLoginCommand") {
+    ConnectedSession session;
+    REQUIRE(session.handler.send_login("alice"));
+
+    const auto message = poll_server_message(session.server);
+    REQUIRE(message.has_value());
+    CHECK_EQ(*message, "login alice");
+}
+
+TEST_CASE("NetworkInputHandlerTest - SendsPlayCommand") {
+    ConnectedSession session;
+    REQUIRE(session.handler.send_play());
+
+    const auto message = poll_server_message(session.server);
+    REQUIRE(message.has_value());
+    CHECK_EQ(*message, "play");
+}
+
 TEST_CASE("NetworkInputHandlerTest - SendsSelectCommand") {
     ConnectedSession session;
     REQUIRE(session.handler.send_select(1, 2));
@@ -98,6 +116,8 @@ TEST_CASE("NetworkInputHandlerTest - ReturnsFalseWhenDisconnected") {
     kfc::WebSocketClient client{"127.0.0.1", 19877};
     kfc::NetworkInputHandler handler{client};
 
+    CHECK_FALSE(handler.send_login("alice"));
+    CHECK_FALSE(handler.send_play());
     CHECK_FALSE(handler.send_select(0, 0));
     CHECK_FALSE(handler.send_move(0, 1));
     CHECK_FALSE(handler.send_jump(0, 0));

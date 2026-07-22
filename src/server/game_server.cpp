@@ -45,6 +45,57 @@ std::optional<std::size_t> parse_non_negative_int(std::string_view token) {
     return value;
 }
 
+bool parse_play_message(std::string_view message) {
+    while (!message.empty() && std::isspace(static_cast<unsigned char>(message.front()))) {
+        message.remove_prefix(1);
+    }
+    while (!message.empty() && std::isspace(static_cast<unsigned char>(message.back()))) {
+        message.remove_suffix(1);
+    }
+
+    if (message.empty()) {
+        return false;
+    }
+
+    const auto command = next_token(message);
+    if (!command || *command != "play") {
+        return false;
+    }
+    if (next_token(message)) {
+        return false;
+    }
+
+    return true;
+}
+
+std::optional<std::string> parse_login_message(std::string_view message) {
+    while (!message.empty() && std::isspace(static_cast<unsigned char>(message.front()))) {
+        message.remove_prefix(1);
+    }
+    while (!message.empty() && std::isspace(static_cast<unsigned char>(message.back()))) {
+        message.remove_suffix(1);
+    }
+
+    if (message.empty()) {
+        return std::nullopt;
+    }
+
+    const auto command = next_token(message);
+    if (!command || *command != "login") {
+        return std::nullopt;
+    }
+
+    const auto username = next_token(message);
+    if (!username || username->empty()) {
+        return std::nullopt;
+    }
+    if (next_token(message)) {
+        return std::nullopt;
+    }
+
+    return std::string(*username);
+}
+
 std::optional<kfc::GameAction> parse_message(std::string_view message) {
     while (!message.empty() && std::isspace(static_cast<unsigned char>(message.front()))) {
         message.remove_prefix(1);
@@ -158,17 +209,50 @@ void GameServer::accept_new_clients() {
     }
 
     ClientConnection& connection = websocket_server_.clients().back();
-    sessions_.emplace_back(next_session_id_++, &connection, player_repository_);
-    PlayerSession& session = sessions_.back();
-    session.request_play();
-    if (session.state() == PlayerSessionState::Searching) {
-        matchmaking_.enqueue(session);
-    }
+    sessions_.emplace_back(next_session_id_++, &connection);
+}
 
-    if (const auto matched = matchmaking_.try_create_match()) {
-        (*matched)[0]->set_playing();
-        (*matched)[1]->set_playing();
-        room_.activate((*matched)[0], (*matched)[1]);
+void GameServer::process_pending_logins() {
+    for (PlayerSession& session : sessions_) {
+        if (session.state() == PlayerSessionState::Playing ||
+            !session.connection()->is_open()) {
+            continue;
+        }
+
+        if (const auto raw_message = session.connection()->try_read()) {
+            if (session.state() == PlayerSessionState::Searching) {
+                parse_play_message(*raw_message);
+                continue;
+            }
+
+            if (!session.has_player()) {
+                if (const auto username = parse_login_message(*raw_message)) {
+                    session.login(*username, player_repository_);
+                }
+                continue;
+            }
+
+            if (parse_play_message(*raw_message)) {
+                session.request_play();
+                if (session.state() == PlayerSessionState::Searching) {
+                    const auto now = std::chrono::steady_clock::now();
+                    if (const auto matched = matchmaking_.enqueue(session, now)) {
+                        (*matched)[0]->set_playing();
+                        (*matched)[1]->set_playing();
+                        room_.activate((*matched)[0], (*matched)[1]);
+                    }
+                }
+            }
+        }
+    }
+}
+
+void GameServer::process_matchmaking_timeouts() {
+    const auto now = std::chrono::steady_clock::now();
+    for (PlayerSession* session : matchmaking_.check_timeouts(now)) {
+        std::cout << "Matchmaking timeout for session " << session->id() << " (player "
+                  << session->player().username() << ")\n";
+        session->cancel_search();
     }
 }
 
@@ -227,6 +311,8 @@ void GameServer::run() {
 
     while (true) {
         accept_new_clients();
+        process_pending_logins();
+        process_matchmaking_timeouts();
 
         const auto now = std::chrono::steady_clock::now();
         const auto elapsed =

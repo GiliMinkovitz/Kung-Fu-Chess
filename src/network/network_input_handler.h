@@ -3,6 +3,7 @@
 #include "network/websocket_client.h"
 
 #include <cstddef>
+#include <string>
 
 namespace kfc {
 
@@ -12,6 +13,8 @@ class NetworkInputHandler {
 public:
     explicit NetworkInputHandler(WebSocketClient& client);
 
+    bool send_login(const std::string& username);
+    bool send_play();
     bool send_select(std::size_t row, std::size_t col);
     bool send_move(std::size_t row, std::size_t col);
     bool send_jump(std::size_t row, std::size_t col);

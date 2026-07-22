@@ -15,6 +15,7 @@
 #include <iostream>
 #include <memory>
 #include <optional>
+#include <string>
 #include <string_view>
 #include <thread>
 
@@ -210,6 +211,11 @@ int run_offline_gui() {
 int run_network_gui() {
     kfc::WebSocketClient client("127.0.0.1", kServerPort);
     client.connect();
+
+    static int next_player = 1;
+    kfc::NetworkInputHandler login_handler(client);
+    login_handler.send_login("Player" + std::to_string(next_player++));
+    login_handler.send_play();
 
     auto renderer = std::make_unique<kfc::Ctd26Renderer>();
     kfc::Ctd26Renderer* renderer_ptr = renderer.get();

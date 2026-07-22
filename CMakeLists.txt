@@ -294,6 +294,7 @@ set(KFC_TEST_SOURCES
     tests/unit/network/network_input_handler_tests.cpp
     tests/unit/database/sqlite_database_tests.cpp
     tests/unit/database/player_repository_tests.cpp
+    tests/unit/server/matchmaking_tests.cpp
     tests/integration/integration_test.cpp
 )
 
