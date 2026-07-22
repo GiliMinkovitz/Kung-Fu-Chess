@@ -164,8 +164,14 @@ endfunction()
 
 function(kfc_link_sqlite target)
     find_package(SQLite3 QUIET)
-    if(SQLite3_FOUND)
+    if(TARGET SQLite3::SQLite3)
         target_link_libraries(${target} PRIVATE SQLite3::SQLite3)
+        return()
+    endif()
+
+    if(SQLite3_FOUND AND SQLite3_LIBRARIES)
+        target_include_directories(${target} PRIVATE ${SQLite3_INCLUDE_DIRS})
+        target_link_libraries(${target} PRIVATE ${SQLite3_LIBRARIES})
         return()
     endif()
 
