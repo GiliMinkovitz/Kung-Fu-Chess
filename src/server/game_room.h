@@ -12,6 +12,7 @@ public:
 
     [[nodiscard]] bool active() const noexcept;
     void activate(PlayerSession* white, PlayerSession* black);
+    void reset();
 
     [[nodiscard]] bool contains(const PlayerSession* session) const noexcept;
     [[nodiscard]] PlayerSession* white_player() noexcept;
@@ -23,6 +24,7 @@ public:
     [[nodiscard]] const Match& match() const noexcept;
 
 private:
+    BoardModel default_board_;
     Match match_;
     bool active_ = false;
     PlayerSession* white_player_ = nullptr;

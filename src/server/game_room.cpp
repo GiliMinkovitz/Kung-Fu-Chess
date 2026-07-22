@@ -2,7 +2,8 @@
 
 namespace kfc {
 
-GameRoom::GameRoom(BoardModel board) : match_(std::move(board)) {}
+GameRoom::GameRoom(BoardModel board)
+    : default_board_(board), match_(std::move(board)) {}
 
 bool GameRoom::active() const noexcept {
     return active_;
@@ -12,6 +13,13 @@ void GameRoom::activate(PlayerSession* white, PlayerSession* black) {
     white_player_ = white;
     black_player_ = black;
     active_ = true;
+}
+
+void GameRoom::reset() {
+    active_ = false;
+    white_player_ = nullptr;
+    black_player_ = nullptr;
+    match_ = Match(default_board_);
 }
 
 bool GameRoom::contains(const PlayerSession* session) const noexcept {

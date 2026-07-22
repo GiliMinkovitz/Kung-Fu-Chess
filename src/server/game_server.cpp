@@ -184,12 +184,26 @@ void GameServer::process_active_room(std::int64_t elapsed,
     }
 }
 
+void GameServer::finish_active_room() {
+    PlayerSession* white = room_.white_player();
+    PlayerSession* black = room_.black_player();
+
+    room_.reset();
+
+    if (white != nullptr) {
+        white->connection()->close();
+    }
+    if (black != nullptr) {
+        black->connection()->close();
+    }
+}
+
 void GameServer::run() {
     std::cout << "Server started\n";
 
     auto last_tick = std::chrono::steady_clock::now();
 
-    while (!room_.active() || !room_.match().is_game_over()) {
+    while (true) {
         accept_new_clients();
 
         const auto now = std::chrono::steady_clock::now();
@@ -198,6 +212,9 @@ void GameServer::run() {
 
         if (room_.active()) {
             process_active_room(elapsed, last_tick);
+            if (room_.match().is_game_over()) {
+                finish_active_room();
+            }
         }
 
         prune_sessions();

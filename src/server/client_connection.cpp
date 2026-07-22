@@ -86,4 +86,14 @@ bool ClientConnection::try_send(const std::string& message) {
     return true;
 }
 
+void ClientConnection::close() {
+    if (!open_) {
+        return;
+    }
+
+    beast::error_code close_ec;
+    beast::get_lowest_layer(ws_).close(close_ec);
+    open_ = false;
+}
+
 }  // namespace kfc

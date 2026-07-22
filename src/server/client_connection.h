@@ -17,6 +17,7 @@ public:
 
     std::optional<std::string> try_read();
     bool try_send(const std::string& message);
+    void close();
 
 private:
     boost::beast::websocket::stream<boost::asio::ip::tcp::socket> ws_;
