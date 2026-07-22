@@ -5,7 +5,8 @@
   "description": "Boost dependencies for Kung Fu Chess networking (Asio/Beast).",
   "dependencies": [
     "boost-beast",
-    "boost-system"
+    "boost-system",
+    "sqlite3"
   ],
   "builtin-baseline": "3ddaad9be959816602453ecb05533f8732464ef4"
 }

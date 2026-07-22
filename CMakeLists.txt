@@ -4,7 +4,7 @@ cmake_minimum_required(VERSION 3.16)
 # "windows-vcpkg", or pass -DCMAKE_TOOLCHAIN_FILE=%VCPKG_ROOT%/scripts/buildsystems/vcpkg.cmake
 # before the first project() call. Linux/WSL builds omit the vcpkg toolchain and use system Boost.
 
-project(KungFuChess VERSION 0.1.0 LANGUAGES CXX)
+project(KungFuChess VERSION 0.1.0 LANGUAGES CXX C)
 
 message(STATUS "Source directory is: ${CMAKE_SOURCE_DIR}")
 file(GLOB_RECURSE ALL_FILES "${CMAKE_SOURCE_DIR}/src/*")
@@ -47,6 +47,10 @@ set(KFC_NETWORK_SOURCES
 set(KFC_SERVER_WEBSOCKET_SOURCES
     src/server/client_connection.cpp
     src/server/websocket_server.cpp
+)
+
+set(KFC_DATABASE_SOURCES
+    src/database/sqlite_database.cpp
 )
 
 set(KFC_CTD26_INCLUDE_DIR "${CMAKE_SOURCE_DIR}/third_party/CTD26/cpp/src")
@@ -151,6 +155,34 @@ function(kfc_link_boost target)
     endif()
 endfunction()
 
+function(kfc_link_sqlite target)
+    find_package(SQLite3 QUIET)
+    if(SQLite3_FOUND)
+        target_link_libraries(${target} PRIVATE SQLite3::SQLite3)
+        return()
+    endif()
+
+    set(KFC_SQLITE_AMALG_DIR "${CMAKE_SOURCE_DIR}/third_party/sqlite")
+    if(EXISTS "${KFC_SQLITE_AMALG_DIR}/sqlite3.c")
+        if(NOT TARGET kfc_sqlite3)
+            message(STATUS "Using bundled SQLite amalgamation from ${KFC_SQLITE_AMALG_DIR}")
+            add_library(kfc_sqlite3 STATIC "${KFC_SQLITE_AMALG_DIR}/sqlite3.c")
+            target_include_directories(kfc_sqlite3 PUBLIC "${KFC_SQLITE_AMALG_DIR}")
+            if(MSVC)
+                target_compile_options(kfc_sqlite3 PRIVATE /W0)
+            else()
+                target_compile_options(kfc_sqlite3 PRIVATE -w)
+            endif()
+        endif()
+        target_link_libraries(${target} PRIVATE kfc_sqlite3)
+        return()
+    endif()
+
+    message(FATAL_ERROR
+        "SQLite3 not found. Install libsqlite3-dev (Linux/WSL), add sqlite3 via vcpkg (Windows), "
+        "or vendor the amalgamation at third_party/sqlite/sqlite3.c")
+endfunction()
+
 if(MSVC)
     target_compile_options(KungFuChessServer PRIVATE /W4 /permissive-)
 else()
@@ -241,6 +273,7 @@ set(KFC_TEST_SOURCES
     tests/unit/network/websocket_client_tests.cpp
     tests/unit/network/snapshot_reader_tests.cpp
     tests/unit/network/network_input_handler_tests.cpp
+    tests/unit/database/sqlite_database_tests.cpp
     tests/integration/integration_test.cpp
 )
 
@@ -249,6 +282,7 @@ add_executable(KungFuChessTests
     ${KFC_SOURCES}
     ${KFC_NETWORK_SOURCES}
     ${KFC_SERVER_WEBSOCKET_SOURCES}
+    ${KFC_DATABASE_SOURCES}
     src/server/snapshot_writer.cpp
 )
 
@@ -258,6 +292,7 @@ target_include_directories(KungFuChessTests PRIVATE
 )
 
 kfc_link_boost(KungFuChessTests)
+kfc_link_sqlite(KungFuChessTests)
 
 if(MSVC)
     target_compile_options(${PROJECT_NAME} PRIVATE /W4 /permissive-)
