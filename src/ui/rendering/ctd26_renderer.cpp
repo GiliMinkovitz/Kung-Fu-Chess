@@ -216,6 +216,10 @@ BoardLayout Ctd26Renderer::board_layout() const {
     return layout_;
 }
 
+void Ctd26Renderer::set_overlay_text(std::optional<std::string_view> text) noexcept {
+    overlay_text_ = text;
+}
+
 UiFrameResult Ctd26Renderer::present(const BoardViewModel& view) {
     if (!initialized_ || impl_ == nullptr || impl_->frame == nullptr || impl_->board_background == nullptr) {
         return {true};
@@ -245,6 +249,12 @@ UiFrameResult Ctd26Renderer::present(const BoardViewModel& view) {
         draw_game_over_banner(view.game_over);
     } catch (const std::exception& ex) {
         log_render_diag_exception("Ctd26Renderer::present->draw_game_over_banner", ex);
+        throw;
+    }
+    try {
+        draw_status_overlay();
+    } catch (const std::exception& ex) {
+        log_render_diag_exception("Ctd26Renderer::present->draw_status_overlay", ex);
         throw;
     }
 
@@ -472,6 +482,16 @@ void Ctd26Renderer::draw_game_over_banner(bool game_over) {
     impl_->frame->put_text("GAME OVER", layout_.game_over_text_x(), layout_.game_over_text_y(),
                            layout_.game_over_font_scale(), to_scalar(theme_.game_over_text),
                            layout_.game_over_font_thickness());
+}
+
+void Ctd26Renderer::draw_status_overlay() {
+    if (!overlay_text_.has_value()) {
+        return;
+    }
+
+    impl_->frame->put_text(std::string(*overlay_text_), layout_.game_over_text_x(),
+                           layout_.game_over_text_y(), layout_.game_over_font_scale(),
+                           to_scalar(theme_.black_token), layout_.game_over_font_thickness());
 }
 
 }  // namespace kfc

@@ -8,6 +8,9 @@
 #include "ui/view/piece_sprite_selector.h"
 
 #include <memory>
+#include <optional>
+#include <string_view>
+
 namespace kfc {
 
 struct Ctd26RendererImpl;
@@ -24,6 +27,7 @@ public:
     void init(int window_width, int window_height, std::size_t rows, std::size_t cols) override;
     void attach_input_sink(IUiInputSink* sink) override;
     [[nodiscard]] BoardLayout board_layout() const override;
+    void set_overlay_text(std::optional<std::string_view> text) noexcept;
     UiFrameResult present(const BoardViewModel& view) override;
     void shutdown() override;
 
@@ -41,6 +45,7 @@ private:
     void draw_moving_pieces(const BoardViewModel& view);
     void draw_jumping_pieces(const BoardViewModel& view);
     void draw_game_over_banner(bool game_over);
+    void draw_status_overlay();
 
     ThemeConfig theme_config_;
     UiTheme theme_;
@@ -53,6 +58,7 @@ private:
     int board_height_cells_ = 0;
     bool initialized_ = false;
     IUiInputSink* input_sink_ = nullptr;
+    std::optional<std::string_view> overlay_text_;
     std::unique_ptr<Ctd26RendererImpl> impl_;
 };
 

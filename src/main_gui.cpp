@@ -189,6 +189,31 @@ struct NetworkGuiState {
     kfc::MatchmakingState matchmaking{kfc::MatchmakingState::Idle};
 };
 
+[[nodiscard]] std::optional<std::string_view> matchmaking_overlay_text(
+    kfc::MatchmakingState state) {
+    switch (state) {
+        case kfc::MatchmakingState::Idle:
+            return std::nullopt;
+        case kfc::MatchmakingState::Searching:
+            return "Searching for opponent...";
+        case kfc::MatchmakingState::MatchedWhite:
+            return "Match found - You are White";
+        case kfc::MatchmakingState::MatchedBlack:
+            return "Match found - You are Black";
+        case kfc::MatchmakingState::Timeout:
+            return "No players available";
+    }
+    return std::nullopt;
+}
+
+[[nodiscard]] kfc::BoardViewModel empty_waiting_board_view() {
+    kfc::BoardViewModel view;
+    view.height = kDefaultBoardRows;
+    view.width = kDefaultBoardCols;
+    view.cells.assign(kDefaultBoardRows * kDefaultBoardCols, kfc::CellView{});
+    return view;
+}
+
 void handle_network_message(const std::string& message,
                             std::optional<kfc::BoardViewModel>& latest_view,
                             NetworkGuiState& gui_state) {
@@ -242,18 +267,37 @@ int run_network_gui() {
 
     std::optional<kfc::BoardViewModel> latest_view;
     NetworkGuiState gui_state;
+    const kfc::BoardViewModel waiting_board_view = empty_waiting_board_view();
+    auto last_frame = std::chrono::steady_clock::now();
     while (!latest_view.has_value()) {
         if (const std::optional<std::string> message = client.try_receive_snapshot()) {
             handle_network_message(*message, latest_view, gui_state);
         }
-        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+
+        renderer_ptr->set_overlay_text(matchmaking_overlay_text(gui_state.matchmaking));
+
+        const auto now = std::chrono::steady_clock::now();
+        const auto elapsed =
+            std::chrono::duration_cast<std::chrono::milliseconds>(now - last_frame).count();
+        if (elapsed >= kfc::kTargetFrameMs) {
+            if (!controller.present(waiting_board_view).should_continue) {
+                controller.shutdown();
+                client.disconnect();
+                return 0;
+            }
+            last_frame = now;
+        } else {
+            std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        }
     }
+
+    renderer_ptr->set_overlay_text(std::nullopt);
 
     kfc::NetworkInputHandler network_input(client);
     NetworkGuiInputSink input_sink(network_input, *latest_view, renderer_ptr->board_layout());
     renderer_ptr->attach_input_sink(&input_sink);
 
-    auto last_frame = std::chrono::steady_clock::now();
+    last_frame = std::chrono::steady_clock::now();
 
     while (true) {
         if (const std::optional<std::string> message = client.try_receive_snapshot()) {
