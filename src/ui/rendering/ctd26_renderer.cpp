@@ -220,6 +220,101 @@ void Ctd26Renderer::set_overlay_text(std::optional<std::string_view> text) noexc
     overlay_text_ = text;
 }
 
+LoginScreenLayout Ctd26Renderer::login_screen_layout() const noexcept {
+    return compute_login_screen_layout();
+}
+
+LoginScreenLayout Ctd26Renderer::compute_login_screen_layout() const noexcept {
+    LoginScreenLayout layout;
+    layout.input_w = std::max(200, window_width_ / 2);
+    layout.input_h = std::max(28, window_height_ / 20);
+    layout.input_x = (window_width_ - layout.input_w) / 2;
+    layout.input_y = window_height_ / 2;
+
+    layout.button_w = std::max(100, window_width_ / 6);
+    layout.button_h = layout.input_h;
+    layout.button_x = (window_width_ - layout.button_w) / 2;
+    layout.button_y = layout.input_y + layout.input_h + std::max(20, window_height_ / 15);
+    return layout;
+}
+
+void Ctd26Renderer::handle_login_key(int key, std::string& username) const {
+    if (key < 0) {
+        return;
+    }
+
+    const int ascii_key = key & 0xFF;
+    if (ascii_key == 8 || ascii_key == 127) {
+        if (!username.empty()) {
+            username.pop_back();
+        }
+        return;
+    }
+
+    if (ascii_key >= 32 && ascii_key <= 126 && username.size() < 32) {
+        username.push_back(static_cast<char>(ascii_key));
+    }
+}
+
+void Ctd26Renderer::draw_login_screen(const std::string& username) {
+    const LoginScreenLayout layout = compute_login_screen_layout();
+    const double label_scale = layout_.game_over_font_scale();
+    const int label_thickness = layout_.game_over_font_thickness();
+    const cv::Scalar label_color = to_scalar(theme_.black_token);
+    const cv::Scalar border_color = to_scalar(theme_.black_token);
+    const cv::Scalar button_fill = cv::Scalar(70, 130, 70);
+    const cv::Scalar placeholder_color = cv::Scalar(140, 140, 140);
+
+    const int title_y = std::max(40, window_height_ / 6);
+    impl_->frame->put_text("Kung Fu Chess", layout_.game_over_text_x(), title_y, label_scale * 1.4,
+                           label_color, label_thickness);
+
+    const int username_label_y = layout.input_y - std::max(8, layout.input_h / 4);
+    impl_->frame->put_text("Username:", layout.input_x, username_label_y, label_scale, label_color,
+                           label_thickness);
+
+    impl_->frame->rectangle(layout.input_x, layout.input_y, layout.input_w, layout.input_h,
+                            border_color, 2);
+
+    const int text_x = layout.input_x + std::max(8, layout.input_w / 30);
+    const int text_y = layout.input_y + layout.input_h - std::max(8, layout.input_h / 5);
+    if (username.empty()) {
+        impl_->frame->put_text("Player1", text_x, text_y, label_scale, placeholder_color,
+                               label_thickness);
+    } else {
+        impl_->frame->put_text(username, text_x, text_y, label_scale, label_color,
+                               label_thickness);
+    }
+
+    impl_->frame->rectangle(layout.button_x, layout.button_y, layout.button_w, layout.button_h,
+                            button_fill, -1);
+    impl_->frame->rectangle(layout.button_x, layout.button_y, layout.button_w, layout.button_h,
+                            border_color, 2);
+
+    const int play_text_x = layout.button_x + layout.button_w / 4;
+    const int play_text_y = layout.button_y + layout.button_h - std::max(8, layout.button_h / 5);
+    impl_->frame->put_text("PLAY", play_text_x, play_text_y, label_scale, label_color,
+                           label_thickness);
+}
+
+UiFrameResult Ctd26Renderer::present_login_screen(std::string& username) {
+    if (!initialized_ || impl_ == nullptr || impl_->frame == nullptr) {
+        return {true};
+    }
+
+    impl_->frame->create(window_width_, window_height_, to_scalar(theme_.frame_background));
+    draw_login_screen(username);
+    impl_->frame->show_in(kWindowName);
+
+    const int key = Img::poll_key(1);
+    if (key == 27) {
+        return {false};
+    }
+
+    handle_login_key(key, username);
+    return {true};
+}
+
 UiFrameResult Ctd26Renderer::present(const BoardViewModel& view) {
     if (!initialized_ || impl_ == nullptr || impl_->frame == nullptr || impl_->board_background == nullptr) {
         return {true};

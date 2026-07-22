@@ -9,11 +9,23 @@
 
 #include <memory>
 #include <optional>
+#include <string>
 #include <string_view>
 
 namespace kfc {
 
 struct Ctd26RendererImpl;
+
+struct LoginScreenLayout {
+    int input_x = 0;
+    int input_y = 0;
+    int input_w = 0;
+    int input_h = 0;
+    int button_x = 0;
+    int button_y = 0;
+    int button_w = 0;
+    int button_h = 0;
+};
 
 class Ctd26Renderer final : public IUiRenderer {
 public:
@@ -28,6 +40,8 @@ public:
     void attach_input_sink(IUiInputSink* sink) override;
     [[nodiscard]] BoardLayout board_layout() const override;
     void set_overlay_text(std::optional<std::string_view> text) noexcept;
+    [[nodiscard]] LoginScreenLayout login_screen_layout() const noexcept;
+    UiFrameResult present_login_screen(std::string& username);
     UiFrameResult present(const BoardViewModel& view) override;
     void shutdown() override;
 
@@ -46,6 +60,9 @@ private:
     void draw_jumping_pieces(const BoardViewModel& view);
     void draw_game_over_banner(bool game_over);
     void draw_status_overlay();
+    void draw_login_screen(const std::string& username);
+    [[nodiscard]] LoginScreenLayout compute_login_screen_layout() const noexcept;
+    void handle_login_key(int key, std::string& username) const;
 
     ThemeConfig theme_config_;
     UiTheme theme_;
