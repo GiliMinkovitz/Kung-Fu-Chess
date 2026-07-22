@@ -1,5 +1,7 @@
 #include "game_state.h"
 
+#include "../model/piece_token.h"
+
 #include <algorithm>
 #include <type_traits>
 #include <variant>
@@ -17,6 +19,36 @@ std::string GameState::token_at(std::size_t row, std::size_t col) const {
 
 bool GameState::same_board_layout_as(const GameState& other) const noexcept {
     return board_ == other.board_;
+}
+
+std::optional<PieceColor> GameState::winning_color() const {
+    if (!game_over_) {
+        return std::nullopt;
+    }
+
+    const std::string white_king = to_token(PieceColor::White, PieceKind::King);
+    const std::string black_king = to_token(PieceColor::Black, PieceKind::King);
+    bool white_king_present = false;
+    bool black_king_present = false;
+
+    for (std::size_t row = 0; row < rows(); ++row) {
+        for (std::size_t col = 0; col < cols(); ++col) {
+            const std::string token = token_at(row, col);
+            if (token == white_king) {
+                white_king_present = true;
+            } else if (token == black_king) {
+                black_king_present = true;
+            }
+        }
+    }
+
+    if (white_king_present && !black_king_present) {
+        return PieceColor::White;
+    }
+    if (black_king_present && !white_king_present) {
+        return PieceColor::Black;
+    }
+    return std::nullopt;
 }
 
 // --- Selection & piece queries ---

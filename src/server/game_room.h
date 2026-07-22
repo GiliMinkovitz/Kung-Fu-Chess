@@ -1,8 +1,11 @@
 #pragma once
 
+#include "database/game_repository.h"
 #include "model/board_model.h"
 #include "server/match.h"
 #include "server/player_session.h"
+
+#include <optional>
 
 namespace kfc {
 
@@ -11,8 +14,9 @@ public:
     explicit GameRoom(BoardModel board);
 
     [[nodiscard]] bool active() const noexcept;
-    void activate(PlayerSession* white, PlayerSession* black);
+    void activate(PlayerSession* white, PlayerSession* black, GameRepository& game_repository);
     void reset();
+    [[nodiscard]] std::optional<int> db_game_id() const noexcept;
 
     [[nodiscard]] bool contains(const PlayerSession* session) const noexcept;
     [[nodiscard]] Player* white_player() noexcept;
@@ -33,6 +37,7 @@ private:
     bool active_ = false;
     PlayerSession* white_player_ = nullptr;
     PlayerSession* black_player_ = nullptr;
+    std::optional<int> db_game_id_;
 };
 
 }  // namespace kfc

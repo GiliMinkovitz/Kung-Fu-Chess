@@ -9,17 +9,24 @@ bool GameRoom::active() const noexcept {
     return active_;
 }
 
-void GameRoom::activate(PlayerSession* white, PlayerSession* black) {
+void GameRoom::activate(PlayerSession* white, PlayerSession* black,
+                        GameRepository& game_repository) {
     white_player_ = white;
     black_player_ = black;
     active_ = true;
+    db_game_id_ = game_repository.create_game(white->player().id(), black->player().id());
 }
 
 void GameRoom::reset() {
     active_ = false;
     white_player_ = nullptr;
     black_player_ = nullptr;
+    db_game_id_.reset();
     match_ = Match(default_board_);
+}
+
+std::optional<int> GameRoom::db_game_id() const noexcept {
+    return db_game_id_;
 }
 
 bool GameRoom::contains(const PlayerSession* session) const noexcept {

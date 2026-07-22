@@ -5,6 +5,7 @@
 #include "server/player_session.h"
 #include "server/websocket_server.h"
 
+#include "database/game_repository.h"
 #include "database/player_repository.h"
 #include "database/sqlite_database.h"
 #include "model/board_model.h"
@@ -27,6 +28,7 @@ public:
     [[nodiscard]] GameRoom& room() noexcept;
     [[nodiscard]] SqliteDatabase& database() noexcept;
     [[nodiscard]] PlayerRepository& player_repository() noexcept;
+    [[nodiscard]] GameRepository& game_repository() noexcept;
 
 private:
     void accept_new_clients();
@@ -41,6 +43,7 @@ private:
     GameRoom room_;
     SqliteDatabase database_;
     PlayerRepository player_repository_;
+    GameRepository game_repository_;
     std::list<PlayerSession> sessions_;
     std::size_t next_session_id_ = 0;
 };

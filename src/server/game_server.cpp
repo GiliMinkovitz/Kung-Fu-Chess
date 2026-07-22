@@ -2,6 +2,7 @@
 
 #include "logic/game_action.h"
 #include "model/game_config.h"
+#include "model/piece.h"
 #include "server/snapshot_writer.h"
 #include "ui/view/board_view_builder.h"
 
@@ -171,7 +172,8 @@ GameServer::GameServer(unsigned short port, BoardModel default_board, const std:
     : websocket_server_(port),
       room_(std::move(default_board)),
       database_(db_path),
-      player_repository_(database_) {
+      player_repository_(database_),
+      game_repository_(database_) {
     if (!database_.open() || !database_.initialize_schema()) {
         throw std::runtime_error("Failed to initialize database");
     }
@@ -195,6 +197,10 @@ SqliteDatabase& GameServer::database() noexcept {
 
 PlayerRepository& GameServer::player_repository() noexcept {
     return player_repository_;
+}
+
+GameRepository& GameServer::game_repository() noexcept {
+    return game_repository_;
 }
 
 void GameServer::accept_new_clients() {
@@ -241,7 +247,7 @@ void GameServer::process_pending_logins() {
                         (*matched)[1]->connection()->try_send("match_found black");
                         (*matched)[0]->set_playing();
                         (*matched)[1]->set_playing();
-                        room_.activate((*matched)[0], (*matched)[1]);
+                        room_.activate((*matched)[0], (*matched)[1], game_repository_);
                     } else {
                         session.connection()->try_send("searching");
                     }
@@ -296,6 +302,16 @@ void GameServer::process_active_room(std::int64_t elapsed,
 }
 
 void GameServer::finish_active_room() {
+    if (const std::optional<int> game_id = room_.db_game_id()) {
+        if (const std::optional<PieceColor> winner_color = room_.match().state().winning_color()) {
+            const Player* winner =
+                *winner_color == PieceColor::White ? room_.white_player() : room_.black_player();
+            if (winner != nullptr) {
+                game_repository_.finish_game(*game_id, winner->id());
+            }
+        }
+    }
+
     PlayerSession* white = room_.white_session();
     PlayerSession* black = room_.black_session();
 

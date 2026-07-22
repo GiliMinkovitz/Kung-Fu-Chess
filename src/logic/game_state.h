@@ -3,6 +3,7 @@
 #include "game_action.h"
 
 #include "../model/board_model.h"
+#include "../model/piece.h"
 #include "../realtime/render_snapshot.h"
 #include "../rules/game_rules.h"
 #include "../realtime/real_time_arbiter.h"
@@ -38,6 +39,7 @@ public:
     [[nodiscard]] std::int64_t clock_ms() const noexcept { return arbiter_.clock_ms(); }
     [[nodiscard]] bool has_selection() const noexcept { return selected_.has_value(); }
     [[nodiscard]] bool is_game_over() const noexcept { return game_over_; }
+    [[nodiscard]] std::optional<PieceColor> winning_color() const;
     [[nodiscard]] bool same_board_layout_as(const GameState& other) const noexcept;
 
     [[nodiscard]] bool selection(std::size_t& row, std::size_t& col) const;

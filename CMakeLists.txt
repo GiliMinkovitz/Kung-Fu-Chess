@@ -61,6 +61,7 @@ set(KFC_SERVER_ARCH_SOURCES
 set(KFC_DATABASE_SOURCES
     src/database/sqlite_database.cpp
     src/database/player_repository.cpp
+    src/database/game_repository.cpp
 )
 
 set(KFC_CTD26_INCLUDE_DIR "${CMAKE_SOURCE_DIR}/third_party/CTD26/cpp/src")
