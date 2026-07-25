@@ -368,4 +368,18 @@ std::optional<BoardViewModel> read_snapshot(std::string_view text) {
     return view;
 }
 
+#ifdef KFC_TEST_BUILD
+namespace test {
+
+std::optional<std::int64_t> snapshot_parse_int64_for_tests(std::string_view token) {
+    return parse_int64(token);
+}
+
+std::optional<float> snapshot_parse_float_for_tests(std::string_view token) {
+    return parse_float(token);
+}
+
+}  // namespace test
+#endif
+
 }  // namespace kfc

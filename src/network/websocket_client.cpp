@@ -1,5 +1,9 @@
 #include "network/websocket_client.h"
 
+#ifdef KFC_TEST_BUILD
+#include "test/socket_test_hooks.h"
+#endif
+
 #include <iostream>
 
 namespace beast = boost::beast;
@@ -55,8 +59,6 @@ void WebSocketClient::disconnect() {
         return;
     }
 
-    // Close the TCP socket directly. A graceful websocket close would block until
-    // the peer reads and responds, which our server only does in its poll loop.
     beast::error_code close_ec;
     beast::get_lowest_layer(*ws_).close(close_ec);
     ws_.reset();
@@ -69,7 +71,15 @@ bool WebSocketClient::try_send(const std::string& message) {
     }
 
     beast::error_code write_ec;
-    ws_->write(net::buffer(message), write_ec);
+#ifdef KFC_TEST_BUILD
+    if (test::SocketTestHooks::next_write_error) {
+        write_ec = *test::SocketTestHooks::next_write_error;
+        test::SocketTestHooks::next_write_error.reset();
+    } else
+#endif
+    {
+        ws_->write(net::buffer(message), write_ec);
+    }
 
     if (write_ec == net::error::would_block) {
         return false;
@@ -96,7 +106,17 @@ std::optional<std::string> WebSocketClient::try_receive_snapshot() {
     auto& socket = beast::get_lowest_layer(*ws_);
 
     beast::error_code avail_ec;
-    const std::size_t available_bytes = socket.available(avail_ec);
+    std::size_t available_bytes = 0;
+#ifdef KFC_TEST_BUILD
+    if (test::SocketTestHooks::next_avail_error) {
+        avail_ec = *test::SocketTestHooks::next_avail_error;
+        test::SocketTestHooks::next_avail_error.reset();
+    } else
+#endif
+    {
+        available_bytes = socket.available(avail_ec);
+    }
+
     if (avail_ec) {
         std::cerr << "[CLIENT-DIAG] try_receive_snapshot() available error: "
                   << avail_ec.message() << " (" << avail_ec.value() << ")\n";
@@ -105,12 +125,18 @@ std::optional<std::string> WebSocketClient::try_receive_snapshot() {
     }
 
     if (available_bytes == 0) {
-        // Avoid synchronous websocket reads on an empty buffer (that poisons Beast
-        // stream state). Probe closure at the TCP layer instead.
         const bool was_non_blocking = socket.non_blocking();
         if (!was_non_blocking) {
             beast::error_code nb_ec;
-            socket.non_blocking(true, nb_ec);
+#ifdef KFC_TEST_BUILD
+            if (test::SocketTestHooks::force_non_blocking_error) {
+                nb_ec = net::error::operation_not_supported;
+                test::SocketTestHooks::force_non_blocking_error = false;
+            } else
+#endif
+            {
+                socket.non_blocking(true, nb_ec);
+            }
             if (nb_ec) {
                 connected_ = false;
                 return std::nullopt;
@@ -119,8 +145,19 @@ std::optional<std::string> WebSocketClient::try_receive_snapshot() {
 
         beast::error_code peek_ec;
         char byte = 0;
-        const std::size_t peeked = socket.receive(
-            net::buffer(&byte, 1), net::socket_base::message_peek, peek_ec);
+        std::size_t peeked = 0;
+#ifdef KFC_TEST_BUILD
+        if (test::SocketTestHooks::next_peek_error) {
+            peek_ec = *test::SocketTestHooks::next_peek_error;
+            peeked = test::SocketTestHooks::forced_peeked.value_or(0);
+            test::SocketTestHooks::next_peek_error.reset();
+            test::SocketTestHooks::forced_peeked.reset();
+        } else
+#endif
+        {
+            peeked = socket.receive(
+                net::buffer(&byte, 1), net::socket_base::message_peek, peek_ec);
+        }
 
         if (!was_non_blocking) {
             beast::error_code blocking_ec;
@@ -149,7 +186,15 @@ std::optional<std::string> WebSocketClient::try_receive_snapshot() {
 
     beast::flat_buffer buffer;
     beast::error_code read_ec;
-    ws_->read(buffer, read_ec);
+#ifdef KFC_TEST_BUILD
+    if (test::SocketTestHooks::next_read_error) {
+        read_ec = *test::SocketTestHooks::next_read_error;
+        test::SocketTestHooks::next_read_error.reset();
+    } else
+#endif
+    {
+        ws_->read(buffer, read_ec);
+    }
 
     if (read_ec == websocket::error::closed || read_ec == net::error::eof ||
         read_ec == net::error::connection_reset) {
