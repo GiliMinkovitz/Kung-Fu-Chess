@@ -18,8 +18,11 @@ public:
     std::optional<std::string> try_read();
     bool try_send(const std::string& message);
     void close();
+    void probe_disconnect();
 
 private:
+    bool detect_peer_disconnect();
+
     boost::beast::websocket::stream<boost::asio::ip::tcp::socket> ws_;
     bool open_ = true;
     bool initial_snapshot_sent_ = false;

@@ -13,6 +13,9 @@ class Matchmaking {
 public:
     static constexpr int kMaxRatingDifference = 100;
     static constexpr std::chrono::seconds kQueueTimeout{60};
+#ifdef KFC_TEST_BUILD
+    void set_queue_timeout(std::chrono::milliseconds timeout) { queue_timeout_ = timeout; }
+#endif
 
     struct WaitingEntry {
         PlayerSession* session;
@@ -35,6 +38,9 @@ private:
     [[nodiscard]] static bool is_eligible(const PlayerSession& session);
 
     std::vector<WaitingEntry> waiting_;
+#ifdef KFC_TEST_BUILD
+    std::chrono::milliseconds queue_timeout_{kQueueTimeout};
+#endif
 };
 
 }  // namespace kfc

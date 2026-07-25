@@ -38,6 +38,9 @@ std::optional<int> GameRoom::db_game_id() const noexcept {
 }
 
 bool GameRoom::contains(const PlayerSession* session) const noexcept {
+    if (session == nullptr) {
+        return false;
+    }
     return session == white_player_ || session == black_player_;
 }
 

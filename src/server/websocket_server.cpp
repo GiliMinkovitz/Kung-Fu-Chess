@@ -52,6 +52,7 @@ void WebSocketServer::prune_disconnected() {
     const std::size_t before = clients_.size();
 
     for (auto it = clients_.begin(); it != clients_.end();) {
+        it->probe_disconnect();
         if (!it->is_open()) {
             it = clients_.erase(it);
         } else {
@@ -70,5 +71,12 @@ void WebSocketServer::broadcast(const std::string& message) {
         client.try_send(message);
     }
 }
+
+#ifdef KFC_TEST_BUILD
+void WebSocketServer::close_acceptor_for_tests() {
+    beast::error_code close_ec;
+    acceptor_.close(close_ec);
+}
+#endif
 
 }  // namespace kfc

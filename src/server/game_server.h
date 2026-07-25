@@ -22,6 +22,10 @@ public:
     GameServer(unsigned short port, BoardModel default_board, const std::string& db_path = "kfc.db");
 
     void run();
+    void tick_once();
+#ifdef KFC_TEST_BUILD
+    void request_stop() noexcept { stop_requested_ = true; }
+#endif
 
     [[nodiscard]] WebSocketServer& websocket_server() noexcept;
     [[nodiscard]] Matchmaking& matchmaking() noexcept;
@@ -46,6 +50,10 @@ private:
     GameRepository game_repository_;
     std::list<PlayerSession> sessions_;
     std::size_t next_session_id_ = 0;
+    std::chrono::steady_clock::time_point last_tick_{};
+#ifdef KFC_TEST_BUILD
+    bool stop_requested_ = false;
+#endif
 };
 
 }  // namespace kfc

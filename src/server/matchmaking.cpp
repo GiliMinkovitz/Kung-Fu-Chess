@@ -47,7 +47,12 @@ std::vector<PlayerSession*> Matchmaking::check_timeouts(
             continue;
         }
 
-        if (now - it->enqueue_time >= kQueueTimeout) {
+#ifdef KFC_TEST_BUILD
+        const auto timeout = queue_timeout_;
+#else
+        const auto timeout = kQueueTimeout;
+#endif
+        if (now - it->enqueue_time >= timeout) {
             timed_out.push_back(it->session);
             it = waiting_.erase(it);
         } else {

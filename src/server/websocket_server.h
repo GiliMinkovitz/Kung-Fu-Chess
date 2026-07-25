@@ -31,6 +31,10 @@ public:
 
     void broadcast(const std::string& message);
 
+#ifdef KFC_TEST_BUILD
+    void close_acceptor_for_tests();
+#endif
+
 private:
     boost::asio::io_context io_context_;
     boost::asio::ip::tcp::acceptor acceptor_;
