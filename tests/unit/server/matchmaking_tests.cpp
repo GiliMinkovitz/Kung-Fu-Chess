@@ -131,3 +131,40 @@ TEST_CASE("MatchmakingTest - IgnoresDisconnectedPlayersWhenMatching") {
     CHECK_FALSE(matchmaking.enqueue(second, now).has_value());
     CHECK_EQ(matchmaking.waiting_count(), 2);
 }
+
+TEST_CASE("MatchmakingTest - RemovesWaitingSession") {
+    TestSessionFactory factory;
+    kfc::Matchmaking matchmaking;
+    const auto now = std::chrono::steady_clock::now();
+
+    kfc::PlayerSession& waiting = factory.create("alice", 1000);
+    CHECK_FALSE(matchmaking.enqueue(waiting, now).has_value());
+    CHECK_EQ(matchmaking.waiting_count(), 1);
+
+    matchmaking.remove(waiting);
+    CHECK_EQ(matchmaking.waiting_count(), 0);
+}
+
+TEST_CASE("MatchmakingTest - SkipsIneligibleWaitingEntryDuringTimeoutCheck") {
+    TestSessionFactory factory;
+    kfc::Matchmaking matchmaking;
+    const auto now = std::chrono::steady_clock::now();
+
+    kfc::PlayerSession& waiting = factory.create("alice", 1000);
+    CHECK_FALSE(matchmaking.enqueue(waiting, now).has_value());
+    waiting.connection()->close();
+
+    const auto timed_out = matchmaking.check_timeouts(now + std::chrono::hours(1));
+    CHECK(timed_out.empty());
+    CHECK_EQ(matchmaking.waiting_count(), 1);
+}
+
+TEST_CASE("MatchmakingTest - RejectsIneligibleSession") {
+    kfc::WebSocketServer server{0};
+    kfc::PlayerSession session{7, nullptr};
+
+    kfc::Matchmaking matchmaking;
+    const auto now = std::chrono::steady_clock::now();
+    CHECK_FALSE(matchmaking.enqueue(session, now).has_value());
+    CHECK_EQ(matchmaking.waiting_count(), 0);
+}

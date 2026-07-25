@@ -16,3 +16,8 @@ build-win/
 build-linux/
 vcpkg_installed/
 
+# Generated coverage reports and build logs
+coverage_report/
+coverage_build_tail.log
+last40.txt
+

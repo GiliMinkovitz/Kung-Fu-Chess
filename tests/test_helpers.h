@@ -42,6 +42,8 @@ struct GameStateTestAccess {
         return state.is_legal_move(start_row, start_col, end_row, end_col);
     }
 
+    static void set_game_over(GameState& state, bool value) { state.game_over_ = value; }
+
     static BoardModel& board(GameState& state) { return state.board_; }
 
     static PieceState piece_state(const GameState& state, Piece::Id id) {

@@ -2,7 +2,9 @@
 
 #include <doctest/doctest.h>
 
+#include <fstream>
 #include <set>
+#include <sqlite3.h>
 #include <string>
 
 namespace {
@@ -73,4 +75,69 @@ TEST_CASE("SqliteDatabaseTest - CreatesExpectedTables") {
     CHECK_EQ(tables.size(), 2);
     CHECK(tables.count("players") == 1);
     CHECK(tables.count("games") == 1);
+}
+
+TEST_CASE("SqliteDatabaseTest - OpenIsIdempotent") {
+    kfc::SqliteDatabase db(":memory:");
+    CHECK(db.open());
+    CHECK(db.open());
+    CHECK(db.connection() != nullptr);
+}
+
+TEST_CASE("SqliteDatabaseTest - InitializeSchemaRequiresOpenConnection") {
+    kfc::SqliteDatabase db(":memory:");
+    CHECK_FALSE(db.initialize_schema());
+}
+
+TEST_CASE("SqliteDatabaseTest - ReinitializingSchemaIsIdempotent") {
+    kfc::SqliteDatabase db(":memory:");
+    REQUIRE(db.open());
+    CHECK(db.initialize_schema());
+    CHECK(db.initialize_schema());
+}
+
+TEST_CASE("SqliteDatabaseTest - MigratesLegacyPlayersTableWithoutRating") {
+    const char* path = "kfc_legacy_players_test.db";
+    {
+        kfc::SqliteDatabase db(path);
+        REQUIRE(db.open());
+        char* err_msg = nullptr;
+        REQUIRE(sqlite3_exec(db.connection(),
+                             "CREATE TABLE players ("
+                             "id INTEGER PRIMARY KEY AUTOINCREMENT,"
+                             "username TEXT NOT NULL UNIQUE);",
+                             nullptr, nullptr, &err_msg) == SQLITE_OK);
+        sqlite3_free(err_msg);
+    }
+
+    kfc::SqliteDatabase db(path);
+    REQUIRE(db.open());
+    CHECK(db.initialize_schema());
+
+    sqlite3_stmt* stmt = nullptr;
+    REQUIRE(sqlite3_prepare_v2(db.connection(), "PRAGMA table_info(players);", -1, &stmt,
+                               nullptr) == SQLITE_OK);
+    bool saw_rating = false;
+    while (sqlite3_step(stmt) == SQLITE_ROW) {
+        const unsigned char* name = sqlite3_column_text(stmt, 1);
+        if (name != nullptr && std::string(reinterpret_cast<const char*>(name)) == "rating") {
+            saw_rating = true;
+        }
+    }
+    sqlite3_finalize(stmt);
+    CHECK(saw_rating);
+    std::remove(path);
+}
+
+TEST_CASE("SqliteDatabaseTest - InitializeSchemaFailsOnCorruptFile") {
+    const char* path = "kfc_corrupt_sqlite_test.db";
+    {
+        std::ofstream out(path, std::ios::binary);
+        out << "not-a-sqlite-database";
+    }
+
+    kfc::SqliteDatabase db(path);
+    REQUIRE(db.open());
+    CHECK_FALSE(db.initialize_schema());
+    std::remove(path);
 }

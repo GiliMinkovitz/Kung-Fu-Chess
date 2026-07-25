@@ -155,6 +155,21 @@ TEST_CASE("SnapshotReaderTest - RoundTripPreservesAnimations") {
     check_view_matches(original, *parsed);
 }
 
+TEST_CASE("SnapshotReaderTest - RoundTripShortRestAnimation") {
+    kfc::BoardViewModel original;
+    original.height = 1;
+    original.width = 1;
+    original.clock_ms = 7;
+    original.cells = {{}};
+    original.animations.rests.push_back({4, 0, 0, kfc::RestKind::Short, 0.125f});
+
+    const std::optional<kfc::BoardViewModel> parsed =
+        kfc::read_snapshot(kfc::write_snapshot(original));
+
+    REQUIRE(parsed.has_value());
+    check_view_matches(original, *parsed);
+}
+
 TEST_CASE("SnapshotReaderTest - RejectsInvalidSnapshot") {
     CHECK_FALSE(kfc::read_snapshot("").has_value());
     CHECK_FALSE(kfc::read_snapshot("not_a_snapshot\n").has_value());
@@ -162,4 +177,147 @@ TEST_CASE("SnapshotReaderTest - RejectsInvalidSnapshot") {
     CHECK_FALSE(
         kfc::read_snapshot("snapshot\nclock_ms 1\ngame_over false\nheight 1\nwidth 2\ncells\nwK")
             .has_value());
+}
+
+TEST_CASE("SnapshotReaderTest - RejectsMalformedHeaderFields") {
+    CHECK_FALSE(kfc::read_snapshot("snapshot\n").has_value());
+    CHECK_FALSE(kfc::read_snapshot("snapshot\nclock_ms 1 extra\n").has_value());
+    CHECK_FALSE(kfc::read_snapshot("snapshot\nclock_ms -1\ngame_over false\nheight 1\nwidth 1\ncells\nwK")
+            .has_value());
+    CHECK_FALSE(kfc::read_snapshot("snapshot\nclock_ms 1\ngame_over maybe\nheight 1\nwidth 1\ncells\nwK")
+            .has_value());
+    CHECK_FALSE(kfc::read_snapshot("snapshot\nclock_ms 1\ngame_over false\nheight 1\nwidth 1\ncells extra\nwK")
+            .has_value());
+    CHECK_FALSE(kfc::read_snapshot("snapshot\nclock_ms 1\ngame_over false\nheight bad\nwidth 1\ncells\nwK")
+            .has_value());
+    CHECK_FALSE(kfc::read_snapshot("snapshot\nclock_ms 1\ngame_over false\nheight 1\nwidth bad\ncells\nwK")
+            .has_value());
+    CHECK_FALSE(kfc::read_snapshot("snapshot\nclock_ms 1\ngame_over false\nselection 0\ncells\nwK")
+            .has_value());
+    CHECK_FALSE(kfc::read_snapshot("snapshot\nclock_ms 1\ngame_over false\nselection bad 0\ncells\nwK")
+            .has_value());
+    CHECK_FALSE(kfc::read_snapshot("snapshot\nclock_ms 1\ngame_over false\nunknown 1\ncells\nwK")
+            .has_value());
+}
+
+TEST_CASE("SnapshotReaderTest - RejectsMalformedCellsAndAnimations") {
+    CHECK_FALSE(kfc::read_snapshot("snapshot\nclock_ms 1\ngame_over false\nheight 1\nwidth 1\ncells\n")
+            .has_value());
+    CHECK_FALSE(kfc::read_snapshot("snapshot\nclock_ms 1\ngame_over false\nheight 1\nwidth 1\ncells\nbad")
+            .has_value());
+    CHECK_FALSE(kfc::read_snapshot("snapshot\nclock_ms 1\ngame_over false\nheight 1\nwidth 2\ncells\nwK")
+            .has_value());
+    CHECK_FALSE(kfc::read_snapshot(
+                    "snapshot\nclock_ms 1\ngame_over false\nheight 1\nwidth 1\ncells\nwK\n"
+                    "animations\nmoves\nbad")
+            .has_value());
+    CHECK_FALSE(kfc::read_snapshot(
+                    "snapshot\nclock_ms 1\ngame_over false\nheight 1\nwidth 1\ncells\n.\n"
+                    "animations\nmoves\nmove bad\njumps\nrests\n")
+            .has_value());
+    CHECK_FALSE(kfc::read_snapshot(
+                    "snapshot\nclock_ms 1\ngame_over false\nheight 1\nwidth 1\ncells\n.\n"
+                    "animations\nmoves\njumps\njump bad\nrests\n")
+            .has_value());
+    CHECK_FALSE(kfc::read_snapshot(
+                    "snapshot\nclock_ms 1\ngame_over false\nheight 1\nwidth 1\ncells\n.\n"
+                    "animations\nmoves\njumps\nrests\nrest bad")
+            .has_value());
+}
+
+TEST_CASE("SnapshotReaderTest - ParsesCarriageReturnLinesAndShortRest") {
+    const std::string text =
+        "snapshot\r\nclock_ms 5\ngame_over false\r\nheight 1\nwidth 1\ncells\n.\n"
+        "animations\nmoves\njumps\nrests\nrest piece_id 1 row 0 0 kind short progress 0.500000\n";
+    const std::optional<kfc::BoardViewModel> parsed = kfc::read_snapshot(text);
+
+    REQUIRE(parsed.has_value());
+    REQUIRE_EQ(parsed->animations.rests.size(), 1u);
+    CHECK(parsed->animations.rests.front().kind == kfc::RestKind::Short);
+}
+
+TEST_CASE("SnapshotReaderTest - RejectsMalformedAnimationDetails") {
+    CHECK_FALSE(kfc::read_snapshot(
+                    "snapshot\nclock_ms 1\ngame_over false\nheight 1\nwidth 1\ncells\n.\n"
+                    "animations\nmoves\nmove piece_id -1 piece wR from 0 0 to 0 1 progress 0.5\n"
+                    "jumps\nrests\n")
+            .has_value());
+    CHECK_FALSE(kfc::read_snapshot(
+                    "snapshot\nclock_ms 1\ngame_over false\nheight 1\nwidth 1\ncells\n.\n"
+                    "animations\nmoves\nmove piece_id 1 piece wR from 0 0 to 0 1 progress bad\n"
+                    "jumps\nrests\n")
+            .has_value());
+    CHECK_FALSE(kfc::read_snapshot(
+                    "snapshot\nclock_ms 1\ngame_over false\nheight 1\nwidth 1\ncells\n.\n"
+                    "animations\nmoves\njumps\njump piece_id -1 piece wK row 0 0 progress 0.5\n"
+                    "rests\n")
+            .has_value());
+    CHECK_FALSE(kfc::read_snapshot(
+                    "snapshot\nclock_ms 1\ngame_over false\nheight 1\nwidth 1\ncells\n.\n"
+                    "animations\nmoves\njumps\nrests\nrest piece_id 1 row 0 0 kind bad progress 0.5\n")
+            .has_value());
+    CHECK_FALSE(kfc::read_snapshot(
+                    "snapshot\nclock_ms 1\ngame_over false\nheight 1\nwidth 1\ncells\n.\n"
+                    "animations\nmoves\njumps\nrests\nrest piece_id 1 row 0 0 kind short progress bad\n")
+            .has_value());
+    CHECK_FALSE(kfc::read_snapshot(
+                    "snapshot\nclock_ms 1\ngame_over false\nheight 1\nwidth 1\ncells\n.\n"
+                    "animations\nbad\n")
+            .has_value());
+    CHECK_FALSE(kfc::read_snapshot(
+                    "snapshot\nclock_ms 1\ngame_over false\nheight 1\nwidth 1\ncells extra\nwK")
+            .has_value());
+    CHECK_FALSE(kfc::read_snapshot(
+                    "snapshot\nclock_ms 1\ngame_over false\nheight 1\nwidth 1\nselection 0\n"
+                    "cells\nwK")
+            .has_value());
+}
+
+TEST_CASE("SnapshotReaderTest - IgnoresBlankLinesInHeaderAndAnimations") {
+    const std::optional<kfc::BoardViewModel> with_header_blank = kfc::read_snapshot(
+        "snapshot\n\nclock_ms 1\ngame_over false\nheight 1\nwidth 1\ncells\nwK");
+    REQUIRE(with_header_blank.has_value());
+    CHECK_EQ(with_header_blank->clock_ms, 1);
+
+    const std::optional<kfc::BoardViewModel> with_animation_blank = kfc::read_snapshot(
+        "snapshot\nclock_ms 1\ngame_over false\nheight 1\nwidth 1\ncells\n.\n"
+        "animations\nmoves\n\njumps\nrests\n");
+    REQUIRE(with_animation_blank.has_value());
+    CHECK(with_animation_blank->animations.moves.empty());
+}
+
+TEST_CASE("SnapshotReaderTest - ParserHelpersRejectEmptyTokens") {
+    CHECK_FALSE(kfc::test::snapshot_parse_int64_for_tests("").has_value());
+    CHECK_FALSE(kfc::test::snapshot_parse_float_for_tests("").has_value());
+}
+
+TEST_CASE("SnapshotReaderTest - RejectsMalformedHeaderTokenCounts") {
+    CHECK_FALSE(kfc::read_snapshot(
+                    "snapshot\nclock_ms 1\ngame_over false extra\nheight 1\nwidth 1\ncells\n.")
+            .has_value());
+    CHECK_FALSE(kfc::read_snapshot(
+                    "snapshot\nclock_ms 1\ngame_over false\nheight 1 extra\nwidth 1\ncells\n.")
+            .has_value());
+    CHECK_FALSE(kfc::read_snapshot(
+                    "snapshot\nclock_ms 1\ngame_over false\nheight 1\nwidth 1 extra\ncells\n.")
+            .has_value());
+}
+
+TEST_CASE("SnapshotReaderTest - RejectsMissingAnimationsSection") {
+    CHECK_FALSE(kfc::read_snapshot(
+                    "snapshot\nclock_ms 1\ngame_over false\nheight 1\nwidth 1\ncells\n.\n"
+                    "not_animations\n")
+            .has_value());
+}
+
+TEST_CASE("SnapshotReaderTest - RoundTripInvalidRestKindUsesFallbackToken") {
+    kfc::BoardViewModel original;
+    original.height = 1;
+    original.width = 1;
+    original.cells = {{}};
+    original.animations.rests.push_back(
+        {5, 0, 0, static_cast<kfc::RestKind>(99), 0.5f});
+
+    const std::string text = kfc::write_snapshot(original);
+    CHECK(text.find("kind short") != std::string::npos);
 }

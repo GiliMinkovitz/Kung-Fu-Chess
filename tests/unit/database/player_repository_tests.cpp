@@ -3,6 +3,8 @@
 
 #include <doctest/doctest.h>
 
+#include <fstream>
+
 namespace {
 
 kfc::PlayerRepository make_repository() {
@@ -72,4 +74,59 @@ TEST_CASE("PlayerRepositoryTest - LoadOrCreateFlow") {
     REQUIRE(loaded.has_value());
     CHECK_EQ(loaded->id(), created->id());
     CHECK_EQ(loaded->rating(), 1000);
+}
+
+TEST_CASE("PlayerRepositoryTest - ReturnsNulloptWithoutDatabaseConnection") {
+    kfc::SqliteDatabase db(":memory:");
+    kfc::PlayerRepository repo{db};
+
+    CHECK_FALSE(repo.find_by_username("missing").has_value());
+    CHECK_FALSE(repo.create_player("new_user").has_value());
+    CHECK_FALSE(repo.update_rating(1, 1000));
+}
+
+TEST_CASE("PlayerRepositoryTest - RejectsDuplicateUsername") {
+    auto repo = make_repository();
+
+    REQUIRE(repo.create_player("duplicate_user", 1000).has_value());
+    CHECK_FALSE(repo.create_player("duplicate_user", 1100).has_value());
+}
+
+TEST_CASE("PlayerRepositoryTest - HandlesCorruptDatabaseFile") {
+    const char* path = "kfc_corrupt_player_repo_test.db";
+    {
+        std::ofstream out(path, std::ios::binary);
+        out << "not-a-sqlite-database";
+    }
+
+    kfc::SqliteDatabase db(path);
+    REQUIRE(db.open());
+    kfc::PlayerRepository repo{db};
+
+    CHECK_FALSE(repo.find_by_username("alice").has_value());
+    CHECK_FALSE(repo.create_player("alice", 1000).has_value());
+    CHECK_FALSE(repo.update_rating(1, 1000));
+    std::remove(path);
+}
+
+TEST_CASE("PlayerRepositoryTest - RejectsWriteWhenDatabaseIsReadOnly") {
+    const char* path = "kfc_readonly_player_repo_test.db";
+    {
+        kfc::SqliteDatabase setup(path);
+        REQUIRE(setup.open());
+        REQUIRE(setup.initialize_schema());
+    }
+
+    kfc::SqliteDatabase db(path);
+    REQUIRE(db.open());
+    kfc::PlayerRepository repo{db};
+
+    sqlite3* connection = db.connection();
+    REQUIRE(connection != nullptr);
+    REQUIRE(sqlite3_exec(connection, "PRAGMA query_only = ON;", nullptr, nullptr, nullptr) ==
+            SQLITE_OK);
+
+    CHECK_FALSE(repo.create_player("readonly_user", 1000).has_value());
+    CHECK_FALSE(repo.update_rating(1, 900));
+    std::remove(path);
 }

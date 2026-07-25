@@ -55,6 +55,7 @@ set(KFC_SERVER_ARCH_SOURCES
     src/server/player_session.cpp
     src/server/matchmaking.cpp
     src/server/game_room.cpp
+    src/server/game_message_parser.cpp
     src/server/game_server.cpp
 )
 
@@ -296,7 +297,17 @@ set(KFC_TEST_SOURCES
     tests/unit/network/network_input_handler_tests.cpp
     tests/unit/database/sqlite_database_tests.cpp
     tests/unit/database/player_repository_tests.cpp
+    tests/unit/database/game_repository_tests.cpp
     tests/unit/server/matchmaking_tests.cpp
+    tests/unit/server/game_room_tests.cpp
+    tests/unit/server/match_tests.cpp
+    tests/unit/server/player_session_tests.cpp
+    tests/unit/server/client_connection_tests.cpp
+    tests/unit/server/client_connection_hook_tests.cpp
+    tests/unit/server/game_message_parser_tests.cpp
+    tests/unit/server/game_server_tests.cpp
+    tests/unit/server/websocket_server_tests.cpp
+    tests/unit/network/matchmaking_message_reader_tests.cpp
     tests/integration/integration_test.cpp
 )
 
@@ -314,6 +325,8 @@ target_include_directories(KungFuChessTests PRIVATE
     ${CMAKE_SOURCE_DIR}/src
     ${CMAKE_SOURCE_DIR}/tests
 )
+
+target_compile_definitions(KungFuChessTests PRIVATE KFC_TEST_BUILD)
 
 kfc_link_boost(KungFuChessTests)
 kfc_link_sqlite(KungFuChessTests)
@@ -398,7 +411,7 @@ if(ENABLE_COVERAGE)
             --directory ${CMAKE_BINARY_DIR}
             --capture
             --output-file ${CMAKE_BINARY_DIR}/coverage.info
-            --ignore-errors source
+            --ignore-errors source,inconsistent
             --rc geninfo_unexecuted_blocks=1
         COMMAND ${LCOV}
             --remove ${CMAKE_BINARY_DIR}/coverage.info

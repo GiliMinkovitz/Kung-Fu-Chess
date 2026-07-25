@@ -3,11 +3,13 @@
 #include "model/piece_factory.h"
 #include "rules/game_rules.h"
 #include "logic/game_state.h"
+#include "io/board_writer.h"
 #include "rules/move_validator.h"
 #include "test_helpers.h"
 
 #include <doctest/doctest.h>
 #include <optional>
+#include <sstream>
 
 TEST_CASE("GameStateTest - GameStateWaitIncrementsClock") {
     kfc::GameState state(kfc::test::make_board({{"wK", ".", "bK"}}));
@@ -490,4 +492,53 @@ TEST_CASE("GameStateTest - AbortedMoveRestoresOverOccupiedStartCell") {
     CHECK(kfc::test::BoardModelTestAccess::find_piece_by_id(board, occupant_id) != nullptr);
     CHECK_EQ(state.token_at(0, 2), "wP");
     CHECK_EQ(state.token_at(0, 3), ".");
+}
+
+TEST_CASE("GameStateTest - WinningColorAfterKingCapture") {
+    kfc::GameState state(
+        kfc::test::make_board({{"wR", ".", "bK"}, {"wK", ".", "."}}));
+    state.select(0, 0);
+    state.move_selected_to(0, 2);
+    state.add_clock(3 * kfc::kMoveDurationMs);
+
+    CHECK(state.is_game_over());
+    REQUIRE(state.winning_color().has_value());
+    CHECK(*state.winning_color() == kfc::PieceColor::White);
+}
+
+TEST_CASE("GameStateTest - WinningColorWhenBlackKingRemains") {
+    kfc::GameState state(
+        kfc::test::make_board({{"bR", ".", "wK"}, {"bK", ".", "."}}));
+    CHECK_FALSE(state.winning_color().has_value());
+
+    state.select(0, 0);
+    state.move_selected_to(0, 2);
+    state.add_clock(3 * kfc::kMoveDurationMs);
+
+    CHECK(state.is_game_over());
+    REQUIRE(state.winning_color().has_value());
+    CHECK(*state.winning_color() == kfc::PieceColor::Black);
+}
+
+TEST_CASE("GameStateTest - WinningColorAmbiguousWhenBothKingsPresent") {
+    kfc::GameState state(kfc::test::make_board({{"wK", ".", "bK"}}));
+    kfc::test::GameStateTestAccess::set_game_over(state, true);
+
+    CHECK(state.is_game_over());
+    CHECK_FALSE(state.winning_color().has_value());
+}
+
+TEST_CASE("GameStateTest - ApplyActionVariantsAndWriteBoard") {
+    kfc::GameState state(kfc::test::make_board({{"wK", "wP", "bK"}}));
+    state.apply_action(kfc::Select{0, 1});
+    CHECK(state.has_selection());
+    CHECK(state.is_friendly_to_selection(0, 0));
+
+    state.apply_action(kfc::JumpSelected{});
+    state.apply_action(kfc::AdvanceClock{500});
+    CHECK_EQ(state.clock_ms(), 500);
+
+    std::ostringstream out;
+    state.write_board(out, kfc::write_board);
+    CHECK(out.str().find("wK") != std::string::npos);
 }
