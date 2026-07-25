@@ -37,7 +37,7 @@
           </tr>
           <tr>
             <td class="headerItem">Test Date:</td>
-            <td class="headerValue">2026-07-19 19:40:07</td>
+            <td class="headerValue">2026-07-26 00:23:33</td>
             <td></td>
             <td class="headerItem">Functions:</td>
             <td class="headerCovTableEntryHi">100.0&nbsp;%</td>
@@ -80,21 +80,21 @@
 <span id="L18"><span class="lineNum">      18</span>              : </span>
 <span id="L19"><span class="lineNum">      19</span>              : }  // namespace</span>
 <span id="L20"><span class="lineNum">      20</span>              : </span>
-<span id="L21"><span class="lineNum">      21</span> <span class="tlaGNC">           6 : std::size_t board_view_cell_index(std::size_t row, std::size_t col, std::size_t width) noexcept {</span></span>
-<span id="L22"><span class="lineNum">      22</span> <span class="tlaGNC">           6 :     return row * width + col;</span></span>
+<span id="L21"><span class="lineNum">      21</span> <span class="tlaGNC">          57 : std::size_t board_view_cell_index(std::size_t row, std::size_t col, std::size_t width) noexcept {</span></span>
+<span id="L22"><span class="lineNum">      22</span> <span class="tlaGNC">          57 :     return row * width + col;</span></span>
 <span id="L23"><span class="lineNum">      23</span>              : }</span>
 <span id="L24"><span class="lineNum">      24</span>              : </span>
-<span id="L25"><span class="lineNum">      25</span> <span class="tlaGNC">           7 : const CellView&amp; board_view_cell_at(const BoardViewModel&amp; view, std::size_t row, std::size_t col) {</span></span>
-<span id="L26"><span class="lineNum">      26</span> <span class="tlaGNC">           7 :     if (row &gt;= view.height || col &gt;= view.width) {</span></span>
+<span id="L25"><span class="lineNum">      25</span> <span class="tlaGNC">          58 : const CellView&amp; board_view_cell_at(const BoardViewModel&amp; view, std::size_t row, std::size_t col) {</span></span>
+<span id="L26"><span class="lineNum">      26</span> <span class="tlaGNC">          58 :     if (row &gt;= view.height || col &gt;= view.width) {</span></span>
 <span id="L27"><span class="lineNum">      27</span> <span class="tlaGNC">           2 :         return kEmptyCellView;</span></span>
 <span id="L28"><span class="lineNum">      28</span>              :     }</span>
 <span id="L29"><span class="lineNum">      29</span>              : </span>
-<span id="L30"><span class="lineNum">      30</span> <span class="tlaGNC">           5 :     const std::size_t index = board_view_cell_index(row, col, view.width);</span></span>
-<span id="L31"><span class="lineNum">      31</span> <span class="tlaGNC">           5 :     if (index &gt;= view.cells.size()) {</span></span>
+<span id="L30"><span class="lineNum">      30</span> <span class="tlaGNC">          56 :     const std::size_t index = board_view_cell_index(row, col, view.width);</span></span>
+<span id="L31"><span class="lineNum">      31</span> <span class="tlaGNC">          56 :     if (index &gt;= view.cells.size()) {</span></span>
 <span id="L32"><span class="lineNum">      32</span> <span class="tlaGNC">           1 :         return kEmptyCellView;</span></span>
 <span id="L33"><span class="lineNum">      33</span>              :     }</span>
 <span id="L34"><span class="lineNum">      34</span>              : </span>
-<span id="L35"><span class="lineNum">      35</span> <span class="tlaGNC">           4 :     return view.cells[index];</span></span>
+<span id="L35"><span class="lineNum">      35</span> <span class="tlaGNC">          55 :     return view.cells[index];</span></span>
 <span id="L36"><span class="lineNum">      36</span>              : }</span>
 <span id="L37"><span class="lineNum">      37</span>              : </span>
 <span id="L38"><span class="lineNum">      38</span> <span class="tlaGNC">           7 : std::optional&lt;PieceView&gt; board_view_piece_at(const BoardViewModel&amp; view, std::size_t row,</span></span>

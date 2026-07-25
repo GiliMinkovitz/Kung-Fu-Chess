@@ -37,7 +37,7 @@
           </tr>
           <tr>
             <td class="headerItem">Test Date:</td>
-            <td class="headerValue">2026-07-19 19:40:07</td>
+            <td class="headerValue">2026-07-26 00:23:33</td>
             <td></td>
             <td class="headerItem">Functions:</td>
             <td class="headerCovTableEntryHi">100.0&nbsp;%</td>
@@ -75,14 +75,14 @@
 <span id="L13"><span class="lineNum">      13</span>              :     UiFrameResult present(const BoardViewModel&amp; view) override;</span>
 <span id="L14"><span class="lineNum">      14</span>              :     void shutdown() override;</span>
 <span id="L15"><span class="lineNum">      15</span>              : </span>
-<span id="L16"><span class="lineNum">      16</span> <span class="tlaGNC">           2 :     [[nodiscard]] bool initialized() const noexcept { return initialized_; }</span></span>
-<span id="L17"><span class="lineNum">      17</span> <span class="tlaGNC">           1 :     [[nodiscard]] std::size_t rows() const noexcept { return rows_; }</span></span>
-<span id="L18"><span class="lineNum">      18</span> <span class="tlaGNC">           1 :     [[nodiscard]] std::size_t cols() const noexcept { return cols_; }</span></span>
-<span id="L19"><span class="lineNum">      19</span> <span class="tlaGNC">           1 :     [[nodiscard]] int window_width() const noexcept { return window_width_; }</span></span>
-<span id="L20"><span class="lineNum">      20</span> <span class="tlaGNC">           1 :     [[nodiscard]] int window_height() const noexcept { return window_height_; }</span></span>
-<span id="L21"><span class="lineNum">      21</span> <span class="tlaGNC">           1 :     [[nodiscard]] IUiInputSink* input_sink() const noexcept { return input_sink_; }</span></span>
-<span id="L22"><span class="lineNum">      22</span> <span class="tlaGNC">           2 :     [[nodiscard]] const BoardViewModel&amp; last_view() const noexcept { return last_view_; }</span></span>
-<span id="L23"><span class="lineNum">      23</span> <span class="tlaGNC">           1 :     [[nodiscard]] std::size_t present_count() const noexcept { return present_count_; }</span></span>
+<span id="L16"><span class="lineNum">      16</span> <span class="tlaGNC">           3 :     [[nodiscard]] bool initialized() const noexcept { return initialized_; }</span></span>
+<span id="L17"><span class="lineNum">      17</span> <span class="tlaGNC">           2 :     [[nodiscard]] std::size_t rows() const noexcept { return rows_; }</span></span>
+<span id="L18"><span class="lineNum">      18</span> <span class="tlaGNC">           2 :     [[nodiscard]] std::size_t cols() const noexcept { return cols_; }</span></span>
+<span id="L19"><span class="lineNum">      19</span> <span class="tlaGNC">           2 :     [[nodiscard]] int window_width() const noexcept { return window_width_; }</span></span>
+<span id="L20"><span class="lineNum">      20</span> <span class="tlaGNC">           2 :     [[nodiscard]] int window_height() const noexcept { return window_height_; }</span></span>
+<span id="L21"><span class="lineNum">      21</span> <span class="tlaGNC">           2 :     [[nodiscard]] IUiInputSink* input_sink() const noexcept { return input_sink_; }</span></span>
+<span id="L22"><span class="lineNum">      22</span> <span class="tlaGNC">           4 :     [[nodiscard]] const BoardViewModel&amp; last_view() const noexcept { return last_view_; }</span></span>
+<span id="L23"><span class="lineNum">      23</span> <span class="tlaGNC">           2 :     [[nodiscard]] std::size_t present_count() const noexcept { return present_count_; }</span></span>
 <span id="L24"><span class="lineNum">      24</span> <span class="tlaGNC">           1 :     [[nodiscard]] bool shutdown_called() const noexcept { return shutdown_called_; }</span></span>
 <span id="L25"><span class="lineNum">      25</span>              : </span>
 <span id="L26"><span class="lineNum">      26</span> <span class="tlaGNC">           1 :     void set_should_continue(bool value) { should_continue_ = value; }</span></span>
