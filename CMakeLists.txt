@@ -402,7 +402,7 @@ if(ENABLE_COVERAGE)
     endif()
 
     foreach(_kfc_target IN ITEMS ${PROJECT_NAME} KungFuChessTests)
-        target_compile_options(${_kfc_target} PRIVATE --coverage -O0 -fno-elide-constructors)
+        target_compile_options(${_kfc_target} PRIVATE --coverage -fprofile-update=atomic -O0 -fno-elide-constructors)
         target_link_options(${_kfc_target} PRIVATE --coverage)
     endforeach()
 
@@ -424,7 +424,7 @@ if(ENABLE_COVERAGE)
             --directory ${CMAKE_BINARY_DIR}
             --capture
             --output-file ${CMAKE_BINARY_DIR}/coverage.info
-            --ignore-errors source,inconsistent
+            --ignore-errors source,inconsistent,negative
             --rc geninfo_unexecuted_blocks=1
         COMMAND ${LCOV}
             --remove ${CMAKE_BINARY_DIR}/coverage.info
