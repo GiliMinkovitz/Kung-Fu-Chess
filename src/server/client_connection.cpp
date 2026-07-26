@@ -12,6 +12,47 @@ namespace net = boost::asio;
 
 namespace kfc {
 
+namespace {
+
+void websocket_write(websocket::stream<net::ip::tcp::socket>& ws, net::const_buffer buffer,
+                     beast::error_code& ec) {
+    try {
+        ws.write(buffer, ec);
+    } catch (const beast::system_error& ex) {
+        ec = ex.code();
+    }
+}
+
+void websocket_read(websocket::stream<net::ip::tcp::socket>& ws, beast::flat_buffer& buffer,
+                    beast::error_code& ec) {
+    try {
+        ws.read(buffer, ec);
+    } catch (const beast::system_error& ex) {
+        ec = ex.code();
+    }
+}
+
+// Wire size of one masked client-to-server frame for a payload of this size.
+//
+// buffered_bytes_ accounting assumptions:
+// - One WebSocket message is transmitted as exactly one frame.
+// - Relies on auto_fragment(false) on both peers.
+// - Assumes permessage-deflate is disabled.
+// - consumed_bytes is derived from payload length plus fixed header math.
+// If transport configuration changes (fragmentation, compression, or a different
+// read strategy), this accounting must be revisited.
+std::size_t masked_frame_size(std::size_t payload_size) {
+    std::size_t header_size = 2 + 4;
+    if (payload_size > 65535) {
+        header_size += 8;
+    } else if (payload_size > 125) {
+        header_size += 2;
+    }
+    return header_size + payload_size;
+}
+
+}  // namespace
+
 bool ClientConnection::detect_peer_disconnect() {
     if (!open_) {
         return true;
@@ -89,7 +130,7 @@ bool ClientConnection::detect_peer_disconnect() {
     }
 
     if (peek_ec == net::error::eof || peek_ec == net::error::connection_reset ||
-        peeked == 0) {
+        (peeked == 0 && !peek_ec)) {
         open_ = false;
         return true;
     }
@@ -114,6 +155,9 @@ ClientConnection::ClientConnection(net::ip::tcp::socket socket)
         open_ = false;
         throw beast::system_error{handshake_ec};
     }
+
+    // One frame per message keeps the buffered-byte accounting exact.
+    ws_.auto_fragment(false);
 }
 
 std::optional<std::string> ClientConnection::try_read() {
@@ -144,14 +188,17 @@ std::optional<std::string> ClientConnection::try_read() {
     if (avail_ec) {
         std::cerr << "[SERVER-CONN-DIAG] try_read() available error: "
                   << avail_ec.message() << " (" << avail_ec.value() << ")\n";
+        buffered_bytes_ = 0;
         open_ = false;
         return std::nullopt;
     }
 
-    if (available_bytes == 0) {
-        if (detect_peer_disconnect()) {
-            return std::nullopt;
-        }
+    // Beast pulls whole segments out of the socket into its own read buffer, so
+    // a complete message can be waiting there while the socket reports nothing
+    // available. buffered_bytes_ tracks those leftovers; reading is safe when
+    // either source has data.
+    if (available_bytes == 0 && buffered_bytes_ == 0) {
+        (void)detect_peer_disconnect();
         return std::nullopt;
     }
 
@@ -164,7 +211,7 @@ std::optional<std::string> ClientConnection::try_read() {
     } else
 #endif
     {
-        ws_.read(buffer, read_ec);
+        websocket_read(ws_, buffer, read_ec);
     }
 
     if (read_ec == net::error::would_block) {
@@ -172,6 +219,7 @@ std::optional<std::string> ClientConnection::try_read() {
     }
 
     if (read_ec == websocket::error::closed) {
+        buffered_bytes_ = 0;
         open_ = false;
         return std::nullopt;
     }
@@ -179,11 +227,33 @@ std::optional<std::string> ClientConnection::try_read() {
     if (read_ec) {
         std::cerr << "[SERVER-CONN-DIAG] try_read() websocket error: "
                   << read_ec.message() << " (" << read_ec.value() << ")\n";
+        buffered_bytes_ = 0;
         open_ = false;
         return std::nullopt;
     }
 
-    return beast::buffers_to_string(buffer.data());
+    std::string message = beast::buffers_to_string(buffer.data());
+    update_buffered_bytes(available_bytes, masked_frame_size(message.size()));
+    return message;
+}
+
+// Updates buffered_bytes_ after a successful read. See masked_frame_size() for
+// the assumptions this accounting relies on; revisit both if transport config changes.
+void ClientConnection::update_buffered_bytes(std::size_t available_before_read,
+                                             std::size_t consumed_bytes) {
+    beast::error_code remaining_ec;
+    const std::size_t available_after_read = beast::get_lowest_layer(ws_).available(remaining_ec);
+
+    // Bytes that moved from the socket into Beast's read buffer. Data arriving
+    // mid-read only makes this smaller, never larger, so the running total can
+    // never overestimate what is still pending.
+    std::size_t moved_into_beast = 0;
+    if (!remaining_ec && available_before_read > available_after_read) {
+        moved_into_beast = available_before_read - available_after_read;
+    }
+
+    const std::size_t reachable = buffered_bytes_ + moved_into_beast;
+    buffered_bytes_ = reachable > consumed_bytes ? reachable - consumed_bytes : 0;
 }
 
 bool ClientConnection::try_send(const std::string& message) {
@@ -199,7 +269,7 @@ bool ClientConnection::try_send(const std::string& message) {
     } else
 #endif
     {
-        ws_.write(net::buffer(message), write_ec);
+        websocket_write(ws_, net::buffer(message), write_ec);
     }
 
     if (write_ec == net::error::would_block) {
@@ -221,6 +291,37 @@ bool ClientConnection::try_send(const std::string& message) {
         return false;
     }
 
+    return true;
+}
+
+bool ClientConnection::send_message(const std::string& message) {
+    beast::error_code write_ec;
+#ifdef KFC_TEST_BUILD
+    if (test::SocketTestHooks::next_write_error) {
+        write_ec = *test::SocketTestHooks::next_write_error;
+        test::SocketTestHooks::next_write_error.reset();
+    } else
+#endif
+    {
+        websocket_write(ws_, net::buffer(message), write_ec);
+    }
+
+    if (write_ec == net::error::would_block) {
+        return false;
+    }
+
+    if (write_ec == websocket::error::closed || write_ec == net::error::eof ||
+        write_ec == net::error::connection_reset) {
+        open_ = false;
+        return false;
+    }
+
+    if (write_ec) {
+        open_ = false;
+        return false;
+    }
+
+    open_ = true;
     return true;
 }
 
