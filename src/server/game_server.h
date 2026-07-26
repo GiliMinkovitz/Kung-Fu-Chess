@@ -1,8 +1,11 @@
 #pragma once
 
+#include "server/authentication_service.h"
 #include "server/game_room.h"
 #include "server/matchmaking.h"
 #include "server/player_session.h"
+#include "server/rating_service.h"
+#include "server/session_registry.h"
 #include "server/websocket_server.h"
 
 #include "database/game_repository.h"
@@ -41,6 +44,7 @@ private:
     void prune_sessions();
     void process_active_room(std::int64_t elapsed, std::chrono::steady_clock::time_point& last_tick);
     void finish_active_room();
+    void refresh_session_player(PlayerSession& session);
 
     WebSocketServer websocket_server_;
     Matchmaking matchmaking_;
@@ -48,6 +52,9 @@ private:
     SqliteDatabase database_;
     PlayerRepository player_repository_;
     GameRepository game_repository_;
+    RatingService rating_service_;
+    AuthenticationService authentication_service_;
+    SessionRegistry session_registry_;
     std::list<PlayerSession> sessions_;
     std::size_t next_session_id_ = 0;
     std::chrono::steady_clock::time_point last_tick_{};

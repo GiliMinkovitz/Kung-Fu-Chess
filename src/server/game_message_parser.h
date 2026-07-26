@@ -10,8 +10,13 @@
 
 namespace kfc {
 
+struct LoginRequest {
+    std::string username;
+    std::string password;
+};
+
 bool parse_play_message(std::string_view message);
-std::optional<std::string> parse_login_message(std::string_view message);
+std::optional<LoginRequest> parse_login_message(std::string_view message);
 std::optional<GameAction> parse_message(std::string_view message);
 bool is_action_allowed(const PlayerSession& session, const Match& match, const GameAction& action);
 

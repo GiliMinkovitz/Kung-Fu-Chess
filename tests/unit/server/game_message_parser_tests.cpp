@@ -42,7 +42,11 @@ struct ParserTestSession {
         client->connect();
         accept_thread.join();
         session = std::make_unique<kfc::PlayerSession>(0, &server.clients().back());
-        REQUIRE(session->login(username, repo));
+        if (const auto player = repo.find_by_username(username)) {
+            session->bind_player(*player);
+        } else if (const auto created = repo.create_player(username, 1000)) {
+            session->bind_player(*created);
+        }
     }
 };
 
@@ -61,15 +65,23 @@ TEST_CASE("GameMessageParserTest - ParsePlayMessage") {
 TEST_CASE("GameMessageParserTest - ParseLoginMessage") {
     const auto alice = kfc::parse_login_message("login alice");
     REQUIRE(alice.has_value());
-    CHECK(*alice == "alice");
+    CHECK(alice->username == "alice");
+    CHECK(alice->password.empty());
 
-    CHECK(kfc::parse_login_message("  login bob  ").value() == "bob");
+    const auto with_password = kfc::parse_login_message("login bob secret");
+    REQUIRE(with_password.has_value());
+    CHECK(with_password->username == "bob");
+    CHECK(with_password->password == "secret");
+
+    const auto trimmed = kfc::parse_login_message("  login carol  ");
+    REQUIRE(trimmed.has_value());
+    CHECK(trimmed->username == "carol");
+
     CHECK_FALSE(kfc::parse_login_message("").has_value());
     CHECK_FALSE(kfc::parse_login_message("login").has_value());
     CHECK_FALSE(kfc::parse_login_message("login  ").has_value());
     CHECK_FALSE(kfc::parse_login_message("signin alice").has_value());
-    CHECK_FALSE(kfc::parse_login_message("login alice extra").has_value());
-    CHECK_FALSE(kfc::parse_login_message("login alice\textra").has_value());
+    CHECK_FALSE(kfc::parse_login_message("login alice extra token").has_value());
 }
 
 TEST_CASE("GameMessageParserTest - ParseGameCommands") {

@@ -49,7 +49,7 @@ struct SessionFixture {
         accept_thread.join();
 
         session = std::make_unique<kfc::PlayerSession>(0, &server.clients().back());
-        REQUIRE(session->login(username, shared.player_repo));
+        session->bind_player(*shared.player_repo.find_by_username(username));
     }
 };
 

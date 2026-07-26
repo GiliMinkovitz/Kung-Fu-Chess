@@ -6,8 +6,11 @@ namespace kfc {
 
 NetworkInputHandler::NetworkInputHandler(WebSocketClient& client) : client_{client} {}
 
-bool NetworkInputHandler::send_login(const std::string& username) {
-    return client_.try_send("login " + username);
+bool NetworkInputHandler::send_login(const std::string& username, const std::string& password) {
+    if (password.empty()) {
+        return client_.try_send("login " + username);
+    }
+    return client_.try_send("login " + username + " " + password);
 }
 
 bool NetworkInputHandler::send_play() {

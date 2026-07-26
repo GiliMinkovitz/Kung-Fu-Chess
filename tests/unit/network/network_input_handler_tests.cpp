@@ -67,6 +67,15 @@ TEST_CASE("NetworkInputHandlerTest - SendsLoginCommand") {
     CHECK_EQ(*message, "login alice");
 }
 
+TEST_CASE("NetworkInputHandlerTest - SendsLoginWithPassword") {
+    ConnectedSession session;
+    REQUIRE(session.handler.send_login("alice", "secret"));
+
+    const auto message = poll_server_message(session.server);
+    REQUIRE(message.has_value());
+    CHECK_EQ(*message, "login alice secret");
+}
+
 TEST_CASE("NetworkInputHandlerTest - SendsPlayCommand") {
     ConnectedSession session;
     REQUIRE(session.handler.send_play());

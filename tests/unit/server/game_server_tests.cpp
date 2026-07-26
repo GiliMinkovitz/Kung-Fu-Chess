@@ -1,7 +1,9 @@
 #include "model/game_config.h"
+#include "network/login_message_reader.h"
 #include "network/matchmaking_message_reader.h"
 #include "network/websocket_client.h"
 #include "server/game_server.h"
+#include "server/rating_service.h"
 #include "test/socket_test_hooks.h"
 #include "test_helpers.h"
 
@@ -64,12 +66,39 @@ std::optional<std::string> poll_snapshot(kfc::WebSocketClient& client) {
     return std::nullopt;
 }
 
-void login_and_queue(kfc::GameServer& server, kfc::WebSocketClient& client,
-                     const std::string& username) {
+std::optional<std::string> poll_login_message(kfc::WebSocketClient& client,
+                                              int max_attempts = 200) {
+    for (int attempt = 0; attempt < max_attempts; ++attempt) {
+        if (const auto message = client.try_receive_snapshot()) {
+            if (kfc::read_login_message(*message).has_value()) {
+                return message;
+            }
+        }
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    }
+    return std::nullopt;
+}
+
+void login_client(kfc::GameServer& server, kfc::WebSocketClient& client,
+                  const std::string& username) {
     connect_through_server(server, client);
 
     REQUIRE(client.try_send("login " + username));
-    server.tick_once();
+    for (int attempt = 0; attempt < 50; ++attempt) {
+        server.tick_once();
+        if (const auto message = poll_login_message(client)) {
+            const auto result = kfc::read_login_message(*message);
+            REQUIRE(result.has_value());
+            REQUIRE(result->status == kfc::LoginResultStatus::Ok);
+            return;
+        }
+    }
+    FAIL("Expected login_ok response");
+}
+
+void login_and_queue(kfc::GameServer& server, kfc::WebSocketClient& client,
+                     const std::string& username) {
+    login_client(server, client, username);
 
     REQUIRE(client.try_send("play"));
     server.tick_once();
@@ -110,10 +139,7 @@ TEST_CASE("GameServerTest - AcceptsClientAndProcessesLogin") {
     kfc::GameServer server{0, kfc::test::make_board({{"wK", ".", "bK"}}), ":memory:"};
     kfc::WebSocketClient client{"127.0.0.1", server.websocket_server().port()};
 
-    connect_through_server(server, client);
-
-    REQUIRE(client.try_send("login server_user"));
-    server.tick_once();
+    login_client(server, client, "server_user");
 
     const auto player = server.player_repository().find_by_username("server_user");
     REQUIRE(player.has_value());
@@ -188,6 +214,8 @@ TEST_CASE("GameServerTest - FinishesGameAndUpdatesRatings") {
     REQUIRE(loser.has_value());
     const int winner_before = winner->rating();
     const int loser_before = loser->rating();
+    const kfc::RatingChange expected =
+        kfc::RatingService{}.calculate(winner_before, loser_before);
     const int game_id = *server.room().db_game_id();
 
     kfc::Match& match = server.room().match();
@@ -205,8 +233,8 @@ TEST_CASE("GameServerTest - FinishesGameAndUpdatesRatings") {
     const auto loser_after = server.player_repository().find_by_username("loser");
     REQUIRE(winner_after.has_value());
     REQUIRE(loser_after.has_value());
-    CHECK_EQ(winner_after->rating(), winner_before + 25);
-    CHECK_EQ(loser_after->rating(), loser_before - 25);
+    CHECK_EQ(winner_after->rating(), expected.winner_new_rating);
+    CHECK_EQ(loser_after->rating(), expected.loser_new_rating);
 
     sqlite3* db = server.database().connection();
     sqlite3_stmt* stmt = nullptr;
@@ -243,7 +271,7 @@ TEST_CASE("GameServerTest - RejectsMalformedLoginAndPlayMessages") {
     server.tick_once();
     CHECK_FALSE(server.player_repository().find_by_username("anyone").has_value());
 
-    REQUIRE(client.try_send("login malformed_alice extra"));
+    REQUIRE(client.try_send("login malformed_alice extra token"));
     server.tick_once();
     CHECK_FALSE(server.player_repository().find_by_username("malformed_alice").has_value());
 
@@ -252,9 +280,7 @@ TEST_CASE("GameServerTest - RejectsMalformedLoginAndPlayMessages") {
     CHECK_FALSE(server.player_repository().find_by_username("nobody").has_value());
 
     kfc::WebSocketClient valid_client{"127.0.0.1", server.websocket_server().port()};
-    connect_through_server(server, valid_client);
-    REQUIRE(valid_client.try_send("login valid_play_user"));
-    server.tick_once();
+    login_client(server, valid_client, "valid_play_user");
     REQUIRE(server.player_repository().find_by_username("valid_play_user").has_value());
 
     REQUIRE(valid_client.try_send("play extra"));
@@ -271,9 +297,7 @@ TEST_CASE("GameServerTest - IgnoresPlayMessagesWhileSearching") {
     kfc::GameServer server{0, kfc::test::make_board({{"wK", ".", "bK"}}), ":memory:"};
     kfc::WebSocketClient client{"127.0.0.1", server.websocket_server().port()};
 
-    connect_through_server(server, client);
-    REQUIRE(client.try_send("login queue_user"));
-    server.tick_once();
+    login_client(server, client, "queue_user");
 
     kfc::test::SocketTestHooks::forced_read_message = std::string("play");
     server.tick_once();
@@ -293,9 +317,7 @@ TEST_CASE("GameServerTest - SwallowsDuplicatePlayWhileSearching") {
     kfc::GameServer server{0, kfc::test::make_board({{"wK", ".", "bK"}}), ":memory:"};
     kfc::WebSocketClient client{"127.0.0.1", server.websocket_server().port()};
 
-    connect_through_server(server, client);
-    REQUIRE(client.try_send("login dup_user"));
-    server.tick_once();
+    login_client(server, client, "dup_play_user");
 
     kfc::test::SocketTestHooks::forced_read_message = std::string("play");
     server.tick_once();
@@ -315,9 +337,7 @@ TEST_CASE("GameServerTest - MatchmakingTimeoutNotifiesClient") {
     kfc::WebSocketClient client{"127.0.0.1", server.websocket_server().port()};
 
     server.matchmaking().set_queue_timeout(std::chrono::milliseconds(0));
-    connect_through_server(server, client);
-    REQUIRE(client.try_send("login timeout_user"));
-    server.tick_once();
+    login_client(server, client, "timeout_user");
     REQUIRE(client.try_send("play"));
     server.tick_once();
 
@@ -407,6 +427,31 @@ TEST_CASE("GameServerTest - ClampsLoserRatingAtZero") {
     const auto loser = server.player_repository().find_by_username("clamp_loser");
     REQUIRE(loser.has_value());
     CHECK_EQ(loser->rating(), 0);
+}
+
+TEST_CASE("GameServerTest - RejectsDuplicateLogin") {
+    kfc::GameServer server{0, kfc::test::make_board({{"wK", ".", "bK"}}), ":memory:"};
+    kfc::WebSocketClient first_client{"127.0.0.1", server.websocket_server().port()};
+    kfc::WebSocketClient second_client{"127.0.0.1", server.websocket_server().port()};
+
+    login_client(server, first_client, "dup_user");
+
+    connect_through_server(server, second_client);
+    REQUIRE(second_client.try_send("login dup_user"));
+
+    bool saw_failure = false;
+    for (int attempt = 0; attempt < 50 && !saw_failure; ++attempt) {
+        server.tick_once();
+        if (const auto message = poll_login_message(second_client)) {
+            const auto result = kfc::read_login_message(*message);
+            REQUIRE(result.has_value());
+            if (result->status == kfc::LoginResultStatus::Failed) {
+                CHECK_EQ(result->failure_reason, "already_connected");
+                saw_failure = true;
+            }
+        }
+    }
+    CHECK(saw_failure);
 }
 
 TEST_CASE("GameServerTest - RunLoopCanBeStoppedInTests") {

@@ -1,6 +1,5 @@
 #pragma once
 
-#include "database/player_repository.h"
 #include "model/piece.h"
 #include "server/client_connection.h"
 #include "server/player.h"
@@ -24,7 +23,7 @@ public:
     [[nodiscard]] std::size_t id() const noexcept;
     [[nodiscard]] PlayerSessionState state() const noexcept;
     [[nodiscard]] bool has_player() const noexcept;
-    bool login(const std::string& username, PlayerRepository& player_repository);
+    void bind_player(Player player);
     void request_play();
     void cancel_search();
     void set_playing();
@@ -38,9 +37,6 @@ public:
     [[nodiscard]] const ClientConnection* connection() const noexcept;
 
 private:
-    static Player load_or_create_player(const std::string& username,
-                                        PlayerRepository& player_repository);
-
     std::size_t id_;
     PlayerSessionState state_ = PlayerSessionState::Connected;
     std::optional<Player> player_;

@@ -52,7 +52,7 @@ public:
         owned->session = std::make_unique<kfc::PlayerSession>(next_id_++,
                                                               &owned->server.clients().back());
         kfc::PlayerSession& session = *owned->session;
-        REQUIRE(session.login(username, repo_));
+        session.bind_player(*repo_.find_by_username(username));
         session.request_play();
         sessions_.push_back(std::move(owned));
         return session;

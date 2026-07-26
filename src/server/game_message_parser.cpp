@@ -90,7 +90,7 @@ bool parse_play_message(std::string_view message) {
     return true;
 }
 
-std::optional<std::string> parse_login_message(std::string_view message) {
+std::optional<LoginRequest> parse_login_message(std::string_view message) {
     while (!message.empty() && std::isspace(static_cast<unsigned char>(message.front()))) {
         message.remove_prefix(1);
     }
@@ -111,11 +111,18 @@ std::optional<std::string> parse_login_message(std::string_view message) {
     if (!username || username->empty()) {
         return std::nullopt;
     }
-    if (next_token(message)) {
-        return std::nullopt;
+
+    LoginRequest request;
+    request.username = std::string(*username);
+
+    if (const auto password = next_token(message)) {
+        request.password = std::string(*password);
+        if (next_token(message)) {
+            return std::nullopt;
+        }
     }
 
-    return std::string(*username);
+    return request;
 }
 
 std::optional<GameAction> parse_message(std::string_view message) {

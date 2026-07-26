@@ -1,3 +1,4 @@
+#include "server/rating_service.h"
 #include "server/game_server.h"
 
 #include "model/game_config.h"
@@ -32,7 +33,8 @@ GameServer::GameServer(unsigned short port, BoardModel default_board, const std:
       room_(std::move(default_board)),
       database_(db_path),
       player_repository_(database_),
-      game_repository_(database_) {
+      game_repository_(database_),
+      authentication_service_(player_repository_) {
     if (!database_.open() || !database_.initialize_schema()) {
         throw std::runtime_error("Failed to initialize database");
     }
@@ -91,8 +93,22 @@ void GameServer::process_pending_logins() {
             }
 
             if (!session.has_player()) {
-                if (const auto username = parse_login_message(*raw_message)) {
-                    session.login(*username, player_repository_);
+                if (const auto request = parse_login_message(*raw_message)) {
+                    if (session_registry_.is_online(request->username)) {
+                        session.connection()->try_send("login_failed already_connected");
+                        continue;
+                    }
+
+                    const AuthenticationResult auth =
+                        authentication_service_.authenticate(request->username, request->password);
+                    if (!auth.success) {
+                        session.connection()->try_send("login_failed " + auth.failure_reason);
+                        continue;
+                    }
+
+                    session.bind_player(*auth.player);
+                    session_registry_.register_session(auth.player->username());
+                    session.connection()->try_send("login_ok " + std::to_string(auth.player->rating()));
                 }
                 continue;
             }
@@ -133,6 +149,9 @@ void GameServer::prune_sessions() {
 
     for (auto it = sessions_.begin(); it != sessions_.end();) {
         if (!it->connection()->is_open()) {
+            if (it->has_player()) {
+                session_registry_.unregister_session(it->player().username());
+            }
             matchmaking_.remove(*it);
             it = sessions_.erase(it);
         } else {
@@ -169,15 +188,11 @@ void GameServer::finish_active_room() {
                 *winner_color == PieceColor::White ? room_.white_player() : room_.black_player();
             const Player* loser =
                 *winner_color == PieceColor::White ? room_.black_player() : room_.white_player();
-            if (winner != nullptr) {
-                player_repository_.update_rating(winner->id(), winner->rating() + 25);
-                if (loser != nullptr) {
-                    int loser_rating = loser->rating() - 25;
-                    if (loser_rating < 0) {
-                        loser_rating = 0;
-                    }
-                    player_repository_.update_rating(loser->id(), loser_rating);
-                }
+            if (winner != nullptr && loser != nullptr) {
+                const RatingChange change =
+                    rating_service_.calculate(winner->rating(), loser->rating());
+                player_repository_.update_rating(winner->id(), change.winner_new_rating);
+                player_repository_.update_rating(loser->id(), change.loser_new_rating);
                 game_repository_.finish_game(*game_id, winner->id());
             }
         }
@@ -189,10 +204,23 @@ void GameServer::finish_active_room() {
     room_.reset();
 
     if (white != nullptr) {
+        refresh_session_player(*white);
+        session_registry_.unregister_session(white->player().username());
         white->connection()->close();
     }
     if (black != nullptr) {
+        refresh_session_player(*black);
+        session_registry_.unregister_session(black->player().username());
         black->connection()->close();
+    }
+}
+
+void GameServer::refresh_session_player(PlayerSession& session) {
+    if (!session.has_player()) {
+        return;
+    }
+    if (const auto updated = player_repository_.find_by_username(session.player().username())) {
+        session.bind_player(*updated);
     }
 }
 
