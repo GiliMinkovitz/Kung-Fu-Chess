@@ -77,7 +77,7 @@ bool ClientConnection::detect_peer_disconnect() {
         return true;
     }
 
-    if (available_bytes > 0) {
+    if (available_bytes > 0 || buffered_bytes_ > 0) {
         return false;
     }
 

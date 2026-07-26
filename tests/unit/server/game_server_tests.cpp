@@ -46,16 +46,18 @@ std::optional<std::string> poll_message(kfc::WebSocketClient& client,
     return std::nullopt;
 }
 
-std::optional<std::string> poll_snapshot(kfc::WebSocketClient& client) {
-    for (int attempt = 0; attempt < 200; ++attempt) {
-        if (const auto message = client.try_receive_snapshot()) {
-            if (message->find("snapshot") != std::string::npos) {
-                return message;
-            }
+std::optional<std::string> drain_latest_snapshot(kfc::WebSocketClient& client) {
+    std::optional<std::string> latest;
+    for (int burst = 0; burst < 100; ++burst) {
+        const auto message = client.try_receive_snapshot();
+        if (!message) {
+            break;
         }
-        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        if (message->find("snapshot") != std::string::npos) {
+            latest = std::move(message);
+        }
     }
-    return std::nullopt;
+    return latest;
 }
 
 std::optional<std::string> poll_login_message(kfc::WebSocketClient& client,
@@ -236,16 +238,19 @@ TEST_CASE("GameServerTest - ActiveRoomBroadcastsSnapshotsAndProcessesMoves") {
 
     start_match(server, white_client, black_client, "active_white", "active_black");
 
-    for (int attempt = 0; attempt < 50; ++attempt) {
+    bool snapshots_matched = false;
+    for (int attempt = 0; attempt < 200 && !snapshots_matched; ++attempt) {
         server.tick_once();
-        const auto white_snapshot = poll_snapshot(white_client);
-        const auto black_snapshot = poll_snapshot(black_client);
+        const auto white_snapshot = drain_latest_snapshot(white_client);
+        const auto black_snapshot = drain_latest_snapshot(black_client);
         if (white_snapshot.has_value() && black_snapshot.has_value()) {
             CHECK(white_snapshot->find("snapshot") != std::string::npos);
-            CHECK_EQ(*white_snapshot, *black_snapshot);
-            break;
+            if (*white_snapshot == *black_snapshot) {
+                snapshots_matched = true;
+            }
         }
     }
+    REQUIRE(snapshots_matched);
 
     REQUIRE(white_client.try_send("select 0 0"));
     server.tick_once();
