@@ -121,6 +121,15 @@ TEST_CASE("NetworkInputHandlerTest - SendsClearCommand") {
     CHECK_EQ(*message, "clear");
 }
 
+TEST_CASE("NetworkInputHandlerTest - SendsResignCommand") {
+    ConnectedSession session;
+    REQUIRE(session.handler.send_resign());
+
+    const auto message = poll_server_message(session.server);
+    REQUIRE(message.has_value());
+    CHECK_EQ(*message, "resign");
+}
+
 TEST_CASE("NetworkInputHandlerTest - ReturnsFalseWhenDisconnected") {
     kfc::WebSocketClient client{"127.0.0.1", 19877};
     kfc::NetworkInputHandler handler{client};
@@ -131,4 +140,5 @@ TEST_CASE("NetworkInputHandlerTest - ReturnsFalseWhenDisconnected") {
     CHECK_FALSE(handler.send_move(0, 1));
     CHECK_FALSE(handler.send_jump(0, 0));
     CHECK_FALSE(handler.send_clear());
+    CHECK_FALSE(handler.send_resign());
 }

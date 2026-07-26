@@ -12,6 +12,7 @@ public:
 
     [[nodiscard]] std::optional<int> create_game(int white_player_id, int black_player_id);
     [[nodiscard]] bool finish_game(int game_id, int winner_player_id);
+    [[nodiscard]] bool finish_game_without_winner(int game_id);
 
 private:
     SqliteDatabase& database_;

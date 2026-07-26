@@ -19,6 +19,7 @@ public:
     bool send_move(std::size_t row, std::size_t col);
     bool send_jump(std::size_t row, std::size_t col);
     bool send_clear();
+    bool send_resign();
 
 private:
     WebSocketClient& client_;

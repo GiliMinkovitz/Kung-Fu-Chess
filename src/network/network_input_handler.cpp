@@ -33,4 +33,8 @@ bool NetworkInputHandler::send_clear() {
     return client_.try_send("clear");
 }
 
+bool NetworkInputHandler::send_resign() {
+    return client_.try_send("resign");
+}
+
 }  // namespace kfc

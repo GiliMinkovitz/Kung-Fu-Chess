@@ -1,10 +1,13 @@
 #include "model/game_config.h"
+#include "network/game_result_message_reader.h"
 #include "network/login_message_reader.h"
 #include "network/matchmaking_message_reader.h"
 #include "network/websocket_client.h"
 #include "server/authentication_service.h"
+#include "server/game_result_message_writer.h"
 #include "server/game_server.h"
 #include "server/rating_service.h"
+#include "server/websocket_server.h"
 #include "test/socket_test_hooks.h"
 #include "test_helpers.h"
 
@@ -68,6 +71,71 @@ std::optional<std::string> poll_login_message(kfc::WebSocketClient& client,
     return std::nullopt;
 }
 
+void drain_client_messages(kfc::WebSocketClient& client, int max_messages = 100) {
+    int drained = 0;
+    int idle_attempts = 0;
+    while (drained < max_messages && idle_attempts < 20) {
+        if (const auto message = client.try_receive_snapshot()) {
+            ++drained;
+            idle_attempts = 0;
+            continue;
+        }
+        ++idle_attempts;
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    }
+}
+
+// Consumes every message currently pending on the client, keeping the first
+// game_result found. Other message types are discarded.
+void poll_available_game_results(kfc::WebSocketClient& client, std::optional<kfc::GameResult>& out) {
+    if (out.has_value()) {
+        return;
+    }
+
+    for (int burst = 0; burst < 100; ++burst) {
+        const auto message = client.try_receive_snapshot();
+        if (!message) {
+            break;
+        }
+        if (const auto result = kfc::read_game_result_message(*message)) {
+            out = result;
+            break;
+        }
+    }
+}
+
+std::optional<kfc::GameResult> poll_game_result(kfc::WebSocketClient& client,
+                                                int max_attempts = 2000) {
+    std::optional<kfc::GameResult> result;
+    for (int attempt = 0; attempt < max_attempts && !result.has_value(); ++attempt) {
+        poll_available_game_results(client, result);
+        if (!result.has_value()) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        }
+    }
+    return result;
+}
+
+struct GameResultPair {
+    std::optional<kfc::GameResult> white;
+    std::optional<kfc::GameResult> black;
+};
+
+GameResultPair poll_both_game_results(kfc::WebSocketClient& white_client,
+                                      kfc::WebSocketClient& black_client,
+                                      int max_attempts = 2000) {
+    GameResultPair results;
+    for (int attempt = 0; attempt < max_attempts && (!results.white || !results.black);
+         ++attempt) {
+        poll_available_game_results(white_client, results.white);
+        poll_available_game_results(black_client, results.black);
+        if (!results.white || !results.black) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        }
+    }
+    return results;
+}
+
 void login_client(kfc::GameServer& server, kfc::WebSocketClient& client,
                   const std::string& username, const std::string& password = "testpass") {
     connect_through_server(server, client);
@@ -101,12 +169,15 @@ void start_match(kfc::GameServer& server, kfc::WebSocketClient& white_client,
 
     for (int attempt = 0; attempt < 50 && !server.room().active(); ++attempt) {
         server.tick_once();
-        (void)poll_message(white_client);
-        (void)poll_message(black_client);
+        (void)white_client.try_receive_snapshot();
+        (void)black_client.try_receive_snapshot();
     }
 
     REQUIRE(server.room().active());
     REQUIRE(server.room().db_game_id().has_value());
+
+    drain_client_messages(white_client, 200);
+    drain_client_messages(black_client, 200);
 }
 
 }  // namespace
@@ -233,6 +304,232 @@ TEST_CASE("GameServerTest - FinishesGameAndUpdatesRatings") {
              "finished");
     CHECK_EQ(sqlite3_column_int(stmt, 1), winner_after->id());
     sqlite3_finalize(stmt);
+}
+
+TEST_CASE("GameServerTest - FinishesGameWithExplicitWinner") {
+    kfc::GameServer server{0, kfc::test::make_board({{"wK", ".", "bK"}}), ":memory:"};
+    kfc::WebSocketClient white_client{"127.0.0.1", server.websocket_server().port()};
+    kfc::WebSocketClient black_client{"127.0.0.1", server.websocket_server().port()};
+
+    start_match(server, white_client, black_client, "explicit_winner", "explicit_loser");
+
+    const auto winner = server.player_repository().find_by_username("explicit_winner");
+    const auto loser = server.player_repository().find_by_username("explicit_loser");
+    REQUIRE(winner.has_value());
+    REQUIRE(loser.has_value());
+    const kfc::RatingChange expected =
+        kfc::RatingService{}.calculate(winner->rating(), loser->rating());
+    const int game_id = *server.room().db_game_id();
+
+    CHECK_FALSE(server.room().match().is_game_over());
+
+    server.finish_active_room_for_tests(kfc::PieceColor::White, kfc::FinishReason::Disconnect);
+
+    REQUIRE_FALSE(server.room().active());
+
+    const auto winner_after = server.player_repository().find_by_username("explicit_winner");
+    const auto loser_after = server.player_repository().find_by_username("explicit_loser");
+    REQUIRE(winner_after.has_value());
+    REQUIRE(loser_after.has_value());
+    CHECK_EQ(winner_after->rating(), expected.winner_new_rating);
+    CHECK_EQ(loser_after->rating(), expected.loser_new_rating);
+
+    sqlite3* db = server.database().connection();
+    sqlite3_stmt* stmt = nullptr;
+    REQUIRE(sqlite3_prepare_v2(db,
+                               "SELECT status, winner_id FROM games WHERE id = ? LIMIT 1;", -1,
+                               &stmt, nullptr) == SQLITE_OK);
+    sqlite3_bind_int(stmt, 1, game_id);
+    REQUIRE(sqlite3_step(stmt) == SQLITE_ROW);
+    CHECK_EQ(std::string(reinterpret_cast<const char*>(sqlite3_column_text(stmt, 0))),
+             "finished");
+    CHECK_EQ(sqlite3_column_int(stmt, 1), winner_after->id());
+    sqlite3_finalize(stmt);
+}
+
+TEST_CASE("GameServerTest - DisconnectingPlayerLosesGame") {
+    kfc::GameServer server{0, kfc::test::make_board({{"wK", ".", "bK"}}), ":memory:"};
+    kfc::WebSocketClient white_client{"127.0.0.1", server.websocket_server().port()};
+    kfc::WebSocketClient black_client{"127.0.0.1", server.websocket_server().port()};
+
+    start_match(server, white_client, black_client, "dc_white", "dc_black");
+
+    const auto white = server.player_repository().find_by_username("dc_white");
+    const auto black = server.player_repository().find_by_username("dc_black");
+    REQUIRE(white.has_value());
+    REQUIRE(black.has_value());
+    const kfc::RatingChange expected =
+        kfc::RatingService{}.calculate(black->rating(), white->rating());
+    const int game_id = *server.room().db_game_id();
+
+    white_client.disconnect();
+    server.tick_once();
+
+    REQUIRE_FALSE(server.room().active());
+
+    const auto black_after = server.player_repository().find_by_username("dc_black");
+    const auto white_after = server.player_repository().find_by_username("dc_white");
+    REQUIRE(black_after.has_value());
+    REQUIRE(white_after.has_value());
+    CHECK_EQ(black_after->rating(), expected.winner_new_rating);
+    CHECK_EQ(white_after->rating(), expected.loser_new_rating);
+
+    sqlite3* db = server.database().connection();
+    sqlite3_stmt* stmt = nullptr;
+    REQUIRE(sqlite3_prepare_v2(db,
+                               "SELECT status, winner_id FROM games WHERE id = ? LIMIT 1;", -1,
+                               &stmt, nullptr) == SQLITE_OK);
+    sqlite3_bind_int(stmt, 1, game_id);
+    REQUIRE(sqlite3_step(stmt) == SQLITE_ROW);
+    CHECK_EQ(std::string(reinterpret_cast<const char*>(sqlite3_column_text(stmt, 0))),
+             "finished");
+    CHECK_EQ(sqlite3_column_int(stmt, 1), black_after->id());
+    sqlite3_finalize(stmt);
+}
+
+TEST_CASE("GameServerTest - ResignFinishesGame") {
+    kfc::GameServer server{0, kfc::test::make_board({{"wK", ".", "bK"}}), ":memory:"};
+    kfc::WebSocketClient white_client{"127.0.0.1", server.websocket_server().port()};
+    kfc::WebSocketClient black_client{"127.0.0.1", server.websocket_server().port()};
+
+    start_match(server, white_client, black_client, "resign_white", "resign_black");
+
+    const auto white = server.player_repository().find_by_username("resign_white");
+    const auto black = server.player_repository().find_by_username("resign_black");
+    REQUIRE(white.has_value());
+    REQUIRE(black.has_value());
+    const kfc::RatingChange expected =
+        kfc::RatingService{}.calculate(black->rating(), white->rating());
+    const int game_id = *server.room().db_game_id();
+
+    REQUIRE(white_client.try_send("resign"));
+    server.tick_once();
+
+    REQUIRE_FALSE(server.room().active());
+
+    const auto black_after = server.player_repository().find_by_username("resign_black");
+    const auto white_after = server.player_repository().find_by_username("resign_white");
+    REQUIRE(black_after.has_value());
+    REQUIRE(white_after.has_value());
+    CHECK_EQ(black_after->rating(), expected.winner_new_rating);
+    CHECK_EQ(white_after->rating(), expected.loser_new_rating);
+
+    sqlite3* db = server.database().connection();
+    sqlite3_stmt* stmt = nullptr;
+    REQUIRE(sqlite3_prepare_v2(db,
+                               "SELECT status, winner_id FROM games WHERE id = ? LIMIT 1;", -1,
+                               &stmt, nullptr) == SQLITE_OK);
+    sqlite3_bind_int(stmt, 1, game_id);
+    REQUIRE(sqlite3_step(stmt) == SQLITE_ROW);
+    CHECK_EQ(std::string(reinterpret_cast<const char*>(sqlite3_column_text(stmt, 0))),
+             "finished");
+    CHECK_EQ(sqlite3_column_int(stmt, 1), black_after->id());
+    sqlite3_finalize(stmt);
+}
+
+TEST_CASE("GameServerTest - DeliversGameResultMessageOverWebSocket") {
+    kfc::WebSocketServer server{0};
+    kfc::WebSocketClient client{"127.0.0.1", server.port()};
+
+    const std::size_t expected_count = server.clients().size() + 1;
+    std::thread connect_thread{[&]() { client.connect(); }};
+    for (int attempt = 0; attempt < 1000 && server.clients().size() < expected_count; ++attempt) {
+        server.try_accept();
+        if (server.clients().size() < expected_count) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        }
+    }
+    connect_thread.join();
+    REQUIRE_EQ(server.clients().size(), expected_count);
+
+    const std::string message =
+        kfc::create_game_result_message(true, kfc::FinishReason::Resign, 1025);
+    REQUIRE(server.clients().back().try_send(message));
+
+    const auto received = poll_game_result(client);
+    REQUIRE(received.has_value());
+    CHECK(received->won);
+    CHECK_EQ(received->reason, "resign");
+    CHECK_EQ(received->rating, 1025);
+}
+
+TEST_CASE("GameServerTest - GameResultSentOnExplicitFinish") {
+    kfc::test::SocketTestHooks::reset();
+    kfc::GameServer server{0, kfc::test::make_board({{"wK", ".", "bK"}}), ":memory:"};
+    kfc::WebSocketClient white_client{"127.0.0.1", server.websocket_server().port()};
+    kfc::WebSocketClient black_client{"127.0.0.1", server.websocket_server().port()};
+
+    start_match(server, white_client, black_client, "result_explicit_white", "result_explicit_black");
+
+    const kfc::RatingChange expected = kfc::RatingService{}.calculate(1000, 1000);
+
+    server.finish_active_room_for_tests(kfc::PieceColor::White, kfc::FinishReason::Resign);
+
+    const GameResultPair results = poll_both_game_results(white_client, black_client);
+
+    REQUIRE(results.white.has_value());
+    REQUIRE(results.black.has_value());
+    CHECK(results.white->won);
+    CHECK_FALSE(results.black->won);
+    CHECK_EQ(results.white->reason, "resign");
+    CHECK_EQ(results.white->rating, expected.winner_new_rating);
+    CHECK_EQ(results.black->rating, expected.loser_new_rating);
+}
+
+TEST_CASE("GameServerTest - GameResultSentAfterResign") {
+    kfc::test::SocketTestHooks::reset();
+    kfc::GameServer server{0, kfc::test::make_board({{"wK", ".", "bK"}}), ":memory:"};
+    kfc::WebSocketClient white_client{"127.0.0.1", server.websocket_server().port()};
+    kfc::WebSocketClient black_client{"127.0.0.1", server.websocket_server().port()};
+
+    start_match(server, white_client, black_client, "result_resign_white", "result_resign_black");
+
+    const auto white = server.player_repository().find_by_username("result_resign_white");
+    const auto black = server.player_repository().find_by_username("result_resign_black");
+    REQUIRE(white.has_value());
+    REQUIRE(black.has_value());
+    const kfc::RatingChange expected =
+        kfc::RatingService{}.calculate(black->rating(), white->rating());
+
+    REQUIRE(white_client.try_send("resign"));
+    server.tick_once();
+
+    const GameResultPair results = poll_both_game_results(white_client, black_client);
+
+    REQUIRE(results.black.has_value());
+    REQUIRE(results.white.has_value());
+    CHECK(results.black->won);
+    CHECK_EQ(results.black->reason, "resign");
+    CHECK_EQ(results.black->rating, expected.winner_new_rating);
+    CHECK_FALSE(results.white->won);
+    CHECK_EQ(results.white->reason, "resign");
+    CHECK_EQ(results.white->rating, expected.loser_new_rating);
+}
+
+TEST_CASE("GameServerTest - GameResultSentAfterDisconnect") {
+    kfc::test::SocketTestHooks::reset();
+    kfc::GameServer server{0, kfc::test::make_board({{"wK", ".", "bK"}}), ":memory:"};
+    kfc::WebSocketClient white_client{"127.0.0.1", server.websocket_server().port()};
+    kfc::WebSocketClient black_client{"127.0.0.1", server.websocket_server().port()};
+
+    start_match(server, white_client, black_client, "result_dc_white", "result_dc_black");
+
+    const auto white = server.player_repository().find_by_username("result_dc_white");
+    const auto black = server.player_repository().find_by_username("result_dc_black");
+    REQUIRE(white.has_value());
+    REQUIRE(black.has_value());
+    const kfc::RatingChange expected =
+        kfc::RatingService{}.calculate(black->rating(), white->rating());
+
+    white_client.disconnect();
+    server.tick_once();
+
+    const std::optional<kfc::GameResult> black_result = poll_game_result(black_client, 2000);
+
+    REQUIRE(black_result.has_value());
+    CHECK(black_result->won);
+    CHECK_EQ(black_result->reason, "opponent_disconnect");
+    CHECK_EQ(black_result->rating, expected.winner_new_rating);
 }
 
 TEST_CASE("GameServerTest - ExposesRepositoriesAndMatchmaking") {

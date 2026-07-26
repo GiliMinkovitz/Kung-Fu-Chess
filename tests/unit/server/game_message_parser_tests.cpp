@@ -62,6 +62,15 @@ TEST_CASE("GameMessageParserTest - ParsePlayMessage") {
     CHECK_FALSE(kfc::parse_play_message(" play\textra "));
 }
 
+TEST_CASE("GameMessageParserTest - ParseResignMessage") {
+    CHECK(kfc::parse_resign_message("resign"));
+    CHECK(kfc::parse_resign_message("  resign  "));
+    CHECK_FALSE(kfc::parse_resign_message(""));
+    CHECK_FALSE(kfc::parse_resign_message("   "));
+    CHECK_FALSE(kfc::parse_resign_message("resign extra"));
+    CHECK_FALSE(kfc::parse_resign_message("quit"));
+}
+
 TEST_CASE("GameMessageParserTest - ParseLoginMessage") {
     const auto alice = kfc::parse_login_message("login alice");
     REQUIRE(alice.has_value());

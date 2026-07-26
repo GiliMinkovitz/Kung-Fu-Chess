@@ -90,6 +90,29 @@ bool parse_play_message(std::string_view message) {
     return true;
 }
 
+bool parse_resign_message(std::string_view message) {
+    while (!message.empty() && std::isspace(static_cast<unsigned char>(message.front()))) {
+        message.remove_prefix(1);
+    }
+    while (!message.empty() && std::isspace(static_cast<unsigned char>(message.back()))) {
+        message.remove_suffix(1);
+    }
+
+    if (message.empty()) {
+        return false;
+    }
+
+    const auto command = next_token(message);
+    if (!command || *command != "resign") {
+        return false;
+    }
+    if (next_token(message)) {
+        return false;
+    }
+
+    return true;
+}
+
 std::optional<LoginRequest> parse_login_message(std::string_view message) {
     while (!message.empty() && std::isspace(static_cast<unsigned char>(message.front()))) {
         message.remove_prefix(1);

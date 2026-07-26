@@ -56,4 +56,25 @@ bool GameRepository::finish_game(int game_id, int winner_player_id) {
     return updated;
 }
 
+bool GameRepository::finish_game_without_winner(int game_id) {
+    sqlite3* db = database_.connection();
+    if (db == nullptr) {
+        return false;
+    }
+
+    sqlite3_stmt* stmt = nullptr;
+    constexpr const char* sql =
+        "UPDATE games SET status = 'finished', winner_id = NULL WHERE id = ?;";
+
+    if (sqlite3_prepare_v2(db, sql, -1, &stmt, nullptr) != SQLITE_OK) {
+        return false;
+    }
+
+    sqlite3_bind_int(stmt, 1, game_id);
+
+    const bool updated = sqlite3_step(stmt) == SQLITE_DONE;
+    sqlite3_finalize(stmt);
+    return updated;
+}
+
 }  // namespace kfc

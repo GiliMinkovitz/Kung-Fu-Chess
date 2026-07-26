@@ -16,6 +16,7 @@ struct LoginRequest {
 };
 
 bool parse_play_message(std::string_view message);
+bool parse_resign_message(std::string_view message);
 std::optional<LoginRequest> parse_login_message(std::string_view message);
 std::optional<GameAction> parse_message(std::string_view message);
 bool is_action_allowed(const PlayerSession& session, const Match& match, const GameAction& action);

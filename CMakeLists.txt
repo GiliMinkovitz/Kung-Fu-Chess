@@ -43,6 +43,7 @@ set(KFC_NETWORK_SOURCES
     src/network/snapshot_reader.cpp
     src/network/matchmaking_message_reader.cpp
     src/network/login_message_reader.cpp
+    src/network/game_result_message_reader.cpp
     src/network/network_input_handler.cpp
 )
 
@@ -62,6 +63,7 @@ set(KFC_SERVER_ARCH_SOURCES
     src/server/authentication_service.cpp
     src/server/session_registry.cpp
     src/server/game_server.cpp
+    src/server/game_result_message_writer.cpp
 )
 
 set(KFC_DATABASE_SOURCES
@@ -318,6 +320,7 @@ set(KFC_TEST_SOURCES
     tests/unit/server/websocket_server_tests.cpp
     tests/unit/network/matchmaking_message_reader_tests.cpp
     tests/unit/network/login_message_reader_tests.cpp
+    tests/unit/network/game_result_message_reader_tests.cpp
     tests/integration/integration_test.cpp
 )
 
