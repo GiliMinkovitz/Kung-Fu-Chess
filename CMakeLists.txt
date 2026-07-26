@@ -58,6 +58,7 @@ set(KFC_SERVER_ARCH_SOURCES
     src/server/game_room.cpp
     src/server/game_message_parser.cpp
     src/server/rating_service.cpp
+    src/server/password_hasher.cpp
     src/server/authentication_service.cpp
     src/server/session_registry.cpp
     src/server/game_server.cpp
@@ -311,6 +312,7 @@ set(KFC_TEST_SOURCES
     tests/unit/server/game_message_parser_tests.cpp
     tests/unit/server/rating_service_tests.cpp
     tests/unit/server/authentication_service_tests.cpp
+    tests/unit/server/password_hasher_tests.cpp
     tests/unit/server/session_registry_tests.cpp
     tests/unit/server/game_server_tests.cpp
     tests/unit/server/websocket_server_tests.cpp

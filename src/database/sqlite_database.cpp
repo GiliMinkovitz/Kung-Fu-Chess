@@ -10,12 +10,16 @@ constexpr const char* kPlayersTableSql = R"(
 CREATE TABLE IF NOT EXISTS players (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     username TEXT NOT NULL UNIQUE,
-    rating INTEGER NOT NULL DEFAULT 1000
+    rating INTEGER NOT NULL DEFAULT 1000,
+    password_hash TEXT
 );
 )";
 
 constexpr const char* kPlayersRatingMigrationSql =
     "ALTER TABLE players ADD COLUMN rating INTEGER NOT NULL DEFAULT 1000;";
+
+constexpr const char* kPlayersPasswordHashMigrationSql =
+    "ALTER TABLE players ADD COLUMN password_hash TEXT;";
 
 constexpr const char* kGamesTableSql = R"(
 CREATE TABLE IF NOT EXISTS games (
@@ -79,6 +83,7 @@ bool SqliteDatabase::initialize_schema() {
 
     return exec_sql(db_, kPlayersTableSql) &&
            exec_sql_ignore_duplicate_column(db_, kPlayersRatingMigrationSql) &&
+           exec_sql_ignore_duplicate_column(db_, kPlayersPasswordHashMigrationSql) &&
            exec_sql(db_, kGamesTableSql);
 }
 

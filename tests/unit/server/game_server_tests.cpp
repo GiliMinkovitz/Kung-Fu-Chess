@@ -2,6 +2,7 @@
 #include "network/login_message_reader.h"
 #include "network/matchmaking_message_reader.h"
 #include "network/websocket_client.h"
+#include "server/authentication_service.h"
 #include "server/game_server.h"
 #include "server/rating_service.h"
 #include "test/socket_test_hooks.h"
@@ -42,18 +43,6 @@ std::optional<std::string> poll_message(kfc::WebSocketClient& client,
     return std::nullopt;
 }
 
-std::optional<std::string> poll_matchmaking_message(kfc::WebSocketClient& client) {
-    for (int attempt = 0; attempt < 200; ++attempt) {
-        if (const auto message = client.try_receive_snapshot()) {
-            if (kfc::read_matchmaking_message(*message).has_value()) {
-                return message;
-            }
-        }
-        std::this_thread::sleep_for(std::chrono::milliseconds(1));
-    }
-    return std::nullopt;
-}
-
 std::optional<std::string> poll_snapshot(kfc::WebSocketClient& client) {
     for (int attempt = 0; attempt < 200; ++attempt) {
         if (const auto message = client.try_receive_snapshot()) {
@@ -80,10 +69,10 @@ std::optional<std::string> poll_login_message(kfc::WebSocketClient& client,
 }
 
 void login_client(kfc::GameServer& server, kfc::WebSocketClient& client,
-                  const std::string& username) {
+                  const std::string& username, const std::string& password = "testpass") {
     connect_through_server(server, client);
 
-    REQUIRE(client.try_send("login " + username));
+    REQUIRE(client.try_send("login " + username + " " + password));
     for (int attempt = 0; attempt < 50; ++attempt) {
         server.tick_once();
         if (const auto message = poll_login_message(client)) {
@@ -97,8 +86,8 @@ void login_client(kfc::GameServer& server, kfc::WebSocketClient& client,
 }
 
 void login_and_queue(kfc::GameServer& server, kfc::WebSocketClient& client,
-                     const std::string& username) {
-    login_client(server, client, username);
+                     const std::string& username, const std::string& password = "testpass") {
+    login_client(server, client, username, password);
 
     REQUIRE(client.try_send("play"));
     server.tick_once();
@@ -151,15 +140,12 @@ TEST_CASE("GameServerTest - MatchmakingFlowFindsOpponents") {
     kfc::WebSocketClient white_client{"127.0.0.1", server.websocket_server().port()};
     kfc::WebSocketClient black_client{"127.0.0.1", server.websocket_server().port()};
 
-    login_and_queue(server, white_client, "white_user");
-    const auto searching = poll_matchmaking_message(white_client);
-    if (!searching.has_value()) {
+    login_client(server, white_client, "white_user");
+    REQUIRE(white_client.try_send("play"));
+    for (int attempt = 0; attempt < 50 && server.matchmaking().waiting_count() == 0; ++attempt) {
         server.tick_once();
     }
-    const auto searching_after_tick = poll_matchmaking_message(white_client);
-    REQUIRE(searching_after_tick.has_value());
-    CHECK(kfc::read_matchmaking_message(*searching_after_tick) ==
-          kfc::MatchmakingState::Searching);
+    REQUIRE_EQ(server.matchmaking().waiting_count(), 1u);
 
     login_and_queue(server, black_client, "black_user");
     for (int attempt = 0; attempt < 50 && !server.room().active(); ++attempt) {
@@ -412,9 +398,28 @@ TEST_CASE("GameServerTest - ClampsLoserRatingAtZero") {
     kfc::WebSocketClient white_client{"127.0.0.1", server.websocket_server().port()};
     kfc::WebSocketClient black_client{"127.0.0.1", server.websocket_server().port()};
 
-    REQUIRE(server.player_repository().create_player("clamp_winner", 50).has_value());
-    REQUIRE(server.player_repository().create_player("clamp_loser", 10).has_value());
-    start_match(server, white_client, black_client, "clamp_winner", "clamp_loser");
+    kfc::AuthenticationService auth{server.player_repository()};
+    REQUIRE(auth.authenticate("clamp_winner", "testpass").success);
+    REQUIRE(auth.authenticate("clamp_loser", "testpass").success);
+
+    const auto winner = server.player_repository().find_by_username("clamp_winner");
+    const auto loser = server.player_repository().find_by_username("clamp_loser");
+    REQUIRE(winner.has_value());
+    REQUIRE(loser.has_value());
+    REQUIRE(server.player_repository().update_rating(winner->id(), 50));
+    REQUIRE(server.player_repository().update_rating(loser->id(), 10));
+
+    login_client(server, white_client, "clamp_winner", "testpass");
+    login_client(server, black_client, "clamp_loser", "testpass");
+
+    REQUIRE(white_client.try_send("play"));
+    REQUIRE(black_client.try_send("play"));
+    for (int attempt = 0; attempt < 50 && !server.room().active(); ++attempt) {
+        server.tick_once();
+        (void)poll_message(white_client);
+        (void)poll_message(black_client);
+    }
+    REQUIRE(server.room().active());
 
     kfc::Match& match = server.room().match();
     match.submit_action(kfc::Select{0, 0});
@@ -424,9 +429,61 @@ TEST_CASE("GameServerTest - ClampsLoserRatingAtZero") {
     }
     server.tick_once();
 
-    const auto loser = server.player_repository().find_by_username("clamp_loser");
-    REQUIRE(loser.has_value());
-    CHECK_EQ(loser->rating(), 0);
+    const auto loser_after = server.player_repository().find_by_username("clamp_loser");
+    REQUIRE(loser_after.has_value());
+    CHECK_EQ(loser_after->rating(), 0);
+}
+
+TEST_CASE("GameServerTest - RejectsWrongPassword") {
+    kfc::GameServer server{0, kfc::test::make_board({{"wK", ".", "bK"}}), ":memory:"};
+    kfc::WebSocketClient registered_client{"127.0.0.1", server.websocket_server().port()};
+    kfc::WebSocketClient attacker_client{"127.0.0.1", server.websocket_server().port()};
+
+    login_client(server, registered_client, "auth_user", "correct");
+    registered_client.disconnect();
+    for (int attempt = 0; attempt < 50; ++attempt) {
+        server.tick_once();
+    }
+
+    connect_through_server(server, attacker_client);
+    REQUIRE(attacker_client.try_send("login auth_user wrongpass"));
+
+    bool saw_failure = false;
+    for (int attempt = 0; attempt < 50 && !saw_failure; ++attempt) {
+        server.tick_once();
+        if (const auto message = poll_login_message(attacker_client)) {
+            const auto result = kfc::read_login_message(*message);
+            REQUIRE(result.has_value());
+            if (result->status == kfc::LoginResultStatus::Failed) {
+                CHECK_EQ(result->failure_reason, "invalid_password");
+                saw_failure = true;
+            }
+        }
+    }
+    CHECK(saw_failure);
+}
+
+TEST_CASE("GameServerTest - RejectsMissingPassword") {
+    kfc::GameServer server{0, kfc::test::make_board({{"wK", ".", "bK"}}), ":memory:"};
+    kfc::WebSocketClient client{"127.0.0.1", server.websocket_server().port()};
+
+    connect_through_server(server, client);
+    REQUIRE(client.try_send("login no_password_user"));
+
+    bool saw_failure = false;
+    for (int attempt = 0; attempt < 50 && !saw_failure; ++attempt) {
+        server.tick_once();
+        if (const auto message = poll_login_message(client)) {
+            const auto result = kfc::read_login_message(*message);
+            REQUIRE(result.has_value());
+            if (result->status == kfc::LoginResultStatus::Failed) {
+                CHECK_EQ(result->failure_reason, "missing_password");
+                saw_failure = true;
+            }
+        }
+    }
+    CHECK(saw_failure);
+    CHECK_FALSE(server.player_repository().find_by_username("no_password_user").has_value());
 }
 
 TEST_CASE("GameServerTest - RejectsDuplicateLogin") {

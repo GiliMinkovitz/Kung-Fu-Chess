@@ -7,6 +7,14 @@ namespace kfc {
 PlayerRepository::PlayerRepository(SqliteDatabase& database) : database_(database) {}
 
 std::optional<Player> PlayerRepository::find_by_username(const std::string& username) {
+    if (const auto credentials = find_credentials_by_username(username)) {
+        return Player(credentials->id, credentials->username, credentials->rating);
+    }
+    return std::nullopt;
+}
+
+std::optional<PlayerCredentials> PlayerRepository::find_credentials_by_username(
+    const std::string& username) {
     sqlite3* db = database_.connection();
     if (db == nullptr) {
         return std::nullopt;
@@ -14,7 +22,7 @@ std::optional<Player> PlayerRepository::find_by_username(const std::string& user
 
     sqlite3_stmt* stmt = nullptr;
     constexpr const char* sql =
-        "SELECT id, username, rating FROM players WHERE username = ? LIMIT 1;";
+        "SELECT id, username, rating, password_hash FROM players WHERE username = ? LIMIT 1;";
 
     if (sqlite3_prepare_v2(db, sql, -1, &stmt, nullptr) != SQLITE_OK) {
         return std::nullopt;
@@ -22,28 +30,36 @@ std::optional<Player> PlayerRepository::find_by_username(const std::string& user
 
     sqlite3_bind_text(stmt, 1, username.c_str(), -1, SQLITE_TRANSIENT);
 
-    std::optional<Player> player;
+    std::optional<PlayerCredentials> credentials;
     if (sqlite3_step(stmt) == SQLITE_ROW) {
         const int id = sqlite3_column_int(stmt, 0);
         const unsigned char* name = sqlite3_column_text(stmt, 1);
         const int rating = sqlite3_column_int(stmt, 2);
+        const unsigned char* password_hash = sqlite3_column_text(stmt, 3);
         if (name != nullptr) {
-            player = Player(id, reinterpret_cast<const char*>(name), rating);
+            credentials = PlayerCredentials{
+                id,
+                reinterpret_cast<const char*>(name),
+                rating,
+                password_hash != nullptr ? reinterpret_cast<const char*>(password_hash) : "",
+            };
         }
     }
 
     sqlite3_finalize(stmt);
-    return player;
+    return credentials;
 }
 
-std::optional<Player> PlayerRepository::create_player(const std::string& username, int rating) {
+std::optional<Player> PlayerRepository::create_player(const std::string& username, int rating,
+                                                      const std::string& password_hash) {
     sqlite3* db = database_.connection();
     if (db == nullptr) {
         return std::nullopt;
     }
 
     sqlite3_stmt* stmt = nullptr;
-    constexpr const char* sql = "INSERT INTO players (username, rating) VALUES (?, ?);";
+    constexpr const char* sql =
+        "INSERT INTO players (username, rating, password_hash) VALUES (?, ?, ?);";
 
     if (sqlite3_prepare_v2(db, sql, -1, &stmt, nullptr) != SQLITE_OK) {
         return std::nullopt;
@@ -51,6 +67,11 @@ std::optional<Player> PlayerRepository::create_player(const std::string& usernam
 
     sqlite3_bind_text(stmt, 1, username.c_str(), -1, SQLITE_TRANSIENT);
     sqlite3_bind_int(stmt, 2, rating);
+    if (password_hash.empty()) {
+        sqlite3_bind_null(stmt, 3);
+    } else {
+        sqlite3_bind_text(stmt, 3, password_hash.c_str(), -1, SQLITE_TRANSIENT);
+    }
 
     const bool inserted = sqlite3_step(stmt) == SQLITE_DONE;
     sqlite3_finalize(stmt);

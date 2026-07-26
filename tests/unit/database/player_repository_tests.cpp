@@ -76,6 +76,18 @@ TEST_CASE("PlayerRepositoryTest - LoadOrCreateFlow") {
     CHECK_EQ(loaded->rating(), 1000);
 }
 
+TEST_CASE("PlayerRepositoryTest - StoresAndLoadsPasswordHash") {
+    auto repo = make_repository();
+    const std::string hash = "pbkdf2_sha256$10000$abc$def";
+
+    const auto created = repo.create_player("secure", 1000, hash);
+    REQUIRE(created.has_value());
+
+    const auto credentials = repo.find_credentials_by_username("secure");
+    REQUIRE(credentials.has_value());
+    CHECK_EQ(credentials->password_hash, hash);
+}
+
 TEST_CASE("PlayerRepositoryTest - ReturnsNulloptWithoutDatabaseConnection") {
     kfc::SqliteDatabase db(":memory:");
     kfc::PlayerRepository repo{db};

@@ -313,7 +313,7 @@ int run_network_gui() {
 
     const std::string login_name = username.empty() ? "Player1" : username;
     kfc::NetworkInputHandler login_handler(client);
-    login_handler.send_login(login_name);
+    login_handler.send_login(login_name, login_name);
     login_handler.send_play();
 
     std::optional<kfc::BoardViewModel> latest_view;
