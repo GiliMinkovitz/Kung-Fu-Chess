@@ -83,6 +83,64 @@ set(KFC_DATABASE_SOURCES
     src/database/game_repository.cpp
 )
 
+function(kfc_find_postgresql out_has_libpq out_libraries out_include_dirs)
+    set(_has_libpq FALSE)
+    set(_libraries "")
+    set(_include_dirs "")
+
+    find_package(PostgreSQL QUIET)
+    if(TARGET PostgreSQL::PostgreSQL)
+        set(_has_libpq TRUE)
+        set(_libraries PostgreSQL::PostgreSQL)
+    elseif(PostgreSQL_FOUND AND PostgreSQL_LIBRARIES)
+        set(_has_libpq TRUE)
+        set(_libraries ${PostgreSQL_LIBRARIES})
+        set(_include_dirs ${PostgreSQL_INCLUDE_DIRS})
+    else()
+        find_package(PkgConfig QUIET)
+        if(PkgConfig_FOUND)
+            pkg_check_modules(LIBPQ QUIET libpq)
+            if(LIBPQ_FOUND)
+                set(_has_libpq TRUE)
+                set(_libraries ${LIBPQ_LIBRARIES})
+                set(_include_dirs ${LIBPQ_INCLUDE_DIRS})
+            endif()
+        endif()
+    endif()
+
+    set(${out_has_libpq} ${_has_libpq} PARENT_SCOPE)
+    set(${out_libraries} ${_libraries} PARENT_SCOPE)
+    set(${out_include_dirs} ${_include_dirs} PARENT_SCOPE)
+endfunction()
+
+kfc_find_postgresql(KFC_HAS_LIBPQ KFC_LIBPQ_LIBRARIES KFC_LIBPQ_INCLUDE_DIRS)
+
+if(KFC_HAS_LIBPQ)
+    message(STATUS "Found libpq; building PostgreSQL connection support")
+    list(APPEND KFC_DATABASE_SOURCES src/database/postgres_connection.cpp)
+else()
+    message(STATUS "libpq not found; building PostgreSQL connection stub")
+    list(APPEND KFC_DATABASE_SOURCES src/database/postgres_connection_stub.cpp)
+endif()
+
+function(kfc_link_postgresql target)
+    if(NOT KFC_HAS_LIBPQ)
+        target_compile_definitions(${target} PRIVATE KFC_HAS_LIBPQ=0)
+        return()
+    endif()
+
+    target_compile_definitions(${target} PRIVATE KFC_HAS_LIBPQ=1)
+    if(TARGET PostgreSQL::PostgreSQL)
+        target_link_libraries(${target} PRIVATE PostgreSQL::PostgreSQL)
+        return()
+    endif()
+
+    if(KFC_LIBPQ_INCLUDE_DIRS)
+        target_include_directories(${target} PRIVATE ${KFC_LIBPQ_INCLUDE_DIRS})
+    endif()
+    target_link_libraries(${target} PRIVATE ${KFC_LIBPQ_LIBRARIES})
+endfunction()
+
 set(KFC_CTD26_INCLUDE_DIR "${CMAKE_SOURCE_DIR}/third_party/CTD26/cpp/src")
 
 set(KFC_SOURCES
@@ -224,6 +282,8 @@ endfunction()
 
 kfc_link_sqlite(KungFuChessServer)
 
+kfc_link_postgresql(KungFuChessServer)
+
 if(MSVC)
     target_compile_options(KungFuChessServer PRIVATE /W4 /permissive-)
 else()
@@ -316,6 +376,7 @@ set(KFC_TEST_SOURCES
     tests/unit/network/network_input_handler_tests.cpp
     tests/unit/network/network_login_session_tests.cpp
     tests/unit/database/sqlite_database_tests.cpp
+    tests/unit/database/postgres_connection_tests.cpp
     tests/unit/database/player_repository_tests.cpp
     tests/unit/database/game_repository_tests.cpp
     tests/unit/server/matchmaking_tests.cpp
@@ -362,6 +423,7 @@ target_compile_definitions(KungFuChessTests PRIVATE KFC_TEST_BUILD)
 
 kfc_link_boost(KungFuChessTests)
 kfc_link_sqlite(KungFuChessTests)
+kfc_link_postgresql(KungFuChessTests)
 
 if(MSVC)
     target_compile_options(${PROJECT_NAME} PRIVATE /W4 /permissive-)

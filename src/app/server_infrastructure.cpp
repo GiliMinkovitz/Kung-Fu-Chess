@@ -1,5 +1,7 @@
 #include "app/server_infrastructure.h"
 
+#include "database/postgres_connection.h"
+#include "database/sqlite_database.h"
 #include "database/sqlite_game_repository.h"
 #include "server/database/sqlite_user_repository.h"
 
@@ -7,27 +9,52 @@
 
 namespace kfc::app {
 
-ServerInfrastructure::ServerInfrastructure(const DatabaseConfig& database_config)
-    : database_(database_config.path),
-      user_repository_(std::make_unique<SqliteUserRepository>(database_)),
-      game_repository_(std::make_unique<SqliteGameRepository>(database_)),
-      authentication_service_(*user_repository_) {
-    if (!database_.open() || !database_.initialize_schema()) {
+namespace {
+
+PostgresConnection::Settings make_postgres_settings(const DatabaseConfig& database_config) {
+    return PostgresConnection::Settings{
+        database_config.host,
+        database_config.port,
+        database_config.database,
+        database_config.username,
+        database_config.password,
+    };
+}
+
+}  // namespace
+
+ServerInfrastructure::ServerInfrastructure(const DatabaseConfig& database_config) {
+    if (database_config.backend == DatabaseBackend::PostgreSQL) {
+        auto postgres = std::make_unique<PostgresConnection>(make_postgres_settings(database_config));
+        if (!postgres->open()) {
+            throw std::runtime_error("Failed to connect to PostgreSQL");
+        }
+        database_connection_ = std::move(postgres);
+        throw std::runtime_error("PostgreSQL backend is not fully supported yet");
+    }
+
+    auto sqlite = std::make_unique<SqliteDatabase>(database_config.path);
+    if (!sqlite->open() || !sqlite->initialize_schema()) {
         throw std::runtime_error("Failed to initialize database");
     }
+
+    database_connection_ = std::move(sqlite);
+    user_repository_ = std::make_unique<SqliteUserRepository>(*database_connection_);
+    game_repository_ = std::make_unique<SqliteGameRepository>(*database_connection_);
+    authentication_service_ = std::make_unique<AuthenticationService>(*user_repository_);
 }
 
 GameServerDependencies ServerInfrastructure::dependencies() noexcept {
     return GameServerDependencies{
-        database_,
+        *database_connection_,
         *user_repository_,
         *game_repository_,
-        authentication_service_,
+        *authentication_service_,
     };
 }
 
 IDatabaseConnection& ServerInfrastructure::database() noexcept {
-    return database_;
+    return *database_connection_;
 }
 
 IUserRepository& ServerInfrastructure::user_repository() noexcept {
@@ -39,7 +66,7 @@ IGameRepository& ServerInfrastructure::game_repository() noexcept {
 }
 
 AuthenticationService& ServerInfrastructure::authentication_service() noexcept {
-    return authentication_service_;
+    return *authentication_service_;
 }
 
 }  // namespace kfc::app

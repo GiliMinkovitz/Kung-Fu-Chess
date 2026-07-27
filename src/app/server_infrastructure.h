@@ -7,7 +7,6 @@
 
 #include "database/i_database_connection.h"
 #include "database/i_game_repository.h"
-#include "database/sqlite_database.h"
 
 #include <memory>
 
@@ -25,10 +24,10 @@ public:
     [[nodiscard]] AuthenticationService& authentication_service() noexcept;
 
 private:
-    SqliteDatabase database_;
+    std::unique_ptr<IDatabaseConnection> database_connection_;
     std::unique_ptr<IUserRepository> user_repository_;
     std::unique_ptr<IGameRepository> game_repository_;
-    AuthenticationService authentication_service_;
+    std::unique_ptr<AuthenticationService> authentication_service_;
 };
 
 }  // namespace kfc::app

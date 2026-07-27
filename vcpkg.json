@@ -6,6 +6,7 @@
   "dependencies": [
     "boost-beast",
     "boost-system",
+    "libpq",
     "sqlite3"
   ],
   "builtin-baseline": "3ddaad9be959816602453ecb05533f8732464ef4"
