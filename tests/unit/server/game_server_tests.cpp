@@ -176,7 +176,7 @@ void start_match(kfc::GameServer& server, kfc::WebSocketClient& white_client,
     }
 
     REQUIRE(server.room().active());
-    REQUIRE(server.room().db_game_id().has_value());
+    REQUIRE(server.room_db_game_id().has_value());
 
     drain_client_messages(white_client, 200);
     drain_client_messages(black_client, 200);
@@ -215,10 +215,10 @@ TEST_CASE("GameServerTest - MatchmakingFlowFindsOpponents") {
 
     login_client(server, white_client, "white_user");
     REQUIRE(white_client.try_send("play"));
-    for (int attempt = 0; attempt < 50 && server.matchmaking().waiting_count() == 0; ++attempt) {
+    for (int attempt = 0; attempt < 50 && server.matchmaking_service().waiting_count() == 0; ++attempt) {
         server.tick_once();
     }
-    REQUIRE_EQ(server.matchmaking().waiting_count(), 1u);
+    REQUIRE_EQ(server.matchmaking_service().waiting_count(), 1u);
 
     login_and_queue(server, black_client, "black_user");
     for (int attempt = 0; attempt < 50 && !server.room().active(); ++attempt) {
@@ -228,7 +228,7 @@ TEST_CASE("GameServerTest - MatchmakingFlowFindsOpponents") {
     }
 
     CHECK(server.room().active());
-    REQUIRE(server.room().db_game_id().has_value());
+    REQUIRE(server.room_db_game_id().has_value());
 }
 
 TEST_CASE("GameServerTest - ActiveRoomBroadcastsSnapshotsAndProcessesMoves") {
@@ -278,7 +278,7 @@ TEST_CASE("GameServerTest - FinishesGameAndUpdatesRatings") {
     const int loser_before = loser->rating();
     const kfc::RatingChange expected =
         kfc::RatingService{}.calculate(winner_before, loser_before);
-    const int game_id = *server.room().db_game_id();
+    const int game_id = *server.room_db_game_id();
 
     kfc::Match& match = server.room().match();
     match.submit_action(kfc::Select{0, 0});
@@ -324,7 +324,7 @@ TEST_CASE("GameServerTest - FinishesGameWithExplicitWinner") {
     REQUIRE(loser.has_value());
     const kfc::RatingChange expected =
         kfc::RatingService{}.calculate(winner->rating(), loser->rating());
-    const int game_id = *server.room().db_game_id();
+    const int game_id = *server.room_db_game_id();
 
     CHECK_FALSE(server.room().match().is_game_over());
 
@@ -365,7 +365,7 @@ TEST_CASE("GameServerTest - DisconnectingPlayerLosesGame") {
     REQUIRE(black.has_value());
     const kfc::RatingChange expected =
         kfc::RatingService{}.calculate(black->rating(), white->rating());
-    const int game_id = *server.room().db_game_id();
+    const int game_id = *server.room_db_game_id();
 
     white_client.disconnect();
     server.tick_once();
@@ -405,7 +405,7 @@ TEST_CASE("GameServerTest - ResignFinishesGame") {
     REQUIRE(black.has_value());
     const kfc::RatingChange expected =
         kfc::RatingService{}.calculate(black->rating(), white->rating());
-    const int game_id = *server.room().db_game_id();
+    const int game_id = *server.room_db_game_id();
 
     REQUIRE(white_client.try_send("resign"));
     server.tick_once();
@@ -541,7 +541,7 @@ TEST_CASE("GameServerTest - ExposesRepositoriesAndMatchmaking") {
     kfc::GameServer server{0, kfc::test::make_board({{"wK", ".", "bK"}}), ":memory:"};
 
     CHECK(server.database().connection() != nullptr);
-    CHECK_EQ(server.matchmaking().waiting_count(), 0u);
+    CHECK_EQ(server.matchmaking_service().waiting_count(), 0u);
     CHECK(&server.game_repository() == &server.game_repository());
 }
 
@@ -573,11 +573,11 @@ TEST_CASE("GameServerTest - RejectsMalformedLoginAndPlayMessages") {
 
     REQUIRE(valid_client.try_send("play extra"));
     server.tick_once();
-    CHECK_FALSE(server.room().active());
+    CHECK(server.room_manager().active_rooms().empty());
 
     REQUIRE(valid_client.try_send("play"));
     server.tick_once();
-    CHECK_FALSE(server.room().active());
+    CHECK(server.room_manager().active_rooms().empty());
 }
 
 TEST_CASE("GameServerTest - IgnoresPlayMessagesWhileSearching") {
@@ -590,14 +590,14 @@ TEST_CASE("GameServerTest - IgnoresPlayMessagesWhileSearching") {
     kfc::test::SocketTestHooks::forced_read_message = std::string("play");
     server.tick_once();
     kfc::test::SocketTestHooks::reset();
-    REQUIRE_EQ(server.matchmaking().waiting_count(), 1u);
+    REQUIRE_EQ(server.matchmaking_service().waiting_count(), 1u);
 
     kfc::test::SocketTestHooks::forced_read_message = std::string("play extra");
     server.tick_once();
     kfc::test::SocketTestHooks::reset();
 
-    CHECK_EQ(server.matchmaking().waiting_count(), 1u);
-    CHECK_FALSE(server.room().active());
+    CHECK_EQ(server.matchmaking_service().waiting_count(), 1u);
+    CHECK(server.room_manager().active_rooms().empty());
 }
 
 TEST_CASE("GameServerTest - SwallowsDuplicatePlayWhileSearching") {
@@ -610,21 +610,21 @@ TEST_CASE("GameServerTest - SwallowsDuplicatePlayWhileSearching") {
     kfc::test::SocketTestHooks::forced_read_message = std::string("play");
     server.tick_once();
     kfc::test::SocketTestHooks::reset();
-    REQUIRE_EQ(server.matchmaking().waiting_count(), 1u);
+    REQUIRE_EQ(server.matchmaking_service().waiting_count(), 1u);
 
     kfc::test::SocketTestHooks::forced_read_message = std::string("play");
     server.tick_once();
     kfc::test::SocketTestHooks::reset();
 
-    CHECK_EQ(server.matchmaking().waiting_count(), 1u);
-    CHECK_FALSE(server.room().active());
+    CHECK_EQ(server.matchmaking_service().waiting_count(), 1u);
+    CHECK(server.room_manager().active_rooms().empty());
 }
 
 TEST_CASE("GameServerTest - MatchmakingTimeoutNotifiesClient") {
     kfc::GameServer server{0, kfc::test::make_board({{"wK", ".", "bK"}}), ":memory:"};
     kfc::WebSocketClient client{"127.0.0.1", server.websocket_server().port()};
 
-    server.matchmaking().set_queue_timeout(std::chrono::milliseconds(0));
+    server.matchmaking_service().set_queue_timeout(std::chrono::milliseconds(0));
     login_client(server, client, "timeout_user");
     REQUIRE(client.try_send("play"));
     server.tick_once();

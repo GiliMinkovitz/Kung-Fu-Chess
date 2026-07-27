@@ -9,7 +9,7 @@
 
 namespace kfc {
 
-class Matchmaking {
+class MatchmakingQueue {
 public:
     static constexpr int kMaxRatingDifference = 100;
     static constexpr std::chrono::seconds kQueueTimeout{60};

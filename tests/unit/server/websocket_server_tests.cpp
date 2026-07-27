@@ -7,8 +7,10 @@
 #include <boost/asio/ip/tcp.hpp>
 #include <boost/system/system_error.hpp>
 #include <chrono>
+#include <memory>
 #include <string>
 #include <thread>
+#include <vector>
 
 namespace {
 
@@ -55,11 +57,14 @@ TEST_CASE("WebSocketServerTest - BroadcastsToConnectedClients") {
 
 TEST_CASE("WebSocketServerTest - EnforcesMaxClients") {
     kfc::WebSocketServer server{0};
-    kfc::WebSocketClient first{"127.0.0.1", server.port()};
-    kfc::WebSocketClient second{"127.0.0.1", server.port()};
+    std::vector<std::unique_ptr<kfc::WebSocketClient>> clients;
+    clients.reserve(kfc::WebSocketServer::kMaxClients);
 
-    connect_client(server, first);
-    connect_client(server, second);
+    for (std::size_t i = 0; i < kfc::WebSocketServer::kMaxClients; ++i) {
+        clients.push_back(
+            std::make_unique<kfc::WebSocketClient>("127.0.0.1", server.port()));
+        connect_client(server, *clients.back());
+    }
     CHECK_EQ(server.clients().size(), kfc::WebSocketServer::kMaxClients);
 
     server.try_accept();

@@ -1,7 +1,7 @@
 #include "database/player_repository.h"
 #include "database/sqlite_database.h"
 #include "network/websocket_client.h"
-#include "server/matchmaking.h"
+#include "server/matchmaking/matchmaking_queue.h"
 #include "server/player_session.h"
 #include "server/websocket_server.h"
 
@@ -67,9 +67,9 @@ private:
 
 }  // namespace
 
-TEST_CASE("MatchmakingTest - MatchesCompatiblePlayers") {
+TEST_CASE("MatchmakingQueueTest - MatchesCompatiblePlayers") {
     TestSessionFactory factory;
-    kfc::Matchmaking matchmaking;
+    kfc::MatchmakingQueue matchmaking;
     const auto now = std::chrono::steady_clock::now();
 
     kfc::PlayerSession& first = factory.create("alice", 1000);
@@ -84,9 +84,9 @@ TEST_CASE("MatchmakingTest - MatchesCompatiblePlayers") {
     CHECK_EQ(matchmaking.waiting_count(), 0);
 }
 
-TEST_CASE("MatchmakingTest - SkipsIncompatiblePlayers") {
+TEST_CASE("MatchmakingQueueTest - SkipsIncompatiblePlayers") {
     TestSessionFactory factory;
-    kfc::Matchmaking matchmaking;
+    kfc::MatchmakingQueue matchmaking;
     const auto now = std::chrono::steady_clock::now();
 
     kfc::PlayerSession& first = factory.create("alice", 1000);
@@ -104,13 +104,13 @@ TEST_CASE("MatchmakingTest - SkipsIncompatiblePlayers") {
     CHECK_EQ(matchmaking.waiting_count(), 1);
 }
 
-TEST_CASE("MatchmakingTest - RemovesTimedOutPlayers") {
+TEST_CASE("MatchmakingQueueTest - RemovesTimedOutPlayers") {
     TestSessionFactory factory;
-    kfc::Matchmaking matchmaking;
+    kfc::MatchmakingQueue matchmaking;
     const auto now = std::chrono::steady_clock::now();
 
     kfc::PlayerSession& waiting = factory.create("alice", 1000);
-    CHECK_FALSE(matchmaking.enqueue(waiting, now - kfc::Matchmaking::kQueueTimeout).has_value());
+    CHECK_FALSE(matchmaking.enqueue(waiting, now - kfc::MatchmakingQueue::kQueueTimeout).has_value());
 
     const auto timed_out = matchmaking.check_timeouts(now);
     REQUIRE_EQ(timed_out.size(), 1);
@@ -118,9 +118,9 @@ TEST_CASE("MatchmakingTest - RemovesTimedOutPlayers") {
     CHECK_EQ(matchmaking.waiting_count(), 0);
 }
 
-TEST_CASE("MatchmakingTest - IgnoresDisconnectedPlayersWhenMatching") {
+TEST_CASE("MatchmakingQueueTest - IgnoresDisconnectedPlayersWhenMatching") {
     TestSessionFactory factory;
-    kfc::Matchmaking matchmaking;
+    kfc::MatchmakingQueue matchmaking;
     const auto now = std::chrono::steady_clock::now();
 
     kfc::PlayerSession& disconnected = factory.create("alice", 1000);
@@ -132,9 +132,9 @@ TEST_CASE("MatchmakingTest - IgnoresDisconnectedPlayersWhenMatching") {
     CHECK_EQ(matchmaking.waiting_count(), 2);
 }
 
-TEST_CASE("MatchmakingTest - RemovesWaitingSession") {
+TEST_CASE("MatchmakingQueueTest - RemovesWaitingSession") {
     TestSessionFactory factory;
-    kfc::Matchmaking matchmaking;
+    kfc::MatchmakingQueue matchmaking;
     const auto now = std::chrono::steady_clock::now();
 
     kfc::PlayerSession& waiting = factory.create("alice", 1000);
@@ -145,9 +145,9 @@ TEST_CASE("MatchmakingTest - RemovesWaitingSession") {
     CHECK_EQ(matchmaking.waiting_count(), 0);
 }
 
-TEST_CASE("MatchmakingTest - SkipsIneligibleWaitingEntryDuringTimeoutCheck") {
+TEST_CASE("MatchmakingQueueTest - SkipsIneligibleWaitingEntryDuringTimeoutCheck") {
     TestSessionFactory factory;
-    kfc::Matchmaking matchmaking;
+    kfc::MatchmakingQueue matchmaking;
     const auto now = std::chrono::steady_clock::now();
 
     kfc::PlayerSession& waiting = factory.create("alice", 1000);
@@ -159,11 +159,11 @@ TEST_CASE("MatchmakingTest - SkipsIneligibleWaitingEntryDuringTimeoutCheck") {
     CHECK_EQ(matchmaking.waiting_count(), 1);
 }
 
-TEST_CASE("MatchmakingTest - RejectsIneligibleSession") {
+TEST_CASE("MatchmakingQueueTest - RejectsIneligibleSession") {
     kfc::WebSocketServer server{0};
     kfc::PlayerSession session{7, nullptr};
 
-    kfc::Matchmaking matchmaking;
+    kfc::MatchmakingQueue matchmaking;
     const auto now = std::chrono::steady_clock::now();
     CHECK_FALSE(matchmaking.enqueue(session, now).has_value());
     CHECK_EQ(matchmaking.waiting_count(), 0);

@@ -103,3 +103,17 @@ TEST_CASE("PlayerSessionTest - ManagesAssignedSide") {
     session.clear_side();
     CHECK_FALSE(session.has_side());
 }
+
+TEST_CASE("PlayerSessionTest - ManagesRoomAssignment") {
+    SessionFixture fixture;
+    kfc::PlayerSession session = fixture.make_session();
+    session.bind_player(kfc::Player{1, "player", 1000});
+
+    CHECK_FALSE(session.has_room());
+    session.assign_room(42);
+    CHECK(session.has_room());
+    CHECK_EQ(session.room_id(), 42u);
+
+    session.clear_room();
+    CHECK_FALSE(session.has_room());
+}

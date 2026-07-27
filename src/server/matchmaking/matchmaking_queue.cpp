@@ -1,11 +1,11 @@
-#include "server/matchmaking.h"
+#include "server/matchmaking/matchmaking_queue.h"
 
 #include <algorithm>
 #include <cmath>
 
 namespace kfc {
 
-void Matchmaking::remove(PlayerSession& session) {
+void MatchmakingQueue::remove(PlayerSession& session) {
     waiting_.erase(
         std::remove_if(
             waiting_.begin(),
@@ -14,7 +14,7 @@ void Matchmaking::remove(PlayerSession& session) {
         waiting_.end());
 }
 
-std::optional<std::vector<PlayerSession*>> Matchmaking::enqueue(
+std::optional<std::vector<PlayerSession*>> MatchmakingQueue::enqueue(
     PlayerSession& session,
     const std::chrono::steady_clock::time_point now) {
     if (!is_eligible(session)) {
@@ -37,7 +37,7 @@ std::optional<std::vector<PlayerSession*>> Matchmaking::enqueue(
     return std::nullopt;
 }
 
-std::vector<PlayerSession*> Matchmaking::check_timeouts(
+std::vector<PlayerSession*> MatchmakingQueue::check_timeouts(
     const std::chrono::steady_clock::time_point now) {
     std::vector<PlayerSession*> timed_out;
 
@@ -63,15 +63,15 @@ std::vector<PlayerSession*> Matchmaking::check_timeouts(
     return timed_out;
 }
 
-std::size_t Matchmaking::waiting_count() const noexcept {
+std::size_t MatchmakingQueue::waiting_count() const noexcept {
     return waiting_.size();
 }
 
-bool Matchmaking::are_compatible(const PlayerSession& a, const PlayerSession& b) {
+bool MatchmakingQueue::are_compatible(const PlayerSession& a, const PlayerSession& b) {
     return std::abs(a.player().rating() - b.player().rating()) <= kMaxRatingDifference;
 }
 
-bool Matchmaking::is_eligible(const PlayerSession& session) {
+bool MatchmakingQueue::is_eligible(const PlayerSession& session) {
     const ClientConnection* connection = session.connection();
     return session.has_player() && connection != nullptr && connection->is_open();
 }

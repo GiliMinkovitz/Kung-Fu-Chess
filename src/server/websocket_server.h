@@ -12,7 +12,7 @@ namespace kfc {
 
 class WebSocketServer {
 public:
-    static constexpr std::size_t kMaxClients = 2;
+    static constexpr std::size_t kMaxClients = 8;
 
     explicit WebSocketServer(unsigned short port);
 

@@ -3,6 +3,7 @@
 #include "model/piece.h"
 #include "server/client_connection.h"
 #include "server/player.h"
+#include "server/room/room.h"
 
 #include <cstddef>
 #include <optional>
@@ -31,6 +32,10 @@ public:
     void clear_side();
     [[nodiscard]] bool has_side() const noexcept;
     [[nodiscard]] PieceColor side() const;
+    void assign_room(RoomId room_id);
+    void clear_room();
+    [[nodiscard]] bool has_room() const noexcept;
+    [[nodiscard]] RoomId room_id() const;
     [[nodiscard]] Player& player() noexcept;
     [[nodiscard]] const Player& player() const noexcept;
     [[nodiscard]] ClientConnection* connection() noexcept;
@@ -41,6 +46,7 @@ private:
     PlayerSessionState state_ = PlayerSessionState::Connected;
     std::optional<Player> player_;
     std::optional<PieceColor> side_;
+    std::optional<RoomId> room_id_;
     ClientConnection* connection_;
 };
 
@@ -86,6 +92,22 @@ inline bool PlayerSession::has_side() const noexcept {
 
 inline PieceColor PlayerSession::side() const {
     return *side_;
+}
+
+inline void PlayerSession::assign_room(RoomId room_id) {
+    room_id_ = room_id;
+}
+
+inline void PlayerSession::clear_room() {
+    room_id_.reset();
+}
+
+inline bool PlayerSession::has_room() const noexcept {
+    return room_id_.has_value();
+}
+
+inline RoomId PlayerSession::room_id() const {
+    return *room_id_;
 }
 
 inline Player& PlayerSession::player() noexcept {
