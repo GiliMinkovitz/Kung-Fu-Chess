@@ -1,20 +1,22 @@
 #pragma once
 
+#include "database/i_database_connection.h"
+
 #include <sqlite3.h>
 
 #include <string>
 
 namespace kfc {
 
-class SqliteDatabase {
+class SqliteDatabase final : public IDatabaseConnection {
 public:
     explicit SqliteDatabase(const std::string& path);
-    ~SqliteDatabase();
+    ~SqliteDatabase() override;
 
     bool open();
     bool initialize_schema();
 
-    sqlite3* connection();
+    sqlite3* connection() override;
 
 private:
     std::string path_;

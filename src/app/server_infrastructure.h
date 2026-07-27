@@ -4,6 +4,7 @@
 #include "server/authentication_service.h"
 #include "server/database/i_user_repository.h"
 
+#include "database/i_database_connection.h"
 #include "database/i_game_repository.h"
 #include "database/sqlite_database.h"
 
@@ -18,7 +19,7 @@ public:
 
     [[nodiscard]] GameServerDependencies dependencies() noexcept;
 
-    [[nodiscard]] SqliteDatabase& database() noexcept;
+    [[nodiscard]] IDatabaseConnection& database() noexcept;
     [[nodiscard]] IUserRepository& user_repository() noexcept;
     [[nodiscard]] IGameRepository& game_repository() noexcept;
     [[nodiscard]] AuthenticationService& authentication_service() noexcept;

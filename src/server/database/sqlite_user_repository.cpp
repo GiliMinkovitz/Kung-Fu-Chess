@@ -2,7 +2,7 @@
 
 namespace kfc {
 
-SqliteUserRepository::SqliteUserRepository(SqliteDatabase& database)
+SqliteUserRepository::SqliteUserRepository(IDatabaseConnection& database)
     : player_repository_(database) {}
 
 UserId SqliteUserRepository::create_user(std::string username) {

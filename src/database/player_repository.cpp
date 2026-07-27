@@ -4,7 +4,7 @@
 
 namespace kfc {
 
-PlayerRepository::PlayerRepository(SqliteDatabase& database) : database_(database) {}
+PlayerRepository::PlayerRepository(IDatabaseConnection& database) : database_(database) {}
 
 std::optional<Player> PlayerRepository::find_by_username(const std::string& username) const {
     if (const auto credentials = find_credentials_by_username(username)) {

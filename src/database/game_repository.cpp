@@ -4,7 +4,7 @@
 
 namespace kfc {
 
-GameRepository::GameRepository(SqliteDatabase& database) : database_(database) {}
+GameRepository::GameRepository(IDatabaseConnection& database) : database_(database) {}
 
 std::optional<int> GameRepository::create_game(int white_player_id, int black_player_id) {
     sqlite3* db = database_.connection();

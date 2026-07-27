@@ -1,5 +1,6 @@
 #pragma once
 
+#include "database/i_database_connection.h"
 #include "database/sqlite_database.h"
 #include "server/player.h"
 
@@ -17,7 +18,7 @@ struct PlayerCredentials {
 
 class PlayerRepository {
 public:
-    explicit PlayerRepository(SqliteDatabase& database);
+    explicit PlayerRepository(IDatabaseConnection& database);
 
     [[nodiscard]] std::optional<Player> find_by_username(const std::string& username) const;
     [[nodiscard]] std::optional<Player> find_by_id(int player_id) const;
@@ -29,7 +30,7 @@ public:
     [[nodiscard]] bool update_rating(int player_id, int rating);
 
 private:
-    SqliteDatabase& database_;
+    IDatabaseConnection& database_;
 };
 
 }  // namespace kfc

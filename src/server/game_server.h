@@ -12,8 +12,8 @@
 #include "server/session_registry.h"
 #include "server/websocket_server.h"
 
+#include "database/i_database_connection.h"
 #include "database/i_game_repository.h"
-#include "database/sqlite_database.h"
 #include "model/board_model.h"
 #include "model/piece.h"
 
@@ -43,7 +43,7 @@ public:
     [[nodiscard]] RoomManager& room_manager() noexcept;
     [[nodiscard]] Room& room() noexcept;
     [[nodiscard]] std::optional<int> room_db_game_id() const noexcept;
-    [[nodiscard]] SqliteDatabase& database() noexcept;
+    [[nodiscard]] IDatabaseConnection& database() noexcept;
     [[nodiscard]] IGameRepository& game_repository() noexcept;
     [[nodiscard]] IUserRepository& user_repository() noexcept;
 
@@ -84,7 +84,7 @@ private:
     RoomManager room_manager_;
     std::optional<RoomId> last_room_id_;
     std::unordered_map<RoomId, RoomContext> room_contexts_;
-    SqliteDatabase& database_;
+    IDatabaseConnection& database_;
     IUserRepository& user_repository_;
     IGameRepository& game_repository_;
     RatingService rating_service_;

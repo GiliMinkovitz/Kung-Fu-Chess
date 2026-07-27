@@ -1,7 +1,7 @@
 #pragma once
 
 #include "database/i_game_repository.h"
-#include "database/sqlite_database.h"
+#include "database/i_database_connection.h"
 
 #include <optional>
 
@@ -9,7 +9,7 @@ namespace kfc {
 
 class GameRepository : public IGameRepository {
 public:
-    explicit GameRepository(SqliteDatabase& database);
+    explicit GameRepository(IDatabaseConnection& database);
 
     [[nodiscard]] std::optional<int> create_game(int white_player_id,
                                                  int black_player_id) override;
@@ -17,7 +17,7 @@ public:
     [[nodiscard]] bool finish_game_without_winner(int game_id) override;
 
 private:
-    SqliteDatabase& database_;
+    IDatabaseConnection& database_;
 };
 
 }  // namespace kfc

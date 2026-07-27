@@ -26,7 +26,7 @@ GameServerDependencies ServerInfrastructure::dependencies() noexcept {
     };
 }
 
-SqliteDatabase& ServerInfrastructure::database() noexcept {
+IDatabaseConnection& ServerInfrastructure::database() noexcept {
     return database_;
 }
 

@@ -94,7 +94,7 @@ std::optional<int> GameServer::room_db_game_id() const noexcept {
     return std::nullopt;
 }
 
-SqliteDatabase& GameServer::database() noexcept {
+IDatabaseConnection& GameServer::database() noexcept {
     return database_;
 }
 

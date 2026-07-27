@@ -3,14 +3,14 @@
 namespace kfc {
 
 class AuthenticationService;
+class IDatabaseConnection;
 class IGameRepository;
 class IUserRepository;
-class SqliteDatabase;
 
 namespace app {
 
 struct GameServerDependencies {
-    SqliteDatabase& database;
+    IDatabaseConnection& database;
     IUserRepository& user_repository;
     IGameRepository& game_repository;
     AuthenticationService& authentication_service;

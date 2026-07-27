@@ -3,7 +3,7 @@
 #include "server/database/i_user_repository.h"
 
 #include "database/player_repository.h"
-#include "database/sqlite_database.h"
+#include "database/i_database_connection.h"
 
 #include <optional>
 
@@ -11,7 +11,7 @@ namespace kfc {
 
 class SqliteUserRepository final : public IUserRepository {
 public:
-    explicit SqliteUserRepository(SqliteDatabase& database);
+    explicit SqliteUserRepository(IDatabaseConnection& database);
 
     [[nodiscard]] UserId create_user(std::string username) override;
     [[nodiscard]] UserId create_user(UserId id, std::string username) override;
