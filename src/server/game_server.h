@@ -7,8 +7,8 @@
 #include "server/player_session.h"
 #include "server/rating_service.h"
 #include "server/room/room_manager.h"
+#include "server/database/i_user_repository.h"
 #include "server/session_registry.h"
-#include "server/user/user_registry.h"
 #include "server/websocket_server.h"
 
 #include "database/game_repository.h"
@@ -20,6 +20,7 @@
 #include <chrono>
 #include <cstddef>
 #include <list>
+#include <memory>
 #include <optional>
 #include <string>
 #include <unordered_map>
@@ -29,6 +30,7 @@ namespace kfc {
 class GameServer : public IMatchCreatedHandler {
 public:
     GameServer(unsigned short port, BoardModel default_board, const std::string& db_path = "kfc.db");
+    ~GameServer();
 
     void run();
     void tick_once();
@@ -45,7 +47,7 @@ public:
     [[nodiscard]] SqliteDatabase& database() noexcept;
     [[nodiscard]] PlayerRepository& player_repository() noexcept;
     [[nodiscard]] GameRepository& game_repository() noexcept;
-    [[nodiscard]] UserRegistry& user_registry() noexcept;
+    [[nodiscard]] IUserRepository& user_repository() noexcept;
 
     RoomId create_match(PlayerSession* white, PlayerSession* black) override;
 
@@ -90,7 +92,7 @@ private:
     RatingService rating_service_;
     AuthenticationService authentication_service_;
     SessionRegistry session_registry_;
-    UserRegistry user_registry_;
+    std::unique_ptr<IUserRepository> user_repository_;
     std::list<PlayerSession> sessions_;
     std::size_t next_session_id_ = 0;
     std::chrono::steady_clock::time_point last_tick_{};

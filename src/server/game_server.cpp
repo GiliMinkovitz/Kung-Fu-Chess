@@ -2,6 +2,7 @@
 #include "server/game_server.h"
 
 #include "model/game_config.h"
+#include "server/database/in_memory_user_repository.h"
 #include "server/game_message_parser.h"
 #include "server/game_result_message_writer.h"
 
@@ -29,12 +30,15 @@ GameServer::GameServer(unsigned short port, BoardModel default_board, const std:
       database_(db_path),
       player_repository_(database_),
       game_repository_(database_),
-      authentication_service_(player_repository_) {
+      authentication_service_(player_repository_),
+      user_repository_(std::make_unique<InMemoryUserRepository>()) {
     if (!database_.open() || !database_.initialize_schema()) {
         throw std::runtime_error("Failed to initialize database");
     }
     last_tick_ = std::chrono::steady_clock::now();
 }
+
+GameServer::~GameServer() = default;
 
 WebSocketServer& GameServer::websocket_server() noexcept {
     return websocket_server_;
@@ -106,8 +110,8 @@ GameRepository& GameServer::game_repository() noexcept {
     return game_repository_;
 }
 
-UserRegistry& GameServer::user_registry() noexcept {
-    return user_registry_;
+IUserRepository& GameServer::user_repository() noexcept {
+    return *user_repository_;
 }
 
 GameServer::RoomContext* GameServer::find_context(RoomId room_id) {
@@ -130,8 +134,8 @@ Room* GameServer::find_session_room(const PlayerSession& session) {
 void GameServer::bind_authenticated_user(PlayerSession& session,
                                          const Player& authenticated_player) {
     const UserId user_id =
-        user_registry_.register_user(static_cast<UserId>(authenticated_player.id()),
-                                   authenticated_player.username());
+        user_repository_->create_user(static_cast<UserId>(authenticated_player.id()),
+                                      authenticated_player.username());
     session.assign_user(user_id, authenticated_player.username(), authenticated_player.rating());
 }
 
@@ -202,8 +206,10 @@ void GameServer::process_pending_logins() {
 void GameServer::process_matchmaking_timeouts() {
     const auto now = std::chrono::steady_clock::now();
     for (PlayerSession* session : matchmaking_service_.check_timeouts(now)) {
+#ifndef KFC_TEST_BUILD
         std::cout << "Matchmaking timeout for session " << session->id() << " (player "
                   << session->player().username() << ")\n";
+#endif
         session->connection()->try_send("search_timeout");
         session->cancel_search();
     }
@@ -429,7 +435,7 @@ void GameServer::refresh_session_player(PlayerSession& session) {
     if (!session.has_user()) {
         return;
     }
-    if (const User* user = user_registry_.find(session.user_id())) {
+    if (const User* user = user_repository_->find_by_id(session.user_id())) {
         if (const auto updated = player_repository_.find_by_username(user->username())) {
             session.assign_user(session.user_id(), updated->username(), updated->rating());
         }
@@ -482,7 +488,9 @@ void GameServer::tick_once() {
 }
 
 void GameServer::run() {
+#ifndef KFC_TEST_BUILD
     std::cout << "Server started\n";
+#endif
     last_tick_ = std::chrono::steady_clock::now();
 
 #ifdef KFC_TEST_BUILD

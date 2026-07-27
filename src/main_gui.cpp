@@ -1,10 +1,12 @@
 // Repository: https://github.com/GiliMinkovitz/Kung-Fu-Chess.git
 
+#include "model/piece.h"
 #include "engine/game_engine.h"
 #include "model/board_model.h"
 #include "model/game_config.h"
 #include "network/matchmaking_message_reader.h"
 #include "network/network_input_handler.h"
+#include "network/network_login_session.h"
 #include "network/snapshot_reader.h"
 #include "network/websocket_client.h"
 #include "ui/layout/board_layout.h"
@@ -108,6 +110,8 @@ public:
 
     void set_layout(kfc::BoardLayout layout) noexcept { layout_ = layout; }
 
+    void set_local_side(std::optional<kfc::PieceColor> side) noexcept { local_side_ = side; }
+
     void on_pixel_click(int x, int y) override { handle_click(x, y); }
 
     void on_pixel_jump(int x, int y) override { handle_jump(x, y); }
@@ -119,6 +123,17 @@ private:
         }
 
         return layout_.try_pixel_to_cell(x, y, view_->width, view_->height, row, col);
+    }
+
+    [[nodiscard]] bool is_actionable_piece(std::size_t row, std::size_t col) const {
+        if (!view_is_selectable_piece(*view_, row, col)) {
+            return false;
+        }
+        if (!local_side_.has_value()) {
+            return true;
+        }
+        const std::optional piece = kfc::board_view_piece_at(*view_, row, col);
+        return piece.has_value() && piece->color == *local_side_;
     }
 
     void handle_click(int x, int y) {
@@ -133,7 +148,7 @@ private:
         }
 
         if (!view_->selection.has_value()) {
-            if (view_is_selectable_piece(*view_, row, col)) {
+            if (is_actionable_piece(row, col)) {
                 input_.send_select(row, col);
             }
             return;
@@ -150,14 +165,16 @@ private:
     void handle_friendly_click(std::size_t row, std::size_t col) {
         const auto [selected_row, selected_col] = *view_->selection;
         if (selected_row == row && selected_col == col) {
-            if (view_is_selectable_piece(*view_, row, col)) {
+            if (is_actionable_piece(row, col)) {
                 input_.send_jump(row, col);
                 input_.send_clear();
             }
             return;
         }
 
-        input_.send_select(row, col);
+        if (is_actionable_piece(row, col)) {
+            input_.send_select(row, col);
+        }
     }
 
     void handle_move_attempt(std::size_t row, std::size_t col) {
@@ -190,6 +207,10 @@ private:
             return;
         }
 
+        if (!is_actionable_piece(row, col)) {
+            return;
+        }
+
         if (kfc::board_view_is_move_origin(*view_, row, col) ||
             kfc::board_view_is_jump_origin(*view_, row, col) ||
             kfc::board_view_is_resting_cell(*view_, row, col)) {
@@ -203,11 +224,41 @@ private:
     kfc::NetworkInputHandler& input_;
     const kfc::BoardViewModel* view_;
     kfc::BoardLayout layout_;
+    std::optional<kfc::PieceColor> local_side_;
 };
 
 struct NetworkGuiState {
     kfc::MatchmakingState matchmaking{kfc::MatchmakingState::Idle};
+    std::optional<kfc::PieceColor> local_side;
 };
+
+[[nodiscard]] std::optional<kfc::PieceColor> matchmaking_local_side(kfc::MatchmakingState state) {
+    switch (state) {
+        case kfc::MatchmakingState::MatchedWhite:
+        case kfc::MatchmakingState::GameStartingWhite:
+            return kfc::PieceColor::White;
+        case kfc::MatchmakingState::MatchedBlack:
+        case kfc::MatchmakingState::GameStartingBlack:
+            return kfc::PieceColor::Black;
+        case kfc::MatchmakingState::Idle:
+        case kfc::MatchmakingState::Searching:
+        case kfc::MatchmakingState::Playing:
+        case kfc::MatchmakingState::Timeout:
+            return std::nullopt;
+    }
+    return std::nullopt;
+}
+
+void handle_network_message(const std::string& message,
+                            std::optional<kfc::BoardViewModel>& latest_view,
+                            NetworkGuiState& gui_state);
+
+void drain_network_messages(kfc::WebSocketClient& client, std::optional<kfc::BoardViewModel>& latest_view,
+                            NetworkGuiState& gui_state) {
+    while (const std::optional<std::string> message = client.try_receive_snapshot()) {
+        handle_network_message(*message, latest_view, gui_state);
+    }
+}
 
 [[nodiscard]] std::optional<std::string_view> matchmaking_overlay_text(
     kfc::MatchmakingState state) {
@@ -252,6 +303,9 @@ void handle_network_message(const std::string& message,
     if (const std::optional<kfc::MatchmakingState> matchmaking =
             kfc::read_matchmaking_message(message)) {
         gui_state.matchmaking = *matchmaking;
+        if (const std::optional<kfc::PieceColor> side = matchmaking_local_side(*matchmaking)) {
+            gui_state.local_side = side;
+        }
     }
 }
 
@@ -279,29 +333,25 @@ int run_offline_gui() {
     return 0;
 }
 
-int run_network_gui() {
-    kfc::WebSocketClient client("127.0.0.1", kServerPort);
-    client.connect();
-
-    auto renderer = std::make_unique<kfc::Ctd26Renderer>();
-    kfc::Ctd26Renderer* renderer_ptr = renderer.get();
-    kfc::UiController controller(kDefaultBoardRows, kDefaultBoardCols, std::move(renderer));
-
-    std::string username;
-    bool play_requested = false;
-    LoginInputSink login_sink(*renderer_ptr, play_requested);
-    renderer_ptr->attach_input_sink(&login_sink);
-
+[[nodiscard]] bool wait_for_login_handshake(kfc::WebSocketClient& client,
+                                            kfc::NetworkLoginSession& login_session,
+                                            kfc::Ctd26Renderer& renderer,
+                                            kfc::UiController& controller,
+                                            std::string& username) {
     auto last_frame = std::chrono::steady_clock::now();
-    while (!play_requested) {
+    while (login_session.phase() == kfc::NetworkLoginPhase::LoginSent) {
+        if (const std::optional<std::string> message = client.try_receive_snapshot()) {
+            login_session.handle_message(*message);
+        }
+
         const auto now = std::chrono::steady_clock::now();
         const auto elapsed =
             std::chrono::duration_cast<std::chrono::milliseconds>(now - last_frame).count();
         if (elapsed >= kfc::kTargetFrameMs) {
-            if (!renderer_ptr->present_login_screen(username).should_continue) {
+            if (!renderer.present_login_screen(username).should_continue) {
                 controller.shutdown();
                 client.disconnect();
-                return 0;
+                return false;
             }
             last_frame = now;
         } else {
@@ -309,21 +359,83 @@ int run_network_gui() {
         }
     }
 
+    if (login_session.is_login_failed()) {
+        std::cerr << "Login failed: " << login_session.login_failure_reason() << '\n';
+        return false;
+    }
+
+    if (!login_session.try_send_play()) {
+        std::cerr << "Failed to send play after login\n";
+        return false;
+    }
+
+    return true;
+}
+
+int run_network_gui() {
+    kfc::WebSocketClient client("127.0.0.1", kServerPort);
+    client.connect();
+
+    auto renderer = std::make_unique<kfc::Ctd26Renderer>();
+    kfc::Ctd26Renderer* renderer_ptr = renderer.get();
+    kfc::UiController controller(kDefaultBoardRows, kDefaultBoardCols, std::move(renderer));
     renderer_ptr->attach_input_sink(nullptr);
 
-    const std::string login_name = username.empty() ? "Player1" : username;
-    kfc::NetworkInputHandler login_handler(client);
-    login_handler.send_login(login_name, login_name);
-    login_handler.send_play();
+    kfc::NetworkInputHandler network_input(client);
+    kfc::NetworkLoginSession login_session(network_input);
+
+    std::string username;
+    bool play_requested = false;
+    LoginInputSink login_sink(*renderer_ptr, play_requested);
+    renderer_ptr->attach_input_sink(&login_sink);
+
+    auto last_frame = std::chrono::steady_clock::now();
+    while (true) {
+        play_requested = false;
+        last_frame = std::chrono::steady_clock::now();
+        while (!play_requested) {
+            const auto now = std::chrono::steady_clock::now();
+            const auto elapsed =
+                std::chrono::duration_cast<std::chrono::milliseconds>(now - last_frame).count();
+            if (elapsed >= kfc::kTargetFrameMs) {
+                if (!renderer_ptr->present_login_screen(username).should_continue) {
+                    controller.shutdown();
+                    client.disconnect();
+                    return 0;
+                }
+                last_frame = now;
+            } else {
+                std::this_thread::sleep_for(std::chrono::milliseconds(1));
+            }
+        }
+
+        renderer_ptr->attach_input_sink(nullptr);
+
+        if (!login_session.send_login(username)) {
+            std::cerr << "Failed to send login\n";
+            login_session.reset();
+            renderer_ptr->attach_input_sink(&login_sink);
+            continue;
+        }
+
+        if (!wait_for_login_handshake(client, login_session, *renderer_ptr, controller, username)) {
+            if (!client.is_connected()) {
+                return 0;
+            }
+            login_session.reset();
+            renderer_ptr->attach_input_sink(&login_sink);
+            continue;
+        }
+
+        break;
+    }
 
     std::optional<kfc::BoardViewModel> latest_view;
     NetworkGuiState gui_state;
     const kfc::BoardViewModel waiting_board_view = empty_waiting_board_view();
     last_frame = std::chrono::steady_clock::now();
     while (!latest_view.has_value()) {
-        if (const std::optional<std::string> message = client.try_receive_snapshot()) {
-            handle_network_message(*message, latest_view, gui_state);
-        }
+        drain_network_messages(client, latest_view, gui_state);
 
         renderer_ptr->set_overlay_text(matchmaking_overlay_text(gui_state.matchmaking));
 
@@ -344,19 +456,17 @@ int run_network_gui() {
 
     renderer_ptr->set_overlay_text(std::nullopt);
 
-    kfc::NetworkInputHandler network_input(client);
     NetworkGuiInputSink input_sink(network_input, *latest_view, renderer_ptr->board_layout());
     renderer_ptr->attach_input_sink(&input_sink);
 
     last_frame = std::chrono::steady_clock::now();
 
     while (true) {
-        if (const std::optional<std::string> message = client.try_receive_snapshot()) {
-            handle_network_message(*message, latest_view, gui_state);
-        }
+        drain_network_messages(client, latest_view, gui_state);
 
         input_sink.update_view(*latest_view);
         input_sink.set_layout(renderer_ptr->board_layout());
+        input_sink.set_local_side(gui_state.local_side);
 
         const auto now = std::chrono::steady_clock::now();
         const auto elapsed =

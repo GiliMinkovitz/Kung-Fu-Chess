@@ -17,7 +17,6 @@ UiController::UiController(GameState& state, std::unique_ptr<IUiRenderer> render
 UiController::UiController(std::size_t rows, std::size_t cols,
                            std::unique_ptr<IUiRenderer> renderer)
     : renderer_(std::move(renderer)) {
-    renderer_->attach_input_sink(this);
     const UiWindowDimensions window = default_initial_window_size(rows, cols);
     renderer_->init(window.width, window.height, rows, cols);
     sync_input_layout();

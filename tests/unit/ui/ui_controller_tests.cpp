@@ -113,7 +113,7 @@ TEST_CASE("UiControllerTest - NetworkConstructorInitializesWithoutGameState") {
     const kfc::UiWindowDimensions window = kfc::default_initial_window_size(8u, 8u);
     CHECK_EQ(renderer_ptr->window_width(), window.width);
     CHECK_EQ(renderer_ptr->window_height(), window.height);
-    CHECK_EQ(renderer_ptr->input_sink(), &controller);
+    CHECK(renderer_ptr->input_sink() == nullptr);
 }
 
 TEST_CASE("UiControllerTest - ShutdownDelegatesToRenderer") {

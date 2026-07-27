@@ -12,15 +12,17 @@ namespace {
 
 void connect_through_server(kfc::GameServer& server, kfc::WebSocketClient& client) {
     const std::size_t expected_count = server.websocket_server().clients().size() + 1;
-    std::thread connect_thread{[&]() { client.connect(); }};
-    for (int attempt = 0; attempt < 1000 && server.websocket_server().clients().size() < expected_count;
-         ++attempt) {
-        server.tick_once();
-        if (server.websocket_server().clients().size() < expected_count) {
-            std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    std::thread accept_thread{[&]() {
+        for (int attempt = 0; attempt < 1000 && server.websocket_server().clients().size() < expected_count;
+             ++attempt) {
+            server.tick_once();
+            if (server.websocket_server().clients().size() < expected_count) {
+                std::this_thread::sleep_for(std::chrono::milliseconds(1));
+            }
         }
-    }
-    connect_thread.join();
+    }};
+    client.connect();
+    accept_thread.join();
     REQUIRE_EQ(server.websocket_server().clients().size(), expected_count);
 }
 

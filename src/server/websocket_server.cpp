@@ -33,17 +33,23 @@ void WebSocketServer::try_accept() {
     if (!accept_ec) {
         try {
             clients_.emplace_back(std::move(socket));
+#ifndef KFC_TEST_BUILD
             std::cerr << "[DIAG] WebSocketServer::try_accept() handshake succeeded\n";
             std::cout << "Client connected (" << clients_.size() << "/"
                       << kMaxClients << ")\n";
+#endif
         } catch (const std::exception& ex) {
+#ifndef KFC_TEST_BUILD
             std::cerr << "[DIAG] WebSocketServer::try_accept() handshake failed: "
                       << ex.what() << '\n';
+#endif
             throw;
         }
     } else if (accept_ec != net::error::would_block) {
+#ifndef KFC_TEST_BUILD
         std::cerr << "[DIAG] WebSocketServer::try_accept() accept failed: "
                   << accept_ec.message() << '\n';
+#endif
         throw beast::system_error{accept_ec};
     }
 }
@@ -61,8 +67,10 @@ void WebSocketServer::prune_disconnected() {
     }
 
     if (clients_.size() < before) {
+#ifndef KFC_TEST_BUILD
         std::cout << "Client disconnected (" << clients_.size() << "/"
                   << kMaxClients << ")\n";
+#endif
     }
 }
 

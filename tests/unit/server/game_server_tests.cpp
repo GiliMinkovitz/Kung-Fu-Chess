@@ -23,15 +23,17 @@ namespace {
 
 void connect_through_server(kfc::GameServer& server, kfc::WebSocketClient& client) {
     const std::size_t expected_count = server.websocket_server().clients().size() + 1;
-    std::thread connect_thread{[&]() { client.connect(); }};
-    for (int attempt = 0; attempt < 1000 && server.websocket_server().clients().size() < expected_count;
-         ++attempt) {
-        server.tick_once();
-        if (server.websocket_server().clients().size() < expected_count) {
-            std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    std::thread accept_thread{[&]() {
+        for (int attempt = 0; attempt < 1000 && server.websocket_server().clients().size() < expected_count;
+             ++attempt) {
+            server.tick_once();
+            if (server.websocket_server().clients().size() < expected_count) {
+                std::this_thread::sleep_for(std::chrono::milliseconds(1));
+            }
         }
-    }
-    connect_thread.join();
+    }};
+    client.connect();
+    accept_thread.join();
     REQUIRE_EQ(server.websocket_server().clients().size(), expected_count);
 }
 
@@ -206,6 +208,11 @@ TEST_CASE("GameServerTest - AcceptsClientAndProcessesLogin") {
     const auto player = server.player_repository().find_by_username("server_user");
     REQUIRE(player.has_value());
     CHECK_EQ(player->rating(), 1000);
+
+    const kfc::User* user = server.user_repository().find_by_username("server_user");
+    REQUIRE(user != nullptr);
+    CHECK_EQ(user->id(), static_cast<kfc::UserId>(player->id()));
+    CHECK_EQ(user->username(), "server_user");
 }
 
 TEST_CASE("GameServerTest - MatchmakingFlowFindsOpponents") {
@@ -284,9 +291,10 @@ TEST_CASE("GameServerTest - FinishesGameAndUpdatesRatings") {
     match.submit_action(kfc::Select{0, 0});
     match.submit_action(kfc::MoveSelected{0, 2});
 
-    while (!match.is_game_over()) {
+    for (int ticks = 0; !match.is_game_over() && ticks < 10000; ++ticks) {
         match.tick(kfc::kMoveDurationMs);
     }
+    REQUIRE(match.is_game_over());
     server.tick_once();
 
     REQUIRE_FALSE(server.room().active());
@@ -437,14 +445,16 @@ TEST_CASE("GameServerTest - DeliversGameResultMessageOverWebSocket") {
     kfc::WebSocketClient client{"127.0.0.1", server.port()};
 
     const std::size_t expected_count = server.clients().size() + 1;
-    std::thread connect_thread{[&]() { client.connect(); }};
-    for (int attempt = 0; attempt < 1000 && server.clients().size() < expected_count; ++attempt) {
-        server.try_accept();
-        if (server.clients().size() < expected_count) {
-            std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    std::thread accept_thread{[&]() {
+        for (int attempt = 0; attempt < 1000 && server.clients().size() < expected_count; ++attempt) {
+            server.try_accept();
+            if (server.clients().size() < expected_count) {
+                std::this_thread::sleep_for(std::chrono::milliseconds(1));
+            }
         }
-    }
-    connect_thread.join();
+    }};
+    client.connect();
+    accept_thread.join();
     REQUIRE_EQ(server.clients().size(), expected_count);
 
     const std::string message =
@@ -726,9 +736,10 @@ TEST_CASE("GameServerTest - ClampsLoserRatingAtZero") {
     kfc::Match& match = server.room().match();
     match.submit_action(kfc::Select{0, 0});
     match.submit_action(kfc::MoveSelected{0, 2});
-    while (!match.is_game_over()) {
+    for (int ticks = 0; !match.is_game_over() && ticks < 10000; ++ticks) {
         match.tick(kfc::kMoveDurationMs);
     }
+    REQUIRE(match.is_game_over());
     server.tick_once();
 
     const auto loser_after = server.player_repository().find_by_username("clamp_loser");

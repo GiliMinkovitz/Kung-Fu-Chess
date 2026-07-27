@@ -157,7 +157,9 @@ std::optional<GameAction> parse_message(std::string_view message) {
     }
 
     if (message.empty()) {
+#ifndef KFC_TEST_BUILD
         std::cerr << "Error: empty message\n";
+#endif
         return std::nullopt;
     }
 
@@ -165,7 +167,9 @@ std::optional<GameAction> parse_message(std::string_view message) {
 
     if (*command == "clear") {
         if (next_token(message)) {
+#ifndef KFC_TEST_BUILD
             std::cerr << "Error: 'clear' takes no arguments\n";
+#endif
             return std::nullopt;
         }
         return ClearSelection{};
@@ -175,18 +179,24 @@ std::optional<GameAction> parse_message(std::string_view message) {
         const auto row = next_token(message);
         const auto col = next_token(message);
         if (!row || !col) {
+#ifndef KFC_TEST_BUILD
             std::cerr << "Error: '" << *command << "' requires row and col\n";
+#endif
             return std::nullopt;
         }
         if (next_token(message)) {
+#ifndef KFC_TEST_BUILD
             std::cerr << "Error: too many arguments for '" << *command << "'\n";
+#endif
             return std::nullopt;
         }
 
         const auto parsed_row = parse_non_negative_int(*row);
         const auto parsed_col = parse_non_negative_int(*col);
         if (!parsed_row || !parsed_col) {
+#ifndef KFC_TEST_BUILD
             std::cerr << "Error: row and col must be non-negative integers\n";
+#endif
             return std::nullopt;
         }
 
@@ -199,7 +209,9 @@ std::optional<GameAction> parse_message(std::string_view message) {
         return JumpAt{*parsed_row, *parsed_col};
     }
 
+#ifndef KFC_TEST_BUILD
     std::cerr << "Error: unknown command '" << *command << "'\n";
+#endif
     return std::nullopt;
 }
 

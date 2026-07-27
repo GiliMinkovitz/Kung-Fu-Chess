@@ -12,10 +12,10 @@
 
 namespace {
 
-void accept_one_client(kfc::WebSocketServer& server) {
-    for (int attempt = 0; attempt < 1000 && server.clients().empty(); ++attempt) {
+void accept_until_count(kfc::WebSocketServer& server, std::size_t expected_count) {
+    for (int attempt = 0; attempt < 1000 && server.clients().size() < expected_count; ++attempt) {
         server.try_accept();
-        if (server.clients().empty()) {
+        if (server.clients().size() < expected_count) {
             std::this_thread::sleep_for(std::chrono::milliseconds(1));
         }
     }
@@ -33,11 +33,13 @@ struct SessionFixture {
     }
 
     kfc::PlayerSession make_session() {
+        const std::size_t expected_count = server.clients().size() + 1;
         client = std::make_unique<kfc::WebSocketClient>("127.0.0.1", server.port());
-        std::thread accept_thread{[&]() { accept_one_client(server); }};
+        std::thread accept_thread{[&]() { accept_until_count(server, expected_count); }};
         client->connect();
         accept_thread.join();
-        return kfc::PlayerSession{0, &server.clients().back()};
+        REQUIRE_EQ(server.clients().size(), expected_count);
+        return kfc::PlayerSession{expected_count - 1, &server.clients().back()};
     }
 };
 

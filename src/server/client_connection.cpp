@@ -186,8 +186,10 @@ std::optional<std::string> ClientConnection::try_read() {
     }
 
     if (avail_ec) {
+#ifndef KFC_TEST_BUILD
         std::cerr << "[SERVER-CONN-DIAG] try_read() available error: "
                   << avail_ec.message() << " (" << avail_ec.value() << ")\n";
+#endif
         buffered_bytes_ = 0;
         open_ = false;
         return std::nullopt;
@@ -225,8 +227,10 @@ std::optional<std::string> ClientConnection::try_read() {
     }
 
     if (read_ec) {
+#ifndef KFC_TEST_BUILD
         std::cerr << "[SERVER-CONN-DIAG] try_read() websocket error: "
                   << read_ec.message() << " (" << read_ec.value() << ")\n";
+#endif
         buffered_bytes_ = 0;
         open_ = false;
         return std::nullopt;
@@ -278,15 +282,19 @@ bool ClientConnection::try_send(const std::string& message) {
 
     if (write_ec == websocket::error::closed || write_ec == net::error::eof ||
         write_ec == net::error::connection_reset) {
+#ifndef KFC_TEST_BUILD
         std::cerr << "[SERVER-CONN-DIAG] try_send() websocket error: "
                   << write_ec.message() << " (" << write_ec.value() << ")\n";
+#endif
         open_ = false;
         return false;
     }
 
     if (write_ec) {
+#ifndef KFC_TEST_BUILD
         std::cerr << "[SERVER-CONN-DIAG] try_send() websocket error: "
                   << write_ec.message() << " (" << write_ec.value() << ")\n";
+#endif
         open_ = false;
         return false;
     }

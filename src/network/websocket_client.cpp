@@ -98,10 +98,14 @@ void WebSocketClient::connect() {
         ws_->auto_fragment(false);
         buffered_bytes_ = 0;
         connected_ = true;
+#ifndef KFC_TEST_BUILD
         std::cerr << "[DIAG] WebSocketClient::connect() succeeded\n";
+#endif
     } catch (const std::exception& ex) {
+#ifndef KFC_TEST_BUILD
         std::cerr << "[DIAG] WebSocketClient::connect() failed: " << ex.what()
                   << '\n';
+#endif
         throw;
     }
 }
@@ -172,8 +176,10 @@ std::optional<std::string> WebSocketClient::try_receive_snapshot() {
     }
 
     if (avail_ec) {
+#ifndef KFC_TEST_BUILD
         std::cerr << "[CLIENT-DIAG] try_receive_snapshot() available error: "
                   << avail_ec.message() << " (" << avail_ec.value() << ")\n";
+#endif
         buffered_bytes_ = 0;
         connected_ = false;
         return std::nullopt;
@@ -229,15 +235,19 @@ std::optional<std::string> WebSocketClient::try_receive_snapshot() {
 
         if (peek_ec == net::error::eof || peek_ec == net::error::connection_reset ||
             (peeked == 0 && !peek_ec)) {
+#ifndef KFC_TEST_BUILD
             std::cerr << "[CLIENT-DIAG] try_receive_snapshot() websocket closed/error: "
                       << peek_ec.message() << " (" << peek_ec.value() << ")\n";
+#endif
             connected_ = false;
             return std::nullopt;
         }
 
         if (peek_ec) {
+#ifndef KFC_TEST_BUILD
             std::cerr << "[CLIENT-DIAG] try_receive_snapshot() peek error: "
                       << peek_ec.message() << " (" << peek_ec.value() << ")\n";
+#endif
             connected_ = false;
             return std::nullopt;
         }
@@ -261,16 +271,20 @@ std::optional<std::string> WebSocketClient::try_receive_snapshot() {
 
     if (read_ec == websocket::error::closed || read_ec == net::error::eof ||
         read_ec == net::error::connection_reset) {
+#ifndef KFC_TEST_BUILD
         std::cerr << "[CLIENT-DIAG] try_receive_snapshot() websocket closed/error: "
                   << read_ec.message() << " (" << read_ec.value() << ")\n";
+#endif
         buffered_bytes_ = 0;
         connected_ = false;
         return std::nullopt;
     }
 
     if (read_ec) {
+#ifndef KFC_TEST_BUILD
         std::cerr << "[CLIENT-DIAG] try_receive_snapshot() websocket read error: "
                   << read_ec.message() << " (" << read_ec.value() << ")\n";
+#endif
         buffered_bytes_ = 0;
         connected_ = false;
         throw beast::system_error{read_ec};
