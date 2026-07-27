@@ -1,6 +1,7 @@
 #include "app/server_infrastructure.h"
 
 #include "database/postgres_connection.h"
+#include "database/postgres_game_repository.h"
 #include "database/sqlite_database.h"
 #include "database/sqlite_game_repository.h"
 #include "server/database/postgres_user_repository.h"
@@ -35,9 +36,11 @@ ServerInfrastructure::ServerInfrastructure(const DatabaseConfig& database_config
         }
 
         database_connection_ = std::move(postgres);
-        user_repository_ = std::make_unique<PostgresUserRepository>(
-            static_cast<PostgresConnection&>(*database_connection_));
-        throw std::runtime_error("PostgreSQL game repository is not implemented yet");
+        auto& postgres_connection = static_cast<PostgresConnection&>(*database_connection_);
+        user_repository_ = std::make_unique<PostgresUserRepository>(postgres_connection);
+        game_repository_ = std::make_unique<PostgresGameRepository>(postgres_connection);
+        authentication_service_ = std::make_unique<AuthenticationService>(*user_repository_);
+        return;
     }
 
     auto sqlite = std::make_unique<SqliteDatabase>(database_config.path);

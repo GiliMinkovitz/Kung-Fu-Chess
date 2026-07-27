@@ -82,6 +82,7 @@ set(KFC_DATABASE_SOURCES
     src/database/sqlite_database.cpp
     src/database/player_repository.cpp
     src/database/game_repository.cpp
+    src/database/postgres_game_repository.cpp
 )
 
 function(kfc_find_postgresql out_has_libpq out_libraries out_include_dirs)
@@ -378,6 +379,7 @@ set(KFC_TEST_SOURCES
     tests/unit/network/network_login_session_tests.cpp
     tests/unit/database/sqlite_database_tests.cpp
     tests/unit/database/postgres_connection_tests.cpp
+    tests/unit/database/postgres_game_repository_tests.cpp
     tests/unit/database/player_repository_tests.cpp
     tests/unit/database/game_repository_tests.cpp
     tests/unit/server/matchmaking_tests.cpp
