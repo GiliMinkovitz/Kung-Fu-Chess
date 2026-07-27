@@ -4,6 +4,7 @@
 #include "server/client_connection.h"
 #include "server/player.h"
 #include "server/room/room.h"
+#include "server/user/user_id.h"
 
 #include <cstddef>
 #include <optional>
@@ -23,8 +24,13 @@ public:
 
     [[nodiscard]] std::size_t id() const noexcept;
     [[nodiscard]] PlayerSessionState state() const noexcept;
+    [[nodiscard]] bool has_user() const noexcept;
     [[nodiscard]] bool has_player() const noexcept;
+    void assign_user(UserId user_id, const std::string& username, int rating);
     void bind_player(Player player);
+    void clear_user();
+    [[nodiscard]] UserId user_id() const;
+    [[nodiscard]] int rating() const noexcept;
     void request_play();
     void cancel_search();
     void set_playing();
@@ -44,7 +50,8 @@ public:
 private:
     std::size_t id_;
     PlayerSessionState state_ = PlayerSessionState::Connected;
-    std::optional<Player> player_;
+    std::optional<UserId> user_id_;
+    std::optional<Player> player_profile_;
     std::optional<PieceColor> side_;
     std::optional<RoomId> room_id_;
     ClientConnection* connection_;
@@ -58,12 +65,24 @@ inline PlayerSessionState PlayerSession::state() const noexcept {
     return state_;
 }
 
+inline bool PlayerSession::has_user() const noexcept {
+    return user_id_.has_value();
+}
+
 inline bool PlayerSession::has_player() const noexcept {
-    return player_.has_value();
+    return has_user();
+}
+
+inline UserId PlayerSession::user_id() const {
+    return *user_id_;
+}
+
+inline int PlayerSession::rating() const noexcept {
+    return player_profile_->rating();
 }
 
 inline void PlayerSession::request_play() {
-    if (state_ == PlayerSessionState::Connected && has_player()) {
+    if (state_ == PlayerSessionState::Connected && has_user()) {
         state_ = PlayerSessionState::Searching;
     }
 }
@@ -111,11 +130,11 @@ inline RoomId PlayerSession::room_id() const {
 }
 
 inline Player& PlayerSession::player() noexcept {
-    return *player_;
+    return *player_profile_;
 }
 
 inline const Player& PlayerSession::player() const noexcept {
-    return *player_;
+    return *player_profile_;
 }
 
 inline ClientConnection* PlayerSession::connection() noexcept {

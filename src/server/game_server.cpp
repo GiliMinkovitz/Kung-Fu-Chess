@@ -106,6 +106,10 @@ GameRepository& GameServer::game_repository() noexcept {
     return game_repository_;
 }
 
+UserRegistry& GameServer::user_registry() noexcept {
+    return user_registry_;
+}
+
 GameServer::RoomContext* GameServer::find_context(RoomId room_id) {
     const auto it = room_contexts_.find(room_id);
     return it != room_contexts_.end() ? &it->second : nullptr;
@@ -121,6 +125,14 @@ Room* GameServer::find_session_room(const PlayerSession& session) {
         return nullptr;
     }
     return room_manager_.find_room(session.room_id());
+}
+
+void GameServer::bind_authenticated_user(PlayerSession& session,
+                                         const Player& authenticated_player) {
+    const UserId user_id =
+        user_registry_.register_user(static_cast<UserId>(authenticated_player.id()),
+                                   authenticated_player.username());
+    session.assign_user(user_id, authenticated_player.username(), authenticated_player.rating());
 }
 
 void GameServer::accept_new_clients() {
@@ -151,7 +163,7 @@ void GameServer::process_pending_logins() {
                 continue;
             }
 
-            if (!session.has_player()) {
+            if (!session.has_user()) {
                 if (const auto request = parse_login_message(*raw_message)) {
                     if (session_registry_.is_online(request->username)) {
                         session.connection()->try_send("login_failed already_connected");
@@ -165,7 +177,7 @@ void GameServer::process_pending_logins() {
                         continue;
                     }
 
-                    session.bind_player(*auth.player);
+                    bind_authenticated_user(session, *auth.player);
                     session_registry_.register_session(auth.player->username());
                     session.connection()->try_send("login_ok " + std::to_string(auth.player->rating()));
                 }
@@ -202,7 +214,7 @@ void GameServer::prune_sessions() {
 
     for (auto it = sessions_.begin(); it != sessions_.end();) {
         if (!it->connection()->is_open()) {
-            if (it->has_player()) {
+            if (it->has_user()) {
                 session_registry_.unregister_session(it->player().username());
             }
             matchmaking_service_.remove(*it);
@@ -414,11 +426,13 @@ void GameServer::finish_active_room_for_tests(std::optional<PieceColor> winner_c
 #endif
 
 void GameServer::refresh_session_player(PlayerSession& session) {
-    if (!session.has_player()) {
+    if (!session.has_user()) {
         return;
     }
-    if (const auto updated = player_repository_.find_by_username(session.player().username())) {
-        session.bind_player(*updated);
+    if (const User* user = user_registry_.find(session.user_id())) {
+        if (const auto updated = player_repository_.find_by_username(user->username())) {
+            session.assign_user(session.user_id(), updated->username(), updated->rating());
+        }
     }
 }
 

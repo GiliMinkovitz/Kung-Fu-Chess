@@ -8,6 +8,7 @@
 #include "server/rating_service.h"
 #include "server/room/room_manager.h"
 #include "server/session_registry.h"
+#include "server/user/user_registry.h"
 #include "server/websocket_server.h"
 
 #include "database/game_repository.h"
@@ -44,6 +45,7 @@ public:
     [[nodiscard]] SqliteDatabase& database() noexcept;
     [[nodiscard]] PlayerRepository& player_repository() noexcept;
     [[nodiscard]] GameRepository& game_repository() noexcept;
+    [[nodiscard]] UserRegistry& user_registry() noexcept;
 
     RoomId create_match(PlayerSession* white, PlayerSession* black) override;
 
@@ -72,6 +74,7 @@ private:
                                                                         int game_id);
     void cleanup_finished_room(RoomId room_id);
     void refresh_session_player(PlayerSession& session);
+    void bind_authenticated_user(PlayerSession& session, const Player& authenticated_player);
     [[nodiscard]] RoomContext* find_context(RoomId room_id);
     [[nodiscard]] const RoomContext* find_context(RoomId room_id) const;
     [[nodiscard]] Room* find_session_room(const PlayerSession& session);
@@ -87,6 +90,7 @@ private:
     RatingService rating_service_;
     AuthenticationService authentication_service_;
     SessionRegistry session_registry_;
+    UserRegistry user_registry_;
     std::list<PlayerSession> sessions_;
     std::size_t next_session_id_ = 0;
     std::chrono::steady_clock::time_point last_tick_{};

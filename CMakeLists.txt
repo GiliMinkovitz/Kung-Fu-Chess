@@ -55,6 +55,8 @@ set(KFC_SERVER_WEBSOCKET_SOURCES
 set(KFC_SERVER_ARCH_SOURCES
     src/server/player.cpp
     src/server/player_session.cpp
+    src/server/user/user.cpp
+    src/server/user/user_registry.cpp
     src/server/matchmaking/matchmaking_queue.cpp
     src/server/matchmaking/matchmaking_service.cpp
     src/server/room/room.cpp
@@ -313,6 +315,7 @@ set(KFC_TEST_SOURCES
     tests/unit/server/room_manager_tests.cpp
     tests/unit/server/match_tests.cpp
     tests/unit/server/player_session_tests.cpp
+    tests/unit/server/user_tests.cpp
     tests/unit/server/client_connection_tests.cpp
     tests/unit/server/client_connection_hook_tests.cpp
     tests/unit/server/game_message_parser_tests.cpp

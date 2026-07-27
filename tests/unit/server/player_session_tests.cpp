@@ -48,10 +48,16 @@ TEST_CASE("PlayerSessionTest - BindsExistingPlayer") {
     REQUIRE(fixture.repo.create_player("existing", 1100).has_value());
 
     kfc::PlayerSession session = fixture.make_session();
-    session.bind_player(*fixture.repo.find_by_username("existing"));
+    const auto existing = fixture.repo.find_by_username("existing");
+    REQUIRE(existing.has_value());
+    session.assign_user(static_cast<kfc::UserId>(existing->id()), existing->username(),
+                        existing->rating());
+
+    CHECK(session.has_user());
     CHECK(session.has_player());
+    CHECK_EQ(session.user_id(), static_cast<kfc::UserId>(existing->id()));
     CHECK_EQ(session.player().username(), "existing");
-    CHECK_EQ(session.player().rating(), 1100);
+    CHECK_EQ(session.rating(), 1100);
 }
 
 TEST_CASE("PlayerSessionTest - BindsNewPlayer") {
@@ -59,24 +65,60 @@ TEST_CASE("PlayerSessionTest - BindsNewPlayer") {
     kfc::PlayerSession session = fixture.make_session();
     CHECK_EQ(session.id(), 0u);
 
-    session.bind_player(kfc::Player{1, "new_player", 1000});
+    session.assign_user(1, "new_player", 1000);
+    CHECK_EQ(session.user_id(), 1u);
     CHECK_EQ(session.player().username(), "new_player");
-    CHECK_EQ(session.player().rating(), 1000);
+    CHECK_EQ(session.rating(), 1000);
 }
 
 TEST_CASE("PlayerSessionTest - RefreshesBoundPlayer") {
     SessionFixture fixture;
     kfc::PlayerSession session = fixture.make_session();
 
-    session.bind_player(kfc::Player{1, "player", 1000});
-    session.bind_player(kfc::Player{1, "player", 1013});
-    CHECK_EQ(session.player().rating(), 1013);
+    session.assign_user(1, "player", 1000);
+    session.assign_user(1, "player", 1013);
+    CHECK_EQ(session.rating(), 1013);
+}
+
+TEST_CASE("PlayerSessionTest - ClearsUserIdentity") {
+    SessionFixture fixture;
+    kfc::PlayerSession session = fixture.make_session();
+
+    session.assign_user(1, "player", 1000);
+    CHECK(session.has_user());
+
+    session.clear_user();
+    CHECK_FALSE(session.has_user());
+    CHECK_FALSE(session.has_player());
+}
+
+TEST_CASE("PlayerSessionTest - TwoSessionsLinkToDifferentUsers") {
+    SessionFixture fixture;
+    kfc::PlayerSession first = fixture.make_session();
+    kfc::PlayerSession second = fixture.make_session();
+
+    first.assign_user(10, "first_user", 1000);
+    second.assign_user(20, "second_user", 1100);
+
+    CHECK_NE(first.user_id(), second.user_id());
+    CHECK_EQ(first.player().username(), "first_user");
+    CHECK_EQ(second.player().username(), "second_user");
+}
+
+TEST_CASE("PlayerSessionTest - BindPlayerDelegatesToUserIdentity") {
+    SessionFixture fixture;
+    kfc::PlayerSession session = fixture.make_session();
+
+    session.bind_player(kfc::Player{5, "legacy_player", 1200});
+    CHECK(session.has_user());
+    CHECK_EQ(session.user_id(), 5u);
+    CHECK_EQ(session.rating(), 1200);
 }
 
 TEST_CASE("PlayerSessionTest - ManagesSearchAndPlayStates") {
     SessionFixture fixture;
     kfc::PlayerSession session = fixture.make_session();
-    session.bind_player(kfc::Player{1, "player", 1000});
+    session.assign_user(1, "player", 1000);
 
     CHECK_EQ(session.state(), kfc::PlayerSessionState::Connected);
     session.request_play();
@@ -93,7 +135,7 @@ TEST_CASE("PlayerSessionTest - ManagesSearchAndPlayStates") {
 TEST_CASE("PlayerSessionTest - ManagesAssignedSide") {
     SessionFixture fixture;
     kfc::PlayerSession session = fixture.make_session();
-    session.bind_player(kfc::Player{1, "player", 1000});
+    session.assign_user(1, "player", 1000);
 
     CHECK_FALSE(session.has_side());
     session.set_side(kfc::PieceColor::White);
@@ -107,7 +149,7 @@ TEST_CASE("PlayerSessionTest - ManagesAssignedSide") {
 TEST_CASE("PlayerSessionTest - ManagesRoomAssignment") {
     SessionFixture fixture;
     kfc::PlayerSession session = fixture.make_session();
-    session.bind_player(kfc::Player{1, "player", 1000});
+    session.assign_user(1, "player", 1000);
 
     CHECK_FALSE(session.has_room());
     session.assign_room(42);

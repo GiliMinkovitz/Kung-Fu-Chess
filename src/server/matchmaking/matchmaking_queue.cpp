@@ -68,12 +68,12 @@ std::size_t MatchmakingQueue::waiting_count() const noexcept {
 }
 
 bool MatchmakingQueue::are_compatible(const PlayerSession& a, const PlayerSession& b) {
-    return std::abs(a.player().rating() - b.player().rating()) <= kMaxRatingDifference;
+    return std::abs(a.rating() - b.rating()) <= kMaxRatingDifference;
 }
 
 bool MatchmakingQueue::is_eligible(const PlayerSession& session) {
     const ClientConnection* connection = session.connection();
-    return session.has_player() && connection != nullptr && connection->is_open();
+    return session.has_user() && connection != nullptr && connection->is_open();
 }
 
 }  // namespace kfc
