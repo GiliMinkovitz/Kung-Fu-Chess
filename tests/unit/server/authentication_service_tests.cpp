@@ -1,4 +1,4 @@
-#include "database/player_repository.h"
+#include "server/database/sqlite_user_repository.h"
 #include "database/sqlite_database.h"
 #include "server/authentication_service.h"
 #include "server/password_hasher.h"
@@ -11,7 +11,7 @@ namespace {
 
 struct AuthFixture {
     kfc::SqliteDatabase db{":memory:"};
-    kfc::PlayerRepository repo;
+    kfc::SqliteUserRepository repo;
     kfc::AuthenticationService auth;
 
     AuthFixture() : repo(db), auth(repo) {
@@ -76,7 +76,7 @@ TEST_CASE("AuthenticationServiceTest - RejectsEmptyUsername") {
 
 TEST_CASE("AuthenticationServiceTest - RejectsLegacyUserWithoutPasswordHash") {
     AuthFixture fixture;
-    REQUIRE(fixture.repo.create_player("legacy_user", 1100).has_value());
+    REQUIRE(fixture.repo.create_user("legacy_user") != 0);
 
     const kfc::AuthenticationResult result = fixture.auth.authenticate("legacy_user", "secret");
     CHECK_FALSE(result.success);
@@ -93,7 +93,7 @@ TEST_CASE("AuthenticationServiceTest - ReportsCreateFailure") {
 
     kfc::SqliteDatabase db(path);
     REQUIRE(db.open());
-    kfc::PlayerRepository repo{db};
+    kfc::SqliteUserRepository repo{db};
     sqlite3* connection = db.connection();
     REQUIRE(connection != nullptr);
     REQUIRE(sqlite3_exec(connection, "PRAGMA query_only = ON;", nullptr, nullptr, nullptr) ==

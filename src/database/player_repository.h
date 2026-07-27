@@ -19,9 +19,10 @@ class PlayerRepository {
 public:
     explicit PlayerRepository(SqliteDatabase& database);
 
-    [[nodiscard]] std::optional<Player> find_by_username(const std::string& username);
+    [[nodiscard]] std::optional<Player> find_by_username(const std::string& username) const;
+    [[nodiscard]] std::optional<Player> find_by_id(int player_id) const;
     [[nodiscard]] std::optional<PlayerCredentials> find_credentials_by_username(
-        const std::string& username);
+        const std::string& username) const;
     [[nodiscard]] std::optional<Player> create_player(const std::string& username,
                                                       int rating = 1000,
                                                       const std::string& password_hash = "");

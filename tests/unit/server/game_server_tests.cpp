@@ -205,7 +205,8 @@ TEST_CASE("GameServerTest - AcceptsClientAndProcessesLogin") {
 
     login_client(server, client, "server_user");
 
-    const auto player = server.player_repository().find_by_username("server_user");
+    const auto player = server.user_repository().find_profile_by_id(
+        server.user_repository().find_by_username("server_user")->id());
     REQUIRE(player.has_value());
     CHECK_EQ(player->rating(), 1000);
 
@@ -710,16 +711,18 @@ TEST_CASE("GameServerTest - ClampsLoserRatingAtZero") {
     kfc::WebSocketClient white_client{"127.0.0.1", server.websocket_server().port()};
     kfc::WebSocketClient black_client{"127.0.0.1", server.websocket_server().port()};
 
-    kfc::AuthenticationService auth{server.player_repository()};
+    kfc::AuthenticationService auth{server.user_repository()};
     REQUIRE(auth.authenticate("clamp_winner", "testpass").success);
     REQUIRE(auth.authenticate("clamp_loser", "testpass").success);
 
-    const auto winner = server.player_repository().find_by_username("clamp_winner");
-    const auto loser = server.player_repository().find_by_username("clamp_loser");
+    const auto winner = server.user_repository().find_profile_by_id(
+        server.user_repository().find_by_username("clamp_winner")->id());
+    const auto loser = server.user_repository().find_profile_by_id(
+        server.user_repository().find_by_username("clamp_loser")->id());
     REQUIRE(winner.has_value());
     REQUIRE(loser.has_value());
-    REQUIRE(server.player_repository().update_rating(winner->id(), 50));
-    REQUIRE(server.player_repository().update_rating(loser->id(), 10));
+    REQUIRE(server.user_repository().update_rating(static_cast<kfc::UserId>(winner->id()), 50));
+    REQUIRE(server.user_repository().update_rating(static_cast<kfc::UserId>(loser->id()), 10));
 
     login_client(server, white_client, "clamp_winner", "testpass");
     login_client(server, black_client, "clamp_loser", "testpass");

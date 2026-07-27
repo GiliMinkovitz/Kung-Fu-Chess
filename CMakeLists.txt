@@ -58,6 +58,7 @@ set(KFC_SERVER_ARCH_SOURCES
     src/server/player_session.cpp
     src/server/user/user.cpp
     src/server/database/in_memory_user_repository.cpp
+    src/server/database/sqlite_user_repository.cpp
     src/server/matchmaking/matchmaking_queue.cpp
     src/server/matchmaking/matchmaking_service.cpp
     src/server/room/room.cpp

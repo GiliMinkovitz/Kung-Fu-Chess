@@ -2,7 +2,7 @@
 #include "server/game_server.h"
 
 #include "model/game_config.h"
-#include "server/database/in_memory_user_repository.h"
+#include "server/database/sqlite_user_repository.h"
 #include "server/game_message_parser.h"
 #include "server/game_result_message_writer.h"
 
@@ -28,10 +28,10 @@ GameServer::GameServer(unsigned short port, BoardModel default_board, const std:
       matchmaking_service_(*this),
       room_manager_(std::move(default_board)),
       database_(db_path),
+      user_repository_(std::make_unique<SqliteUserRepository>(database_)),
       player_repository_(database_),
       game_repository_(database_),
-      authentication_service_(player_repository_),
-      user_repository_(std::make_unique<InMemoryUserRepository>()) {
+      authentication_service_(*user_repository_) {
     if (!database_.open() || !database_.initialize_schema()) {
         throw std::runtime_error("Failed to initialize database");
     }
@@ -133,10 +133,8 @@ Room* GameServer::find_session_room(const PlayerSession& session) {
 
 void GameServer::bind_authenticated_user(PlayerSession& session,
                                          const Player& authenticated_player) {
-    const UserId user_id =
-        user_repository_->create_user(static_cast<UserId>(authenticated_player.id()),
-                                      authenticated_player.username());
-    session.assign_user(user_id, authenticated_player.username(), authenticated_player.rating());
+    session.assign_user(static_cast<UserId>(authenticated_player.id()), authenticated_player.username(),
+                        authenticated_player.rating());
 }
 
 void GameServer::accept_new_clients() {
@@ -385,8 +383,8 @@ std::optional<RatingChange> GameServer::update_ratings_for_result(const Room& ro
     }
 
     const RatingChange change = rating_service_.calculate(winner->rating(), loser->rating());
-    player_repository_.update_rating(winner->id(), change.winner_new_rating);
-    player_repository_.update_rating(loser->id(), change.loser_new_rating);
+    user_repository_->update_rating(static_cast<UserId>(winner->id()), change.winner_new_rating);
+    user_repository_->update_rating(static_cast<UserId>(loser->id()), change.loser_new_rating);
     game_repository_.finish_game(game_id, winner->id());
     return change;
 }
@@ -435,10 +433,8 @@ void GameServer::refresh_session_player(PlayerSession& session) {
     if (!session.has_user()) {
         return;
     }
-    if (const User* user = user_repository_->find_by_id(session.user_id())) {
-        if (const auto updated = player_repository_.find_by_username(user->username())) {
-            session.assign_user(session.user_id(), updated->username(), updated->rating());
-        }
+    if (const auto updated = user_repository_->find_profile_by_id(session.user_id())) {
+        session.assign_user(session.user_id(), updated->username(), updated->rating());
     }
 }
 

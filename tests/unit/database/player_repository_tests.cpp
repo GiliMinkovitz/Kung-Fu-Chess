@@ -43,6 +43,19 @@ TEST_CASE("PlayerRepositoryTest - FindsExistingPlayer") {
     CHECK_EQ(found->rating(), 1200);
 }
 
+TEST_CASE("PlayerRepositoryTest - FindsExistingPlayerById") {
+    auto repo = make_repository();
+
+    const auto created = repo.create_player("by_id_user", 1200);
+    REQUIRE(created.has_value());
+
+    const auto found = repo.find_by_id(created->id());
+    REQUIRE(found.has_value());
+    CHECK_EQ(found->id(), created->id());
+    CHECK_EQ(found->username(), "by_id_user");
+    CHECK_EQ(found->rating(), 1200);
+}
+
 TEST_CASE("PlayerRepositoryTest - ReturnsNulloptForMissingPlayer") {
     auto repo = make_repository();
 

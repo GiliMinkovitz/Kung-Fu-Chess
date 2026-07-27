@@ -87,12 +87,12 @@ private:
     std::optional<RoomId> last_room_id_;
     std::unordered_map<RoomId, RoomContext> room_contexts_;
     SqliteDatabase database_;
+    std::unique_ptr<IUserRepository> user_repository_;
     PlayerRepository player_repository_;
     GameRepository game_repository_;
     RatingService rating_service_;
     AuthenticationService authentication_service_;
     SessionRegistry session_registry_;
-    std::unique_ptr<IUserRepository> user_repository_;
     std::list<PlayerSession> sessions_;
     std::size_t next_session_id_ = 0;
     std::chrono::steady_clock::time_point last_tick_{};

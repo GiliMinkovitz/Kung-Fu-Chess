@@ -2,13 +2,17 @@
 
 #include "server/database/i_user_repository.h"
 
-#include <string>
-#include <unordered_map>
+#include "database/player_repository.h"
+#include "database/sqlite_database.h"
+
+#include <optional>
 
 namespace kfc {
 
-class InMemoryUserRepository final : public IUserRepository {
+class SqliteUserRepository final : public IUserRepository {
 public:
+    explicit SqliteUserRepository(SqliteDatabase& database);
+
     [[nodiscard]] UserId create_user(std::string username) override;
     [[nodiscard]] UserId create_user(UserId id, std::string username) override;
     [[nodiscard]] const User* find_by_id(UserId id) const noexcept override;
@@ -21,15 +25,10 @@ public:
     [[nodiscard]] bool update_rating(UserId id, int rating) override;
 
 private:
-    struct StoredUser {
-        User user;
-        int rating = 1000;
-        std::string password_hash;
-    };
+    [[nodiscard]] const User* cache_user(UserId id, const std::string& username) const noexcept;
 
-    UserId next_id_ = 1;
-    std::unordered_map<UserId, StoredUser> users_;
-    std::unordered_map<std::string, UserId> by_username_;
+    PlayerRepository player_repository_;
+    mutable std::optional<User> cached_user_;
 };
 
 }  // namespace kfc

@@ -1,12 +1,11 @@
 #include "server/authentication_service.h"
 
-#include "database/player_repository.h"
 #include "server/password_hasher.h"
 
 namespace kfc {
 
-AuthenticationService::AuthenticationService(PlayerRepository& player_repository)
-    : player_repository_(player_repository) {}
+AuthenticationService::AuthenticationService(IUserRepository& user_repository)
+    : user_repository_(user_repository) {}
 
 AuthenticationResult AuthenticationService::authenticate(const std::string& username,
                                                          const std::string& password) {
@@ -18,7 +17,7 @@ AuthenticationResult AuthenticationService::authenticate(const std::string& user
         return AuthenticationResult{false, std::nullopt, "missing_password"};
     }
 
-    if (const auto existing = player_repository_.find_credentials_by_username(username)) {
+    if (const auto existing = user_repository_.find_credentials_by_username(username)) {
         if (existing->password_hash.empty()) {
             return AuthenticationResult{false, std::nullopt, "invalid_password"};
         }
@@ -28,16 +27,16 @@ AuthenticationResult AuthenticationService::authenticate(const std::string& user
         }
 
         return AuthenticationResult{
-            true, Player(existing->id, existing->username, existing->rating), ""};
+            true, Player(static_cast<int>(existing->id), existing->username, existing->rating), ""};
     }
 
     const std::string password_hash = PasswordHasher::hash_password(password);
     if (const auto created =
-            player_repository_.create_player(username, 1000, password_hash)) {
+            user_repository_.create_user_with_password(username, 1000, password_hash)) {
         return AuthenticationResult{true, *created, ""};
     }
 
-    if (player_repository_.find_credentials_by_username(username)) {
+    if (user_repository_.find_credentials_by_username(username)) {
         return AuthenticationResult{false, std::nullopt, "username_taken"};
     }
 
