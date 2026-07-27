@@ -1,6 +1,7 @@
 #pragma once
 
 #include "app/game_server_dependencies.h"
+#include "app/server_config.h"
 #include "server/authentication_service.h"
 #include "server/game_result_message_writer.h"
 #include "server/matchmaking/match_created_handler.h"
@@ -28,7 +29,8 @@ namespace kfc {
 
 class GameServer : public IMatchCreatedHandler {
 public:
-    GameServer(unsigned short port, BoardModel default_board, app::GameServerDependencies dependencies);
+    GameServer(const app::ServerConfig& server_config, BoardModel default_board,
+               app::GameServerDependencies dependencies);
     ~GameServer();
 
     void run();

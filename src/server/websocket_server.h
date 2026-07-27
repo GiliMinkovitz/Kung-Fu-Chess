@@ -1,5 +1,6 @@
 #pragma once
 
+#include "app/server_config.h"
 #include "server/client_connection.h"
 
 #include <boost/asio/ip/tcp.hpp>
@@ -12,9 +13,10 @@ namespace kfc {
 
 class WebSocketServer {
 public:
-    static constexpr std::size_t kMaxClients = 8;
+    static constexpr std::size_t kMaxClients = app::ServerConfig::kDefaultMaxClients;
 
     explicit WebSocketServer(unsigned short port);
+    explicit WebSocketServer(const app::ServerConfig& server_config);
 
     [[nodiscard]] unsigned short port() const;
 
@@ -39,6 +41,7 @@ private:
     boost::asio::io_context io_context_;
     boost::asio::ip::tcp::acceptor acceptor_;
     std::list<ClientConnection> clients_;
+    std::size_t max_clients_;
 };
 
 }  // namespace kfc

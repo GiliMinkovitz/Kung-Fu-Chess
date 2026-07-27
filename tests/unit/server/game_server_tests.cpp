@@ -1,3 +1,4 @@
+#include "app/database_config.h"
 #include "app/server_infrastructure.h"
 #include "model/game_config.h"
 #include "network/game_result_message_reader.h"
@@ -197,7 +198,8 @@ TEST_CASE("GameServerTest - InitializesInMemoryDatabase") {
 }
 
 TEST_CASE("GameServerTest - RejectsInvalidDatabasePath") {
-    CHECK_THROWS_AS((kfc::app::ServerInfrastructure{"/tmp"}), std::runtime_error);
+    CHECK_THROWS_AS((kfc::app::ServerInfrastructure{kfc::app::DatabaseConfig{"/tmp"}}),
+                    std::runtime_error);
 }
 
 TEST_CASE("GameServerTest - AcceptsClientAndProcessesLogin") {

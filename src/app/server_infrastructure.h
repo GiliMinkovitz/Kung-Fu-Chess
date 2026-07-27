@@ -1,5 +1,6 @@
 #pragma once
 
+#include "app/database_config.h"
 #include "app/game_server_dependencies.h"
 #include "server/authentication_service.h"
 #include "server/database/i_user_repository.h"
@@ -9,13 +10,12 @@
 #include "database/sqlite_database.h"
 
 #include <memory>
-#include <string>
 
 namespace kfc::app {
 
 class ServerInfrastructure {
 public:
-    explicit ServerInfrastructure(const std::string& db_path);
+    explicit ServerInfrastructure(const DatabaseConfig& database_config);
 
     [[nodiscard]] GameServerDependencies dependencies() noexcept;
 

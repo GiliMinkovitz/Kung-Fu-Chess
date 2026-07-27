@@ -22,9 +22,9 @@ namespace {
 
 namespace kfc {
 
-GameServer::GameServer(unsigned short port, BoardModel default_board,
+GameServer::GameServer(const app::ServerConfig& server_config, BoardModel default_board,
                        app::GameServerDependencies dependencies)
-    : websocket_server_(port),
+    : websocket_server_(server_config),
       matchmaking_service_(*this),
       room_manager_(std::move(default_board)),
       database_(dependencies.database),

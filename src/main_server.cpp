@@ -1,11 +1,10 @@
+#include "app/app_config.h"
 #include "app/server_builder.h"
 #include "model/board_model.h"
 
 #include <iostream>
 
 namespace {
-
-constexpr unsigned short kServerPort = 8765;
 
 kfc::BoardModel default_board() {
     return kfc::BoardModel::from_token_grid({
@@ -24,7 +23,8 @@ kfc::BoardModel default_board() {
 
 int main() {
     try {
-        auto built = kfc::app::build_game_server(kServerPort, default_board(), "kfc.db");
+        const kfc::app::AppConfig config = kfc::app::make_default_config();
+        auto built = kfc::app::build_game_server(config, default_board());
         built.server.run();
     } catch (const std::exception& ex) {
         std::cerr << "Error: " << ex.what() << '\n';

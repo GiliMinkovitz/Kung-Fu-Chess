@@ -9,10 +9,18 @@ using tcp = net::ip::tcp;
 namespace kfc {
 
 WebSocketServer::WebSocketServer(unsigned short port)
+    : WebSocketServer([port] {
+          app::ServerConfig config;
+          config.port = port;
+          return config;
+      }()) {}
+
+WebSocketServer::WebSocketServer(const app::ServerConfig& server_config)
     : acceptor_{
           io_context_,
-          tcp::endpoint{net::ip::make_address("127.0.0.1"), port},
-      } {
+          tcp::endpoint{net::ip::make_address(server_config.bind_address), server_config.port},
+      },
+      max_clients_{server_config.max_clients} {
     acceptor_.set_option(net::socket_base::reuse_address{true});
     acceptor_.non_blocking(true);
 }
@@ -22,7 +30,7 @@ unsigned short WebSocketServer::port() const {
 }
 
 void WebSocketServer::try_accept() {
-    if (clients_.size() >= kMaxClients) {
+    if (clients_.size() >= max_clients_) {
         return;
     }
 
@@ -36,7 +44,7 @@ void WebSocketServer::try_accept() {
 #ifndef KFC_TEST_BUILD
             std::cerr << "[DIAG] WebSocketServer::try_accept() handshake succeeded\n";
             std::cout << "Client connected (" << clients_.size() << "/"
-                      << kMaxClients << ")\n";
+                      << max_clients_ << ")\n";
 #endif
         } catch (const std::exception& ex) {
 #ifndef KFC_TEST_BUILD
@@ -69,7 +77,7 @@ void WebSocketServer::prune_disconnected() {
     if (clients_.size() < before) {
 #ifndef KFC_TEST_BUILD
         std::cout << "Client disconnected (" << clients_.size() << "/"
-                  << kMaxClients << ")\n";
+                  << max_clients_ << ")\n";
 #endif
     }
 }

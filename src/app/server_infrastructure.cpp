@@ -7,8 +7,8 @@
 
 namespace kfc::app {
 
-ServerInfrastructure::ServerInfrastructure(const std::string& db_path)
-    : database_(db_path),
+ServerInfrastructure::ServerInfrastructure(const DatabaseConfig& database_config)
+    : database_(database_config.path),
       user_repository_(std::make_unique<SqliteUserRepository>(database_)),
       game_repository_(std::make_unique<SqliteGameRepository>(database_)),
       authentication_service_(*user_repository_) {
