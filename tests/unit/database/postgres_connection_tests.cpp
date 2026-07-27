@@ -58,9 +58,19 @@ TEST_CASE("PostgresConnectionTest - OpenIsIdempotentWhenConnectionFailed") {
     CHECK_FALSE(connection.open());
 }
 
-TEST_CASE("ServerInfrastructureTest - RejectsPostgreSQLBackendUntilRepositoriesExist") {
+TEST_CASE("ServerInfrastructureTest - RejectsPostgreSQLBackendUntilGameRepositoryExists") {
     kfc::app::DatabaseConfig config;
     config.backend = kfc::app::DatabaseBackend::PostgreSQL;
 
-    CHECK_THROWS_AS((kfc::app::ServerInfrastructure{config}), std::runtime_error);
+    try {
+        (void)kfc::app::ServerInfrastructure{config};
+        CHECK(false);
+    } catch (const std::runtime_error& error) {
+        const std::string message = error.what();
+        const bool missing_game_repository =
+            message.find("PostgreSQL game repository is not implemented yet") != std::string::npos;
+        const bool missing_server =
+            message.find("Failed to connect to PostgreSQL") != std::string::npos;
+        CHECK((missing_game_repository || missing_server));
+    }
 }

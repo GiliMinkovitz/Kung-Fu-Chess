@@ -63,6 +63,7 @@ set(KFC_SERVER_ARCH_SOURCES
     src/server/player_session.cpp
     src/server/user/user.cpp
     src/server/database/in_memory_user_repository.cpp
+    src/server/database/postgres_user_repository.cpp
     src/server/database/sqlite_user_repository.cpp
     src/server/matchmaking/matchmaking_queue.cpp
     src/server/matchmaking/matchmaking_service.cpp
@@ -387,6 +388,7 @@ set(KFC_TEST_SOURCES
     tests/unit/server/player_session_tests.cpp
     tests/unit/server/user_tests.cpp
     tests/unit/server/user_repository_tests.cpp
+    tests/unit/server/postgres_user_repository_tests.cpp
     tests/unit/server/client_connection_tests.cpp
     tests/unit/server/client_connection_hook_tests.cpp
     tests/unit/server/game_message_parser_tests.cpp

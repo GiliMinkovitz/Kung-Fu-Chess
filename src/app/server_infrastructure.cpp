@@ -3,6 +3,7 @@
 #include "database/postgres_connection.h"
 #include "database/sqlite_database.h"
 #include "database/sqlite_game_repository.h"
+#include "server/database/postgres_user_repository.h"
 #include "server/database/sqlite_user_repository.h"
 
 #include <stdexcept>
@@ -29,8 +30,14 @@ ServerInfrastructure::ServerInfrastructure(const DatabaseConfig& database_config
         if (!postgres->open()) {
             throw std::runtime_error("Failed to connect to PostgreSQL");
         }
+        if (!postgres->initialize_schema()) {
+            throw std::runtime_error("Failed to initialize PostgreSQL connection");
+        }
+
         database_connection_ = std::move(postgres);
-        throw std::runtime_error("PostgreSQL backend is not fully supported yet");
+        user_repository_ = std::make_unique<PostgresUserRepository>(
+            static_cast<PostgresConnection&>(*database_connection_));
+        throw std::runtime_error("PostgreSQL game repository is not implemented yet");
     }
 
     auto sqlite = std::make_unique<SqliteDatabase>(database_config.path);
