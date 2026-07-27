@@ -8,6 +8,8 @@
 #include "io/game_input_handler.h"
 #include "logic/game_state.h"
 #include "realtime/move_scheduler.h"
+#include "server/database/i_user_repository.h"
+#include "server/player.h"
 
 #include <cassert>
 #include <string>
@@ -110,6 +112,15 @@ inline ArrivingPieceInfo make_arriving_info(const BoardModel& board, std::size_t
 inline Piece make_piece(PieceColor color, PieceKind kind) {
     PieceFactory factory;
     return factory.create(color, kind, {0, 0});
+}
+
+inline std::optional<Player> find_player_profile(IUserRepository& repository,
+                                                 const std::string& username) {
+    const User* user = repository.find_by_username(username);
+    if (user == nullptr) {
+        return std::nullopt;
+    }
+    return repository.find_profile_by_id(user->id());
 }
 
 }  // namespace kfc::test

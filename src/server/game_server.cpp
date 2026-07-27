@@ -2,7 +2,6 @@
 #include "server/game_server.h"
 
 #include "model/game_config.h"
-#include "server/database/sqlite_user_repository.h"
 #include "server/game_message_parser.h"
 #include "server/game_result_message_writer.h"
 
@@ -23,18 +22,15 @@ namespace {
 
 namespace kfc {
 
-GameServer::GameServer(unsigned short port, BoardModel default_board, const std::string& db_path)
+GameServer::GameServer(unsigned short port, BoardModel default_board,
+                       app::GameServerDependencies dependencies)
     : websocket_server_(port),
       matchmaking_service_(*this),
       room_manager_(std::move(default_board)),
-      database_(db_path),
-      user_repository_(std::make_unique<SqliteUserRepository>(database_)),
-      player_repository_(database_),
-      game_repository_(database_),
-      authentication_service_(*user_repository_) {
-    if (!database_.open() || !database_.initialize_schema()) {
-        throw std::runtime_error("Failed to initialize database");
-    }
+      database_(dependencies.database),
+      user_repository_(dependencies.user_repository),
+      game_repository_(dependencies.game_repository),
+      authentication_service_(dependencies.authentication_service) {
     last_tick_ = std::chrono::steady_clock::now();
 }
 
@@ -102,16 +98,12 @@ SqliteDatabase& GameServer::database() noexcept {
     return database_;
 }
 
-PlayerRepository& GameServer::player_repository() noexcept {
-    return player_repository_;
-}
-
-GameRepository& GameServer::game_repository() noexcept {
+IGameRepository& GameServer::game_repository() noexcept {
     return game_repository_;
 }
 
 IUserRepository& GameServer::user_repository() noexcept {
-    return *user_repository_;
+    return user_repository_;
 }
 
 GameServer::RoomContext* GameServer::find_context(RoomId room_id) {
@@ -383,8 +375,8 @@ std::optional<RatingChange> GameServer::update_ratings_for_result(const Room& ro
     }
 
     const RatingChange change = rating_service_.calculate(winner->rating(), loser->rating());
-    user_repository_->update_rating(static_cast<UserId>(winner->id()), change.winner_new_rating);
-    user_repository_->update_rating(static_cast<UserId>(loser->id()), change.loser_new_rating);
+    user_repository_.update_rating(static_cast<UserId>(winner->id()), change.winner_new_rating);
+    user_repository_.update_rating(static_cast<UserId>(loser->id()), change.loser_new_rating);
     game_repository_.finish_game(game_id, winner->id());
     return change;
 }
@@ -433,7 +425,7 @@ void GameServer::refresh_session_player(PlayerSession& session) {
     if (!session.has_user()) {
         return;
     }
-    if (const auto updated = user_repository_->find_profile_by_id(session.user_id())) {
+    if (const auto updated = user_repository_.find_profile_by_id(session.user_id())) {
         session.assign_user(session.user_id(), updated->username(), updated->rating());
     }
 }

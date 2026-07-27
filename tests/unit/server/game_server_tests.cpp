@@ -1,3 +1,4 @@
+#include "app/server_infrastructure.h"
 #include "model/game_config.h"
 #include "network/game_result_message_reader.h"
 #include "network/login_message_reader.h"
@@ -9,6 +10,7 @@
 #include "server/rating_service.h"
 #include "server/websocket_server.h"
 #include "test/socket_test_hooks.h"
+#include "test_game_server_fixture.h"
 #include "test_helpers.h"
 
 #include <doctest/doctest.h>
@@ -187,20 +189,20 @@ void start_match(kfc::GameServer& server, kfc::WebSocketClient& white_client,
 }  // namespace
 
 TEST_CASE("GameServerTest - InitializesInMemoryDatabase") {
-    kfc::GameServer server{0, kfc::test::make_board({{"wK", ".", "bK"}}), ":memory:"};
+    kfc::test::GameServerFixture fixture{0, kfc::test::make_board({{"wK", ".", "bK"}})};
+    kfc::GameServer& server = fixture.server;
 
     CHECK(server.database().connection() != nullptr);
-    CHECK_FALSE(server.player_repository().find_by_username("missing").has_value());
+    CHECK(server.user_repository().find_by_username("missing") == nullptr);
 }
 
 TEST_CASE("GameServerTest - RejectsInvalidDatabasePath") {
-    CHECK_THROWS_AS(
-        (kfc::GameServer{0, kfc::test::make_board({{"wK", ".", "bK"}}), "/tmp"}),
-        std::runtime_error);
+    CHECK_THROWS_AS((kfc::app::ServerInfrastructure{"/tmp"}), std::runtime_error);
 }
 
 TEST_CASE("GameServerTest - AcceptsClientAndProcessesLogin") {
-    kfc::GameServer server{0, kfc::test::make_board({{"wK", ".", "bK"}}), ":memory:"};
+    kfc::test::GameServerFixture fixture{0, kfc::test::make_board({{"wK", ".", "bK"}})};
+    kfc::GameServer& server = fixture.server;
     kfc::WebSocketClient client{"127.0.0.1", server.websocket_server().port()};
 
     login_client(server, client, "server_user");
@@ -217,7 +219,8 @@ TEST_CASE("GameServerTest - AcceptsClientAndProcessesLogin") {
 }
 
 TEST_CASE("GameServerTest - MatchmakingFlowFindsOpponents") {
-    kfc::GameServer server{0, kfc::test::make_board({{"wK", ".", "bK"}}), ":memory:"};
+    kfc::test::GameServerFixture fixture{0, kfc::test::make_board({{"wK", ".", "bK"}})};
+    kfc::GameServer& server = fixture.server;
     kfc::WebSocketClient white_client{"127.0.0.1", server.websocket_server().port()};
     kfc::WebSocketClient black_client{"127.0.0.1", server.websocket_server().port()};
 
@@ -240,7 +243,8 @@ TEST_CASE("GameServerTest - MatchmakingFlowFindsOpponents") {
 }
 
 TEST_CASE("GameServerTest - ActiveRoomBroadcastsSnapshotsAndProcessesMoves") {
-    kfc::GameServer server{0, kfc::test::make_board({{"wK", ".", "bK"}}), ":memory:"};
+    kfc::test::GameServerFixture fixture{0, kfc::test::make_board({{"wK", ".", "bK"}})};
+    kfc::GameServer& server = fixture.server;
     kfc::WebSocketClient white_client{"127.0.0.1", server.websocket_server().port()};
     kfc::WebSocketClient black_client{"127.0.0.1", server.websocket_server().port()};
 
@@ -271,15 +275,16 @@ TEST_CASE("GameServerTest - ActiveRoomBroadcastsSnapshotsAndProcessesMoves") {
 }
 
 TEST_CASE("GameServerTest - FinishesGameAndUpdatesRatings") {
-    kfc::GameServer server{
-        0, kfc::test::make_board({{"wR", ".", "bK"}, {"wK", ".", "."}}), ":memory:"};
+    kfc::test::GameServerFixture fixture{
+        0, kfc::test::make_board({{"wR", ".", "bK"}, {"wK", ".", "."}})};
+    kfc::GameServer& server = fixture.server;
     kfc::WebSocketClient white_client{"127.0.0.1", server.websocket_server().port()};
     kfc::WebSocketClient black_client{"127.0.0.1", server.websocket_server().port()};
 
     start_match(server, white_client, black_client, "winner", "loser");
 
-    const auto winner = server.player_repository().find_by_username("winner");
-    const auto loser = server.player_repository().find_by_username("loser");
+    const auto winner = kfc::test::find_player_profile(server.user_repository(), "winner");
+    const auto loser = kfc::test::find_player_profile(server.user_repository(), "loser");
     REQUIRE(winner.has_value());
     REQUIRE(loser.has_value());
     const int winner_before = winner->rating();
@@ -300,8 +305,8 @@ TEST_CASE("GameServerTest - FinishesGameAndUpdatesRatings") {
 
     REQUIRE_FALSE(server.room().active());
 
-    const auto winner_after = server.player_repository().find_by_username("winner");
-    const auto loser_after = server.player_repository().find_by_username("loser");
+    const auto winner_after = kfc::test::find_player_profile(server.user_repository(), "winner");
+    const auto loser_after = kfc::test::find_player_profile(server.user_repository(), "loser");
     REQUIRE(winner_after.has_value());
     REQUIRE(loser_after.has_value());
     CHECK_EQ(winner_after->rating(), expected.winner_new_rating);
@@ -321,14 +326,15 @@ TEST_CASE("GameServerTest - FinishesGameAndUpdatesRatings") {
 }
 
 TEST_CASE("GameServerTest - FinishesGameWithExplicitWinner") {
-    kfc::GameServer server{0, kfc::test::make_board({{"wK", ".", "bK"}}), ":memory:"};
+    kfc::test::GameServerFixture fixture{0, kfc::test::make_board({{"wK", ".", "bK"}})};
+    kfc::GameServer& server = fixture.server;
     kfc::WebSocketClient white_client{"127.0.0.1", server.websocket_server().port()};
     kfc::WebSocketClient black_client{"127.0.0.1", server.websocket_server().port()};
 
     start_match(server, white_client, black_client, "explicit_winner", "explicit_loser");
 
-    const auto winner = server.player_repository().find_by_username("explicit_winner");
-    const auto loser = server.player_repository().find_by_username("explicit_loser");
+    const auto winner = kfc::test::find_player_profile(server.user_repository(), "explicit_winner");
+    const auto loser = kfc::test::find_player_profile(server.user_repository(), "explicit_loser");
     REQUIRE(winner.has_value());
     REQUIRE(loser.has_value());
     const kfc::RatingChange expected =
@@ -341,8 +347,10 @@ TEST_CASE("GameServerTest - FinishesGameWithExplicitWinner") {
 
     REQUIRE_FALSE(server.room().active());
 
-    const auto winner_after = server.player_repository().find_by_username("explicit_winner");
-    const auto loser_after = server.player_repository().find_by_username("explicit_loser");
+    const auto winner_after =
+        kfc::test::find_player_profile(server.user_repository(), "explicit_winner");
+    const auto loser_after =
+        kfc::test::find_player_profile(server.user_repository(), "explicit_loser");
     REQUIRE(winner_after.has_value());
     REQUIRE(loser_after.has_value());
     CHECK_EQ(winner_after->rating(), expected.winner_new_rating);
@@ -362,14 +370,15 @@ TEST_CASE("GameServerTest - FinishesGameWithExplicitWinner") {
 }
 
 TEST_CASE("GameServerTest - DisconnectingPlayerLosesGame") {
-    kfc::GameServer server{0, kfc::test::make_board({{"wK", ".", "bK"}}), ":memory:"};
+    kfc::test::GameServerFixture fixture{0, kfc::test::make_board({{"wK", ".", "bK"}})};
+    kfc::GameServer& server = fixture.server;
     kfc::WebSocketClient white_client{"127.0.0.1", server.websocket_server().port()};
     kfc::WebSocketClient black_client{"127.0.0.1", server.websocket_server().port()};
 
     start_match(server, white_client, black_client, "dc_white", "dc_black");
 
-    const auto white = server.player_repository().find_by_username("dc_white");
-    const auto black = server.player_repository().find_by_username("dc_black");
+    const auto white = kfc::test::find_player_profile(server.user_repository(), "dc_white");
+    const auto black = kfc::test::find_player_profile(server.user_repository(), "dc_black");
     REQUIRE(white.has_value());
     REQUIRE(black.has_value());
     const kfc::RatingChange expected =
@@ -381,8 +390,8 @@ TEST_CASE("GameServerTest - DisconnectingPlayerLosesGame") {
 
     REQUIRE_FALSE(server.room().active());
 
-    const auto black_after = server.player_repository().find_by_username("dc_black");
-    const auto white_after = server.player_repository().find_by_username("dc_white");
+    const auto black_after = kfc::test::find_player_profile(server.user_repository(), "dc_black");
+    const auto white_after = kfc::test::find_player_profile(server.user_repository(), "dc_white");
     REQUIRE(black_after.has_value());
     REQUIRE(white_after.has_value());
     CHECK_EQ(black_after->rating(), expected.winner_new_rating);
@@ -402,14 +411,15 @@ TEST_CASE("GameServerTest - DisconnectingPlayerLosesGame") {
 }
 
 TEST_CASE("GameServerTest - ResignFinishesGame") {
-    kfc::GameServer server{0, kfc::test::make_board({{"wK", ".", "bK"}}), ":memory:"};
+    kfc::test::GameServerFixture fixture{0, kfc::test::make_board({{"wK", ".", "bK"}})};
+    kfc::GameServer& server = fixture.server;
     kfc::WebSocketClient white_client{"127.0.0.1", server.websocket_server().port()};
     kfc::WebSocketClient black_client{"127.0.0.1", server.websocket_server().port()};
 
     start_match(server, white_client, black_client, "resign_white", "resign_black");
 
-    const auto white = server.player_repository().find_by_username("resign_white");
-    const auto black = server.player_repository().find_by_username("resign_black");
+    const auto white = kfc::test::find_player_profile(server.user_repository(), "resign_white");
+    const auto black = kfc::test::find_player_profile(server.user_repository(), "resign_black");
     REQUIRE(white.has_value());
     REQUIRE(black.has_value());
     const kfc::RatingChange expected =
@@ -421,8 +431,10 @@ TEST_CASE("GameServerTest - ResignFinishesGame") {
 
     REQUIRE_FALSE(server.room().active());
 
-    const auto black_after = server.player_repository().find_by_username("resign_black");
-    const auto white_after = server.player_repository().find_by_username("resign_white");
+    const auto black_after =
+        kfc::test::find_player_profile(server.user_repository(), "resign_black");
+    const auto white_after =
+        kfc::test::find_player_profile(server.user_repository(), "resign_white");
     REQUIRE(black_after.has_value());
     REQUIRE(white_after.has_value());
     CHECK_EQ(black_after->rating(), expected.winner_new_rating);
@@ -471,7 +483,8 @@ TEST_CASE("GameServerTest - DeliversGameResultMessageOverWebSocket") {
 
 TEST_CASE("GameServerTest - GameResultSentOnExplicitFinish") {
     kfc::test::SocketTestHooks::reset();
-    kfc::GameServer server{0, kfc::test::make_board({{"wK", ".", "bK"}}), ":memory:"};
+    kfc::test::GameServerFixture fixture{0, kfc::test::make_board({{"wK", ".", "bK"}})};
+    kfc::GameServer& server = fixture.server;
     kfc::WebSocketClient white_client{"127.0.0.1", server.websocket_server().port()};
     kfc::WebSocketClient black_client{"127.0.0.1", server.websocket_server().port()};
 
@@ -494,14 +507,17 @@ TEST_CASE("GameServerTest - GameResultSentOnExplicitFinish") {
 
 TEST_CASE("GameServerTest - GameResultSentAfterResign") {
     kfc::test::SocketTestHooks::reset();
-    kfc::GameServer server{0, kfc::test::make_board({{"wK", ".", "bK"}}), ":memory:"};
+    kfc::test::GameServerFixture fixture{0, kfc::test::make_board({{"wK", ".", "bK"}})};
+    kfc::GameServer& server = fixture.server;
     kfc::WebSocketClient white_client{"127.0.0.1", server.websocket_server().port()};
     kfc::WebSocketClient black_client{"127.0.0.1", server.websocket_server().port()};
 
     start_match(server, white_client, black_client, "result_resign_white", "result_resign_black");
 
-    const auto white = server.player_repository().find_by_username("result_resign_white");
-    const auto black = server.player_repository().find_by_username("result_resign_black");
+    const auto white =
+        kfc::test::find_player_profile(server.user_repository(), "result_resign_white");
+    const auto black =
+        kfc::test::find_player_profile(server.user_repository(), "result_resign_black");
     REQUIRE(white.has_value());
     REQUIRE(black.has_value());
     const kfc::RatingChange expected =
@@ -524,14 +540,15 @@ TEST_CASE("GameServerTest - GameResultSentAfterResign") {
 
 TEST_CASE("GameServerTest - GameResultSentAfterDisconnect") {
     kfc::test::SocketTestHooks::reset();
-    kfc::GameServer server{0, kfc::test::make_board({{"wK", ".", "bK"}}), ":memory:"};
+    kfc::test::GameServerFixture fixture{0, kfc::test::make_board({{"wK", ".", "bK"}})};
+    kfc::GameServer& server = fixture.server;
     kfc::WebSocketClient white_client{"127.0.0.1", server.websocket_server().port()};
     kfc::WebSocketClient black_client{"127.0.0.1", server.websocket_server().port()};
 
     start_match(server, white_client, black_client, "result_dc_white", "result_dc_black");
 
-    const auto white = server.player_repository().find_by_username("result_dc_white");
-    const auto black = server.player_repository().find_by_username("result_dc_black");
+    const auto white = kfc::test::find_player_profile(server.user_repository(), "result_dc_white");
+    const auto black = kfc::test::find_player_profile(server.user_repository(), "result_dc_black");
     REQUIRE(white.has_value());
     REQUIRE(black.has_value());
     const kfc::RatingChange expected =
@@ -549,7 +566,8 @@ TEST_CASE("GameServerTest - GameResultSentAfterDisconnect") {
 }
 
 TEST_CASE("GameServerTest - ExposesRepositoriesAndMatchmaking") {
-    kfc::GameServer server{0, kfc::test::make_board({{"wK", ".", "bK"}}), ":memory:"};
+    kfc::test::GameServerFixture fixture{0, kfc::test::make_board({{"wK", ".", "bK"}})};
+    kfc::GameServer& server = fixture.server;
 
     CHECK(server.database().connection() != nullptr);
     CHECK_EQ(server.matchmaking_service().waiting_count(), 0u);
@@ -557,30 +575,31 @@ TEST_CASE("GameServerTest - ExposesRepositoriesAndMatchmaking") {
 }
 
 TEST_CASE("GameServerTest - RejectsMalformedLoginAndPlayMessages") {
-    kfc::GameServer server{0, kfc::test::make_board({{"wK", ".", "bK"}}), ":memory:"};
+    kfc::test::GameServerFixture fixture{0, kfc::test::make_board({{"wK", ".", "bK"}})};
+    kfc::GameServer& server = fixture.server;
     kfc::WebSocketClient client{"127.0.0.1", server.websocket_server().port()};
 
     connect_through_server(server, client);
 
     REQUIRE(client.try_send("   "));
     server.tick_once();
-    CHECK_FALSE(server.player_repository().find_by_username("anyone").has_value());
+    CHECK(server.user_repository().find_by_username("anyone") == nullptr);
 
     REQUIRE(client.try_send("login"));
     server.tick_once();
-    CHECK_FALSE(server.player_repository().find_by_username("anyone").has_value());
+    CHECK(server.user_repository().find_by_username("anyone") == nullptr);
 
     REQUIRE(client.try_send("login malformed_alice extra token"));
     server.tick_once();
-    CHECK_FALSE(server.player_repository().find_by_username("malformed_alice").has_value());
+    CHECK(server.user_repository().find_by_username("malformed_alice") == nullptr);
 
     REQUIRE(client.try_send("signin nobody"));
     server.tick_once();
-    CHECK_FALSE(server.player_repository().find_by_username("nobody").has_value());
+    CHECK(server.user_repository().find_by_username("nobody") == nullptr);
 
     kfc::WebSocketClient valid_client{"127.0.0.1", server.websocket_server().port()};
     login_client(server, valid_client, "valid_play_user");
-    REQUIRE(server.player_repository().find_by_username("valid_play_user").has_value());
+    REQUIRE(server.user_repository().find_by_username("valid_play_user") != nullptr);
 
     REQUIRE(valid_client.try_send("play extra"));
     server.tick_once();
@@ -593,7 +612,8 @@ TEST_CASE("GameServerTest - RejectsMalformedLoginAndPlayMessages") {
 
 TEST_CASE("GameServerTest - IgnoresPlayMessagesWhileSearching") {
     kfc::test::SocketTestHooks::reset();
-    kfc::GameServer server{0, kfc::test::make_board({{"wK", ".", "bK"}}), ":memory:"};
+    kfc::test::GameServerFixture fixture{0, kfc::test::make_board({{"wK", ".", "bK"}})};
+    kfc::GameServer& server = fixture.server;
     kfc::WebSocketClient client{"127.0.0.1", server.websocket_server().port()};
 
     login_client(server, client, "queue_user");
@@ -613,7 +633,8 @@ TEST_CASE("GameServerTest - IgnoresPlayMessagesWhileSearching") {
 
 TEST_CASE("GameServerTest - SwallowsDuplicatePlayWhileSearching") {
     kfc::test::SocketTestHooks::reset();
-    kfc::GameServer server{0, kfc::test::make_board({{"wK", ".", "bK"}}), ":memory:"};
+    kfc::test::GameServerFixture fixture{0, kfc::test::make_board({{"wK", ".", "bK"}})};
+    kfc::GameServer& server = fixture.server;
     kfc::WebSocketClient client{"127.0.0.1", server.websocket_server().port()};
 
     login_client(server, client, "dup_play_user");
@@ -632,7 +653,8 @@ TEST_CASE("GameServerTest - SwallowsDuplicatePlayWhileSearching") {
 }
 
 TEST_CASE("GameServerTest - MatchmakingTimeoutNotifiesClient") {
-    kfc::GameServer server{0, kfc::test::make_board({{"wK", ".", "bK"}}), ":memory:"};
+    kfc::test::GameServerFixture fixture{0, kfc::test::make_board({{"wK", ".", "bK"}})};
+    kfc::GameServer& server = fixture.server;
     kfc::WebSocketClient client{"127.0.0.1", server.websocket_server().port()};
 
     server.matchmaking_service().set_queue_timeout(std::chrono::milliseconds(0));
@@ -655,7 +677,8 @@ TEST_CASE("GameServerTest - MatchmakingTimeoutNotifiesClient") {
 }
 
 TEST_CASE("GameServerTest - RejectsMalformedGameCommands") {
-    kfc::GameServer server{0, kfc::test::make_board({{"wK", ".", "bK"}}), ":memory:"};
+    kfc::test::GameServerFixture fixture{0, kfc::test::make_board({{"wK", ".", "bK"}})};
+    kfc::GameServer& server = fixture.server;
     kfc::WebSocketClient white_client{"127.0.0.1", server.websocket_server().port()};
     kfc::WebSocketClient black_client{"127.0.0.1", server.websocket_server().port()};
 
@@ -677,8 +700,9 @@ TEST_CASE("GameServerTest - RejectsMalformedGameCommands") {
 }
 
 TEST_CASE("GameServerTest - ProcessesJumpCommandForAssignedSide") {
-    kfc::GameServer server{
-        0, kfc::test::make_board({{"wK", "wN", "bK"}, {".", ".", "."}}), ":memory:"};
+    kfc::test::GameServerFixture fixture{
+        0, kfc::test::make_board({{"wK", "wN", "bK"}, {".", ".", "."}})};
+    kfc::GameServer& server = fixture.server;
     kfc::WebSocketClient white_client{"127.0.0.1", server.websocket_server().port()};
     kfc::WebSocketClient black_client{"127.0.0.1", server.websocket_server().port()};
 
@@ -692,7 +716,8 @@ TEST_CASE("GameServerTest - ProcessesJumpCommandForAssignedSide") {
 }
 
 TEST_CASE("GameServerTest - RejectsMoveSelectedForWrongSide") {
-    kfc::GameServer server{0, kfc::test::make_board({{"wK", ".", "bK"}}), ":memory:"};
+    kfc::test::GameServerFixture fixture{0, kfc::test::make_board({{"wK", ".", "bK"}})};
+    kfc::GameServer& server = fixture.server;
     kfc::WebSocketClient white_client{"127.0.0.1", server.websocket_server().port()};
     kfc::WebSocketClient black_client{"127.0.0.1", server.websocket_server().port()};
 
@@ -706,8 +731,9 @@ TEST_CASE("GameServerTest - RejectsMoveSelectedForWrongSide") {
 }
 
 TEST_CASE("GameServerTest - ClampsLoserRatingAtZero") {
-    kfc::GameServer server{
-        0, kfc::test::make_board({{"wR", ".", "bK"}, {"wK", ".", "."}}), ":memory:"};
+    kfc::test::GameServerFixture fixture{
+        0, kfc::test::make_board({{"wR", ".", "bK"}, {"wK", ".", "."}})};
+    kfc::GameServer& server = fixture.server;
     kfc::WebSocketClient white_client{"127.0.0.1", server.websocket_server().port()};
     kfc::WebSocketClient black_client{"127.0.0.1", server.websocket_server().port()};
 
@@ -745,13 +771,15 @@ TEST_CASE("GameServerTest - ClampsLoserRatingAtZero") {
     REQUIRE(match.is_game_over());
     server.tick_once();
 
-    const auto loser_after = server.player_repository().find_by_username("clamp_loser");
+    const auto loser_after =
+        kfc::test::find_player_profile(server.user_repository(), "clamp_loser");
     REQUIRE(loser_after.has_value());
     CHECK_EQ(loser_after->rating(), 0);
 }
 
 TEST_CASE("GameServerTest - RejectsWrongPassword") {
-    kfc::GameServer server{0, kfc::test::make_board({{"wK", ".", "bK"}}), ":memory:"};
+    kfc::test::GameServerFixture fixture{0, kfc::test::make_board({{"wK", ".", "bK"}})};
+    kfc::GameServer& server = fixture.server;
     kfc::WebSocketClient registered_client{"127.0.0.1", server.websocket_server().port()};
     kfc::WebSocketClient attacker_client{"127.0.0.1", server.websocket_server().port()};
 
@@ -780,7 +808,8 @@ TEST_CASE("GameServerTest - RejectsWrongPassword") {
 }
 
 TEST_CASE("GameServerTest - RejectsMissingPassword") {
-    kfc::GameServer server{0, kfc::test::make_board({{"wK", ".", "bK"}}), ":memory:"};
+    kfc::test::GameServerFixture fixture{0, kfc::test::make_board({{"wK", ".", "bK"}})};
+    kfc::GameServer& server = fixture.server;
     kfc::WebSocketClient client{"127.0.0.1", server.websocket_server().port()};
 
     connect_through_server(server, client);
@@ -799,11 +828,12 @@ TEST_CASE("GameServerTest - RejectsMissingPassword") {
         }
     }
     CHECK(saw_failure);
-    CHECK_FALSE(server.player_repository().find_by_username("no_password_user").has_value());
+    CHECK(server.user_repository().find_by_username("no_password_user") == nullptr);
 }
 
 TEST_CASE("GameServerTest - RejectsDuplicateLogin") {
-    kfc::GameServer server{0, kfc::test::make_board({{"wK", ".", "bK"}}), ":memory:"};
+    kfc::test::GameServerFixture fixture{0, kfc::test::make_board({{"wK", ".", "bK"}})};
+    kfc::GameServer& server = fixture.server;
     kfc::WebSocketClient first_client{"127.0.0.1", server.websocket_server().port()};
     kfc::WebSocketClient second_client{"127.0.0.1", server.websocket_server().port()};
 
@@ -828,7 +858,8 @@ TEST_CASE("GameServerTest - RejectsDuplicateLogin") {
 }
 
 TEST_CASE("GameServerTest - RunLoopCanBeStoppedInTests") {
-    kfc::GameServer server{0, kfc::test::make_board({{"wK", ".", "bK"}}), ":memory:"};
+    kfc::test::GameServerFixture fixture{0, kfc::test::make_board({{"wK", ".", "bK"}})};
+    kfc::GameServer& server = fixture.server;
 
     std::thread server_thread{[&]() { server.run(); }};
     std::this_thread::sleep_for(std::chrono::milliseconds(5));

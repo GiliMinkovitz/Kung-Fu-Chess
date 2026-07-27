@@ -53,6 +53,10 @@ set(KFC_SERVER_WEBSOCKET_SOURCES
     src/server/websocket_server.cpp
 )
 
+set(KFC_APP_SOURCES
+    src/app/server_infrastructure.cpp
+)
+
 set(KFC_SERVER_ARCH_SOURCES
     src/server/player.cpp
     src/server/player_session.cpp
@@ -131,6 +135,7 @@ add_executable(KungFuChessServer
     src/server/client_connection.cpp
     src/server/snapshot_writer.cpp
     src/server/websocket_server.cpp
+    ${KFC_APP_SOURCES}
     ${KFC_SERVER_ARCH_SOURCES}
     ${KFC_DATABASE_SOURCES}
     ${KFC_SOURCES}
@@ -341,6 +346,7 @@ add_executable(KungFuChessTests
     ${KFC_SOURCES}
     ${KFC_NETWORK_SOURCES}
     ${KFC_SERVER_WEBSOCKET_SOURCES}
+    ${KFC_APP_SOURCES}
     ${KFC_SERVER_ARCH_SOURCES}
     ${KFC_DATABASE_SOURCES}
     src/server/snapshot_writer.cpp

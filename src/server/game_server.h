@@ -1,5 +1,6 @@
 #pragma once
 
+#include "app/game_server_dependencies.h"
 #include "server/authentication_service.h"
 #include "server/game_result_message_writer.h"
 #include "server/matchmaking/match_created_handler.h"
@@ -11,8 +12,7 @@
 #include "server/session_registry.h"
 #include "server/websocket_server.h"
 
-#include "database/game_repository.h"
-#include "database/player_repository.h"
+#include "database/i_game_repository.h"
 #include "database/sqlite_database.h"
 #include "model/board_model.h"
 #include "model/piece.h"
@@ -20,7 +20,6 @@
 #include <chrono>
 #include <cstddef>
 #include <list>
-#include <memory>
 #include <optional>
 #include <string>
 #include <unordered_map>
@@ -29,7 +28,7 @@ namespace kfc {
 
 class GameServer : public IMatchCreatedHandler {
 public:
-    GameServer(unsigned short port, BoardModel default_board, const std::string& db_path = "kfc.db");
+    GameServer(unsigned short port, BoardModel default_board, app::GameServerDependencies dependencies);
     ~GameServer();
 
     void run();
@@ -45,8 +44,7 @@ public:
     [[nodiscard]] Room& room() noexcept;
     [[nodiscard]] std::optional<int> room_db_game_id() const noexcept;
     [[nodiscard]] SqliteDatabase& database() noexcept;
-    [[nodiscard]] PlayerRepository& player_repository() noexcept;
-    [[nodiscard]] GameRepository& game_repository() noexcept;
+    [[nodiscard]] IGameRepository& game_repository() noexcept;
     [[nodiscard]] IUserRepository& user_repository() noexcept;
 
     RoomId create_match(PlayerSession* white, PlayerSession* black) override;
@@ -86,12 +84,11 @@ private:
     RoomManager room_manager_;
     std::optional<RoomId> last_room_id_;
     std::unordered_map<RoomId, RoomContext> room_contexts_;
-    SqliteDatabase database_;
-    std::unique_ptr<IUserRepository> user_repository_;
-    PlayerRepository player_repository_;
-    GameRepository game_repository_;
+    SqliteDatabase& database_;
+    IUserRepository& user_repository_;
+    IGameRepository& game_repository_;
     RatingService rating_service_;
-    AuthenticationService authentication_service_;
+    AuthenticationService& authentication_service_;
     SessionRegistry session_registry_;
     std::list<PlayerSession> sessions_;
     std::size_t next_session_id_ = 0;

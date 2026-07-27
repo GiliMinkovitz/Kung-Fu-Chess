@@ -1,5 +1,5 @@
+#include "app/server_builder.h"
 #include "model/board_model.h"
-#include "server/game_server.h"
 
 #include <iostream>
 
@@ -24,8 +24,8 @@ kfc::BoardModel default_board() {
 
 int main() {
     try {
-        kfc::GameServer server{kServerPort, default_board()};
-        server.run();
+        auto built = kfc::app::build_game_server(kServerPort, default_board(), "kfc.db");
+        built.server.run();
     } catch (const std::exception& ex) {
         std::cerr << "Error: " << ex.what() << '\n';
         return 1;

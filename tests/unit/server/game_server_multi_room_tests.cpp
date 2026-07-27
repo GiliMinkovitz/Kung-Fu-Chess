@@ -1,5 +1,6 @@
 #include "network/websocket_client.h"
 #include "server/game_server.h"
+#include "test_game_server_fixture.h"
 #include "test_helpers.h"
 
 #include <doctest/doctest.h>
@@ -110,7 +111,8 @@ std::optional<std::string> drain_latest_snapshot(kfc::WebSocketClient& client) {
 }  // namespace
 
 TEST_CASE("GameServerMultiRoomTest - TwoRoomsExistSimultaneously") {
-    kfc::GameServer server{0, kfc::test::make_board({{"wK", ".", "bK"}}), ":memory:"};
+    kfc::test::GameServerFixture fixture{0, kfc::test::make_board({{"wK", ".", "bK"}})};
+    kfc::GameServer& server = fixture.server;
     kfc::WebSocketClient g1_white{"127.0.0.1", server.websocket_server().port()};
     kfc::WebSocketClient g1_black{"127.0.0.1", server.websocket_server().port()};
     kfc::WebSocketClient g2_white{"127.0.0.1", server.websocket_server().port()};
@@ -122,7 +124,8 @@ TEST_CASE("GameServerMultiRoomTest - TwoRoomsExistSimultaneously") {
 }
 
 TEST_CASE("GameServerMultiRoomTest - PlayersAssignedToCorrectRoom") {
-    kfc::GameServer server{0, kfc::test::make_board({{"wK", ".", "bK"}}), ":memory:"};
+    kfc::test::GameServerFixture fixture{0, kfc::test::make_board({{"wK", ".", "bK"}})};
+    kfc::GameServer& server = fixture.server;
     kfc::WebSocketClient g1_white{"127.0.0.1", server.websocket_server().port()};
     kfc::WebSocketClient g1_black{"127.0.0.1", server.websocket_server().port()};
     kfc::WebSocketClient g2_white{"127.0.0.1", server.websocket_server().port()};
@@ -146,7 +149,8 @@ TEST_CASE("GameServerMultiRoomTest - PlayersAssignedToCorrectRoom") {
 }
 
 TEST_CASE("GameServerMultiRoomTest - CommandsRoutedToCorrectRoom") {
-    kfc::GameServer server{0, kfc::test::make_board({{"wK", ".", "bK"}}), ":memory:"};
+    kfc::test::GameServerFixture fixture{0, kfc::test::make_board({{"wK", ".", "bK"}})};
+    kfc::GameServer& server = fixture.server;
     kfc::WebSocketClient g1_white{"127.0.0.1", server.websocket_server().port()};
     kfc::WebSocketClient g1_black{"127.0.0.1", server.websocket_server().port()};
     kfc::WebSocketClient g2_white{"127.0.0.1", server.websocket_server().port()};
@@ -167,7 +171,8 @@ TEST_CASE("GameServerMultiRoomTest - CommandsRoutedToCorrectRoom") {
 }
 
 TEST_CASE("GameServerMultiRoomTest - SnapshotsIsolatedBetweenRooms") {
-    kfc::GameServer server{0, kfc::test::make_board({{"wK", ".", "bK"}}), ":memory:"};
+    kfc::test::GameServerFixture fixture{0, kfc::test::make_board({{"wK", ".", "bK"}})};
+    kfc::GameServer& server = fixture.server;
     kfc::WebSocketClient g1_white{"127.0.0.1", server.websocket_server().port()};
     kfc::WebSocketClient g1_black{"127.0.0.1", server.websocket_server().port()};
     kfc::WebSocketClient g2_white{"127.0.0.1", server.websocket_server().port()};
@@ -192,7 +197,8 @@ TEST_CASE("GameServerMultiRoomTest - SnapshotsIsolatedBetweenRooms") {
 }
 
 TEST_CASE("GameServerMultiRoomTest - RoomsTickIndependently") {
-    kfc::GameServer server{0, kfc::test::make_board({{"wK", ".", "bK"}}), ":memory:"};
+    kfc::test::GameServerFixture fixture{0, kfc::test::make_board({{"wK", ".", "bK"}})};
+    kfc::GameServer& server = fixture.server;
     kfc::WebSocketClient g1_white{"127.0.0.1", server.websocket_server().port()};
     kfc::WebSocketClient g1_black{"127.0.0.1", server.websocket_server().port()};
     kfc::WebSocketClient g2_white{"127.0.0.1", server.websocket_server().port()};
