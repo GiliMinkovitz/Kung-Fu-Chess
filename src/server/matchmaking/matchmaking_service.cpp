@@ -1,6 +1,5 @@
 #include "server/matchmaking/matchmaking_service.h"
 
-#include "model/piece.h"
 #include "server/player_session.h"
 
 namespace kfc {
@@ -36,16 +35,7 @@ void MatchmakingService::set_queue_timeout(const std::chrono::milliseconds timeo
 #endif
 
 MatchCreated MatchmakingService::finalize_match(PlayerSession* white, PlayerSession* black) {
-    white->set_playing();
-    black->set_playing();
-    white->set_side(PieceColor::White);
-    black->set_side(PieceColor::Black);
-
     const RoomId room_id = handler_.create_match(white, black);
-
-    white->assign_room(room_id);
-    black->assign_room(room_id);
-
     return MatchCreated{white, black, room_id};
 }
 

@@ -72,11 +72,16 @@ set(KFC_SERVER_ARCH_SOURCES
     src/server/matchmaking/matchmaking_service.cpp
     src/server/room/room.cpp
     src/server/room/room_manager.cpp
+    src/server/room/active_room_processor.cpp
+    src/server/game_result/game_result_handler.cpp
     src/server/game_message_parser.cpp
     src/server/rating_service.cpp
     src/server/password_hasher.cpp
     src/server/authentication_service.cpp
     src/server/session_registry.cpp
+    src/server/session/client_session_manager.cpp
+    src/server/lobby/lobby_message_handler.cpp
+    src/server/match/match_lifecycle_handler.cpp
     src/server/game_server.cpp
     src/server/game_result_message_writer.cpp
 )

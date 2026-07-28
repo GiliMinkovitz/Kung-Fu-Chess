@@ -2,31 +2,26 @@
 
 #include "app/game_server_dependencies.h"
 #include "app/server_config.h"
-#include "server/authentication_service.h"
-#include "server/game_result_message_writer.h"
-#include "server/matchmaking/match_created_handler.h"
+#include "server/game_result/game_result_handler.h"
+#include "server/lobby/lobby_message_handler.h"
+#include "server/match/match_lifecycle_handler.h"
 #include "server/matchmaking/matchmaking_service.h"
-#include "server/player_session.h"
-#include "server/rating_service.h"
+#include "server/room/active_room_processor.h"
 #include "server/room/room_manager.h"
 #include "server/database/i_user_repository.h"
+#include "server/session/client_session_manager.h"
 #include "server/session_registry.h"
 #include "server/websocket_server.h"
 
-#include "database/i_database_connection.h"
-#include "database/i_game_repository.h"
 #include "model/board_model.h"
 #include "model/piece.h"
 
 #include <chrono>
-#include <cstddef>
-#include <list>
 #include <optional>
-#include <string>
 
 namespace kfc {
 
-class GameServer : public IMatchCreatedHandler {
+class GameServer {
 public:
     GameServer(const app::ServerConfig& server_config, BoardModel default_board,
                app::GameServerDependencies dependencies);
@@ -36,53 +31,27 @@ public:
     void tick_once();
 #ifdef KFC_TEST_BUILD
     void request_stop() noexcept { stop_requested_ = true; }
-    void finish_room(RoomId room_id, std::optional<PieceColor> winner_color, FinishReason reason);
+    void finish_room(RoomId room_id, std::optional<PieceColor> winner_color, FinishReason reason) {
+        game_result_handler_.finish(room_id, winner_color, reason);
+    }
 #endif
 
     [[nodiscard]] WebSocketServer& websocket_server() noexcept;
     [[nodiscard]] MatchmakingService& matchmaking_service() noexcept;
     [[nodiscard]] RoomManager& room_manager() noexcept;
-    [[nodiscard]] IDatabaseConnection& database() noexcept;
-    [[nodiscard]] IGameRepository& game_repository() noexcept;
     [[nodiscard]] IUserRepository& user_repository() noexcept;
 
-    RoomId create_match(PlayerSession* white, PlayerSession* black) override;
-
 private:
-    void accept_new_clients();
-    void process_pending_logins();
-    void process_matchmaking_timeouts();
-    void notify_match_created(const MatchCreated& match);
-    void prune_sessions();
-    void process_active_rooms(std::int64_t elapsed, std::chrono::steady_clock::time_point& last_tick);
-    void process_playing_session_messages();
-    void process_room_player_messages(Room& room, PlayerSession& session);
-    void probe_room_connections(Room& room);
-    [[nodiscard]] std::optional<PieceColor> disconnected_player_color(const Room& room) const;
-    [[nodiscard]] bool both_room_players_disconnected(const Room& room) const;
-#ifndef KFC_TEST_BUILD
-    void finish_room(RoomId room_id, std::optional<PieceColor> winner_color, FinishReason reason);
-#endif
-    [[nodiscard]] const Player* find_player_by_color(const Room& room, PieceColor color) const;
-    [[nodiscard]] std::optional<RatingChange> update_ratings_for_result(const Room& room,
-                                                                        PieceColor winner_color,
-                                                                        int game_id);
-    void cleanup_finished_room(RoomId room_id);
-    void refresh_session_player(PlayerSession& session);
-    void bind_authenticated_user(PlayerSession& session, const Player& authenticated_player);
-    [[nodiscard]] Room* find_session_room(const PlayerSession& session);
-
     WebSocketServer websocket_server_;
-    MatchmakingService matchmaking_service_;
     RoomManager room_manager_;
-    IDatabaseConnection& database_;
+    MatchLifecycleHandler match_lifecycle_handler_;
+    MatchmakingService matchmaking_service_;
+    ActiveRoomProcessor active_room_processor_;
     IUserRepository& user_repository_;
-    IGameRepository& game_repository_;
-    RatingService rating_service_;
-    AuthenticationService& authentication_service_;
     SessionRegistry session_registry_;
-    std::list<PlayerSession> sessions_;
-    std::size_t next_session_id_ = 0;
+    ClientSessionManager session_manager_;
+    LobbyMessageHandler lobby_handler_;
+    GameResultHandler game_result_handler_;
     std::chrono::steady_clock::time_point last_tick_{};
 #ifdef KFC_TEST_BUILD
     bool stop_requested_ = false;

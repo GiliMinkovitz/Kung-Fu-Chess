@@ -1,9 +1,6 @@
-#include "server/rating_service.h"
 #include "server/game_server.h"
 
 #include "model/game_config.h"
-#include "server/game_message_parser.h"
-#include "server/game_result_message_writer.h"
 
 #include <chrono>
 #include <iostream>
@@ -11,26 +8,22 @@
 #include <stdexcept>
 #include <thread>
 
-namespace {
-
-[[nodiscard]] bool is_room_player_connected(const kfc::PlayerSession* session) {
-    return session != nullptr && session->connection() != nullptr &&
-           session->connection()->is_open();
-}
-
-}  // namespace
-
 namespace kfc {
 
 GameServer::GameServer(const app::ServerConfig& server_config, BoardModel default_board,
                        app::GameServerDependencies dependencies)
     : websocket_server_(server_config),
-      matchmaking_service_(*this),
       room_manager_(std::move(default_board)),
-      database_(dependencies.database),
+      match_lifecycle_handler_(room_manager_, dependencies.game_repository),
+      matchmaking_service_(match_lifecycle_handler_),
+      active_room_processor_(room_manager_),
       user_repository_(dependencies.user_repository),
-      game_repository_(dependencies.game_repository),
-      authentication_service_(dependencies.authentication_service) {
+      session_manager_(websocket_server_, session_registry_, matchmaking_service_),
+      lobby_handler_(dependencies.authentication_service, matchmaking_service_, session_registry_,
+                     session_manager_, match_lifecycle_handler_),
+      game_result_handler_(room_manager_, user_repository_, dependencies.game_repository,
+                           session_registry_) {
+    match_lifecycle_handler_.bind_matchmaking_service(matchmaking_service_);
     last_tick_ = std::chrono::steady_clock::now();
 }
 
@@ -44,380 +37,30 @@ MatchmakingService& GameServer::matchmaking_service() noexcept {
     return matchmaking_service_;
 }
 
-RoomId GameServer::create_match(PlayerSession* white, PlayerSession* black) {
-    const RoomId room_id = room_manager_.create_room();
-
-    Room* room = room_manager_.find_room(room_id);
-    room->activate(&white->player(), &black->player());
-
-    const std::optional<int> db_game_id =
-        game_repository_.create_game(white->player().id(), black->player().id());
-    room->bind_sessions(white, black);
-    if (db_game_id.has_value()) {
-        room->set_db_game_id(*db_game_id);
-    }
-
-    return room_id;
-}
-
-void GameServer::notify_match_created(const MatchCreated& match) {
-    match.white->connection()->try_send("match_found white");
-    match.black->connection()->try_send("match_found black");
-    match.white->connection()->try_send("game_start white");
-    match.black->connection()->try_send("game_start black");
-}
-
 RoomManager& GameServer::room_manager() noexcept {
     return room_manager_;
-}
-
-IDatabaseConnection& GameServer::database() noexcept {
-    return database_;
-}
-
-IGameRepository& GameServer::game_repository() noexcept {
-    return game_repository_;
 }
 
 IUserRepository& GameServer::user_repository() noexcept {
     return user_repository_;
 }
 
-Room* GameServer::find_session_room(const PlayerSession& session) {
-    if (!session.has_room()) {
-        return nullptr;
-    }
-    return room_manager_.find_room(session.room_id());
-}
-
-void GameServer::bind_authenticated_user(PlayerSession& session,
-                                         const Player& authenticated_player) {
-    session.assign_user(static_cast<UserId>(authenticated_player.id()), authenticated_player.username(),
-                        authenticated_player.rating());
-}
-
-void GameServer::accept_new_clients() {
-    if (websocket_server_.clients().size() >= WebSocketServer::kMaxClients) {
-        return;
-    }
-
-    const std::size_t before = websocket_server_.clients().size();
-    websocket_server_.try_accept();
-    if (websocket_server_.clients().size() <= before) {
-        return;
-    }
-
-    ClientConnection& connection = websocket_server_.clients().back();
-    sessions_.emplace_back(next_session_id_++, &connection);
-}
-
-void GameServer::process_pending_logins() {
-    for (PlayerSession& session : sessions_) {
-        if (session.state() == PlayerSessionState::Playing ||
-            !session.connection()->is_open()) {
-            continue;
-        }
-
-        if (const auto raw_message = session.connection()->try_read()) {
-            if (session.state() == PlayerSessionState::Searching) {
-                parse_play_message(*raw_message);
-                continue;
-            }
-
-            if (!session.has_user()) {
-                if (const auto request = parse_login_message(*raw_message)) {
-                    if (session_registry_.is_online(request->username)) {
-                        session.connection()->try_send("login_failed already_connected");
-                        continue;
-                    }
-
-                    const AuthenticationResult auth =
-                        authentication_service_.authenticate(request->username, request->password);
-                    if (!auth.success) {
-                        session.connection()->try_send("login_failed " + auth.failure_reason);
-                        continue;
-                    }
-
-                    bind_authenticated_user(session, *auth.player);
-                    session_registry_.register_session(auth.player->username());
-                    session.connection()->try_send("login_ok " + std::to_string(auth.player->rating()));
-                }
-                continue;
-            }
-
-            if (parse_play_message(*raw_message)) {
-                session.request_play();
-                if (session.state() == PlayerSessionState::Searching) {
-                    const auto now = std::chrono::steady_clock::now();
-                    if (const auto match = matchmaking_service_.enqueue(session, now)) {
-                        notify_match_created(*match);
-                    } else {
-                        session.connection()->try_send("searching");
-                    }
-                }
-            }
-        }
-    }
-}
-
-void GameServer::process_matchmaking_timeouts() {
-    const auto now = std::chrono::steady_clock::now();
-    for (PlayerSession* session : matchmaking_service_.check_timeouts(now)) {
-#ifndef KFC_TEST_BUILD
-        std::cout << "Matchmaking timeout for session " << session->id() << " (player "
-                  << session->player().username() << ")\n";
-#endif
-        session->connection()->try_send("search_timeout");
-        session->cancel_search();
-    }
-}
-
-void GameServer::prune_sessions() {
-    websocket_server_.prune_disconnected();
-
-    for (auto it = sessions_.begin(); it != sessions_.end();) {
-        if (!it->connection()->is_open()) {
-            if (it->has_user()) {
-                session_registry_.unregister_session(it->player().username());
-            }
-            matchmaking_service_.remove(*it);
-            it = sessions_.erase(it);
-        } else {
-            ++it;
-        }
-    }
-}
-
-void GameServer::probe_room_connections(Room& room) {
-    if (PlayerSession* white_session = room.white_session()) {
-        if (ClientConnection* connection = white_session->connection()) {
-            connection->probe_disconnect();
-        }
-    }
-    if (PlayerSession* black_session = room.black_session()) {
-        if (ClientConnection* connection = black_session->connection()) {
-            connection->probe_disconnect();
-        }
-    }
-}
-
-std::optional<PieceColor> GameServer::disconnected_player_color(const Room& room) const {
-    if (room.white_session() == nullptr || room.black_session() == nullptr) {
-        return std::nullopt;
-    }
-
-    const bool white_connected = is_room_player_connected(room.white_session());
-    const bool black_connected = is_room_player_connected(room.black_session());
-    if (white_connected && black_connected) {
-        return std::nullopt;
-    }
-    if (!white_connected && black_connected) {
-        return PieceColor::White;
-    }
-    if (white_connected && !black_connected) {
-        return PieceColor::Black;
-    }
-    return std::nullopt;
-}
-
-bool GameServer::both_room_players_disconnected(const Room& room) const {
-    return !is_room_player_connected(room.white_session()) &&
-           !is_room_player_connected(room.black_session());
-}
-
-void GameServer::process_room_player_messages(Room& room, PlayerSession& session) {
-    if (const auto raw_message = session.connection()->try_read()) {
-        if (parse_resign_message(*raw_message)) {
-            if (room.contains_player(&session.player()) && session.has_side()) {
-                const PieceColor winner =
-                    session.side() == PieceColor::White ? PieceColor::Black : PieceColor::White;
-                finish_room(room.id(), winner, FinishReason::Resign);
-            }
-            return;
-        }
-
-        if (const auto action = parse_message(*raw_message)) {
-            if (is_action_allowed(session, room.match(), *action)) {
-                room.submit_action(*action);
-            }
-        }
-    }
-}
-
-void GameServer::process_playing_session_messages() {
-    for (PlayerSession& session : sessions_) {
-        if (session.state() != PlayerSessionState::Playing || !session.has_room()) {
-            continue;
-        }
-
-        Room* room = find_session_room(session);
-        if (room == nullptr || !room->active() || room->is_game_over()) {
-            continue;
-        }
-
-        process_room_player_messages(*room, session);
-    }
-}
-
-void GameServer::process_active_rooms(std::int64_t elapsed,
-                                      std::chrono::steady_clock::time_point& last_tick) {
-    for (Room* room : room_manager_.active_rooms()) {
-        if (room->white_session() == nullptr || room->black_session() == nullptr) {
-            continue;
-        }
-
-        if (elapsed >= kTargetFrameMs && !room->is_game_over()) {
-            room->tick(elapsed);
-
-            const std::string snapshot = room->generate_snapshot();
-            if (is_room_player_connected(room->white_session())) {
-                room->white_session()->connection()->try_send(snapshot);
-            }
-            if (is_room_player_connected(room->black_session())) {
-                room->black_session()->connection()->try_send(snapshot);
-            }
-
-            last_tick = std::chrono::steady_clock::now();
-        }
-    }
-
-    process_playing_session_messages();
-}
-
-void GameServer::finish_room(RoomId room_id, std::optional<PieceColor> winner_color,
-                             FinishReason reason) {
-    Room* room = room_manager_.find_room(room_id);
-    if (room == nullptr || room->white_session() == nullptr || room->black_session() == nullptr) {
-        return;
-    }
-
-    PlayerSession* white_session = room->white_session();
-    PlayerSession* black_session = room->black_session();
-    ClientConnection* white_connection =
-        white_session != nullptr ? white_session->connection() : nullptr;
-    ClientConnection* black_connection =
-        black_session != nullptr ? black_session->connection() : nullptr;
-
-    std::optional<RatingChange> rating_change;
-    if (room->db_game_id().has_value()) {
-        if (winner_color.has_value()) {
-            rating_change = update_ratings_for_result(*room, *winner_color, *room->db_game_id());
-        } else if (reason == FinishReason::Disconnect) {
-            game_repository_.finish_game_without_winner(*room->db_game_id());
-        }
-    }
-
-    if (winner_color.has_value() && rating_change.has_value() && white_connection != nullptr &&
-        black_connection != nullptr) {
-        const bool white_won = *winner_color == PieceColor::White;
-        const std::string white_message = create_game_result_message(
-            white_won, reason,
-            white_won ? rating_change->winner_new_rating : rating_change->loser_new_rating);
-        const std::string black_message = create_game_result_message(
-            !white_won, reason,
-            white_won ? rating_change->loser_new_rating : rating_change->winner_new_rating);
-
-        (void)white_connection->send_message(white_message);
-        (void)black_connection->send_message(black_message);
-    }
-
-    cleanup_finished_room(room_id);
-}
-
-const Player* GameServer::find_player_by_color(const Room& room, PieceColor color) const {
-    return color == PieceColor::White ? room.white_player() : room.black_player();
-}
-
-std::optional<RatingChange> GameServer::update_ratings_for_result(const Room& room,
-                                                                  PieceColor winner_color,
-                                                                  int game_id) {
-    const Player* winner = find_player_by_color(room, winner_color);
-    const PieceColor loser_color =
-        winner_color == PieceColor::White ? PieceColor::Black : PieceColor::White;
-    const Player* loser = find_player_by_color(room, loser_color);
-    if (winner == nullptr || loser == nullptr) {
-        return std::nullopt;
-    }
-
-    const RatingChange change = rating_service_.calculate(winner->rating(), loser->rating());
-    user_repository_.update_rating(static_cast<UserId>(winner->id()), change.winner_new_rating);
-    user_repository_.update_rating(static_cast<UserId>(loser->id()), change.loser_new_rating);
-    game_repository_.finish_game(game_id, winner->id());
-    return change;
-}
-
-void GameServer::cleanup_finished_room(RoomId room_id) {
-    Room* room = room_manager_.find_room(room_id);
-    if (room == nullptr) {
-        return;
-    }
-
-    PlayerSession* white = room->white_session();
-    PlayerSession* black = room->black_session();
-
-    room->reset();
-
-    if (white != nullptr) {
-        white->clear_side();
-        white->clear_room();
-        refresh_session_player(*white);
-        session_registry_.unregister_session(white->player().username());
-    }
-    if (black != nullptr) {
-        black->clear_side();
-        black->clear_room();
-        refresh_session_player(*black);
-        session_registry_.unregister_session(black->player().username());
-    }
-}
-
-void GameServer::refresh_session_player(PlayerSession& session) {
-    if (!session.has_user()) {
-        return;
-    }
-    if (const auto updated = user_repository_.find_profile_by_id(session.user_id())) {
-        session.assign_user(session.user_id(), updated->username(), updated->rating());
-    }
-}
-
 void GameServer::tick_once() {
-    accept_new_clients();
-    process_pending_logins();
-    process_matchmaking_timeouts();
+    session_manager_.accept_new_clients();
+    lobby_handler_.process();
+    match_lifecycle_handler_.process_timeouts();
 
     const auto now = std::chrono::steady_clock::now();
     const auto elapsed =
         std::chrono::duration_cast<std::chrono::milliseconds>(now - last_tick_).count();
 
-    for (Room* room : room_manager_.active_rooms()) {
-        if (room->white_session() == nullptr || room->black_session() == nullptr) {
-            continue;
-        }
+    active_room_processor_.process(
+        elapsed, last_tick_,
+        [this](RoomId room_id, std::optional<PieceColor> winner_color, FinishReason reason) {
+            game_result_handler_.finish(room_id, winner_color, reason);
+        });
 
-        probe_room_connections(*room);
-
-        if (both_room_players_disconnected(*room)) {
-            finish_room(room->id(), std::nullopt, FinishReason::Disconnect);
-        } else if (const std::optional<PieceColor> disconnected =
-                       disconnected_player_color(*room)) {
-            const PieceColor winner =
-                *disconnected == PieceColor::White ? PieceColor::Black : PieceColor::White;
-            finish_room(room->id(), winner, FinishReason::Disconnect);
-        }
-    }
-
-    if (!room_manager_.active_rooms().empty()) {
-        process_active_rooms(elapsed, last_tick_);
-
-        for (Room* room : room_manager_.active_rooms()) {
-            if (room->is_game_over()) {
-                finish_room(room->id(), room->match().state().winning_color(),
-                            FinishReason::KingCapture);
-            }
-        }
-    }
-
-    prune_sessions();
+    session_manager_.prune_sessions();
     room_manager_.remove_inactive_rooms();
 
     if (elapsed < kTargetFrameMs) {

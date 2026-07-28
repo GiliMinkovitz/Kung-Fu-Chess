@@ -1,5 +1,6 @@
 #include "database/player_repository.h"
 #include "database/sqlite_database.h"
+#include "model/piece.h"
 #include "network/websocket_client.h"
 #include "server/matchmaking/match_created_handler.h"
 #include "server/matchmaking/matchmaking_service.h"
@@ -69,8 +70,16 @@ private:
 class RecordingMatchHandler : public kfc::IMatchCreatedHandler {
 public:
     kfc::RoomId create_match(kfc::PlayerSession* white, kfc::PlayerSession* black) override {
+        white->set_playing();
+        black->set_playing();
+        white->set_side(kfc::PieceColor::White);
+        black->set_side(kfc::PieceColor::Black);
+
         created_matches_.push_back({white, black});
-        return next_room_id_++;
+        const kfc::RoomId room_id = next_room_id_++;
+        white->assign_room(room_id);
+        black->assign_room(room_id);
+        return room_id;
     }
 
     [[nodiscard]] const std::vector<std::pair<kfc::PlayerSession*, kfc::PlayerSession*>>&

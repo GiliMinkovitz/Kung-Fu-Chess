@@ -200,7 +200,7 @@ TEST_CASE("GameServerTest - InitializesInMemoryDatabase") {
     kfc::test::GameServerFixture fixture{0, kfc::test::make_board({{"wK", ".", "bK"}})};
     kfc::GameServer& server = fixture.server;
 
-    CHECK(server.database().connection() != nullptr);
+    CHECK(fixture.infrastructure.database().connection() != nullptr);
     CHECK(server.user_repository().find_by_username("missing") == nullptr);
 }
 
@@ -351,7 +351,7 @@ TEST_CASE("GameServerTest - FinishesGameAndUpdatesRatings") {
     CHECK_EQ(winner_after->rating(), expected.winner_new_rating);
     CHECK_EQ(loser_after->rating(), expected.loser_new_rating);
 
-    sqlite3* db = server.database().connection();
+    sqlite3* db = fixture.infrastructure.database().connection();
     sqlite3_stmt* stmt = nullptr;
     REQUIRE(sqlite3_prepare_v2(db,
                                "SELECT status, winner_id FROM games WHERE id = ? LIMIT 1;", -1,
@@ -400,7 +400,7 @@ TEST_CASE("GameServerTest - FinishesGameWithExplicitWinner") {
     CHECK_EQ(winner_after->rating(), expected.winner_new_rating);
     CHECK_EQ(loser_after->rating(), expected.loser_new_rating);
 
-    sqlite3* db = server.database().connection();
+    sqlite3* db = fixture.infrastructure.database().connection();
     sqlite3_stmt* stmt = nullptr;
     REQUIRE(sqlite3_prepare_v2(db,
                                "SELECT status, winner_id FROM games WHERE id = ? LIMIT 1;", -1,
@@ -443,7 +443,7 @@ TEST_CASE("GameServerTest - DisconnectingPlayerLosesGame") {
     CHECK_EQ(black_after->rating(), expected.winner_new_rating);
     CHECK_EQ(white_after->rating(), expected.loser_new_rating);
 
-    sqlite3* db = server.database().connection();
+    sqlite3* db = fixture.infrastructure.database().connection();
     sqlite3_stmt* stmt = nullptr;
     REQUIRE(sqlite3_prepare_v2(db,
                                "SELECT status, winner_id FROM games WHERE id = ? LIMIT 1;", -1,
@@ -488,7 +488,7 @@ TEST_CASE("GameServerTest - ResignFinishesGame") {
     CHECK_EQ(black_after->rating(), expected.winner_new_rating);
     CHECK_EQ(white_after->rating(), expected.loser_new_rating);
 
-    sqlite3* db = server.database().connection();
+    sqlite3* db = fixture.infrastructure.database().connection();
     sqlite3_stmt* stmt = nullptr;
     REQUIRE(sqlite3_prepare_v2(db,
                                "SELECT status, winner_id FROM games WHERE id = ? LIMIT 1;", -1,
@@ -619,9 +619,9 @@ TEST_CASE("GameServerTest - ExposesRepositoriesAndMatchmaking") {
     kfc::test::GameServerFixture fixture{0, kfc::test::make_board({{"wK", ".", "bK"}})};
     kfc::GameServer& server = fixture.server;
 
-    CHECK(server.database().connection() != nullptr);
+    CHECK(fixture.infrastructure.database().connection() != nullptr);
     CHECK_EQ(server.matchmaking_service().waiting_count(), 0u);
-    CHECK(&server.game_repository() == &server.game_repository());
+    CHECK(&fixture.infrastructure.game_repository() == &fixture.infrastructure.game_repository());
 }
 
 TEST_CASE("GameServerTest - RejectsMalformedLoginAndPlayMessages") {
