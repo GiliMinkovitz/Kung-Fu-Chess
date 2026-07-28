@@ -328,6 +328,7 @@ TEST_CASE("GameServerTest - FinishesGameAndUpdatesRatings") {
         kfc::RatingService{}.calculate(winner_before, loser_before);
     kfc::Room* room = kfc::test::find_room_for_player(server, "winner");
     REQUIRE(room != nullptr);
+    const kfc::RoomId room_id = room->id();
     const int game_id = *room->db_game_id();
 
     kfc::Match& match = room->match();
@@ -341,6 +342,7 @@ TEST_CASE("GameServerTest - FinishesGameAndUpdatesRatings") {
     server.tick_once();
 
     REQUIRE(server.room_manager().active_rooms().empty());
+    CHECK(server.room_manager().find_room(room_id) == nullptr);
 
     const auto winner_after = kfc::test::find_player_profile(server.user_repository(), "winner");
     const auto loser_after = kfc::test::find_player_profile(server.user_repository(), "loser");
@@ -378,13 +380,16 @@ TEST_CASE("GameServerTest - FinishesGameWithExplicitWinner") {
         kfc::RatingService{}.calculate(winner->rating(), loser->rating());
     kfc::Room* room = kfc::test::find_room_for_player(server, "explicit_winner");
     REQUIRE(room != nullptr);
+    const kfc::RoomId room_id = room->id();
     const int game_id = *room->db_game_id();
 
     CHECK_FALSE(room->match().is_game_over());
 
     server.finish_room(room->id(), kfc::PieceColor::White, kfc::FinishReason::Disconnect);
+    server.tick_once();
 
     REQUIRE(server.room_manager().active_rooms().empty());
+    CHECK(server.room_manager().find_room(room_id) == nullptr);
 
     const auto winner_after =
         kfc::test::find_player_profile(server.user_repository(), "explicit_winner");

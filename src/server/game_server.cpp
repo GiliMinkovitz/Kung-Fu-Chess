@@ -418,6 +418,7 @@ void GameServer::tick_once() {
     }
 
     prune_sessions();
+    room_manager_.remove_inactive_rooms();
 
     if (elapsed < kTargetFrameMs) {
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
