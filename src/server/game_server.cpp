@@ -46,17 +46,16 @@ MatchmakingService& GameServer::matchmaking_service() noexcept {
 
 RoomId GameServer::create_match(PlayerSession* white, PlayerSession* black) {
     const RoomId room_id = room_manager_.create_room();
-    last_room_id_ = room_id;
 
     Room* room = room_manager_.find_room(room_id);
     room->activate(&white->player(), &black->player());
 
-    RoomContext context;
-    context.white_session = white;
-    context.black_session = black;
-    context.db_game_id =
+    const std::optional<int> db_game_id =
         game_repository_.create_game(white->player().id(), black->player().id());
-    room_contexts_[room_id] = context;
+    room->bind_sessions(white, black);
+    if (db_game_id.has_value()) {
+        room->set_db_game_id(*db_game_id);
+    }
 
     return room_id;
 }
@@ -72,28 +71,6 @@ RoomManager& GameServer::room_manager() noexcept {
     return room_manager_;
 }
 
-Room& GameServer::room() noexcept {
-    const std::vector<Room*> active = room_manager_.active_rooms();
-    if (!active.empty()) {
-        return *active.front();
-    }
-    if (last_room_id_.has_value()) {
-        return *room_manager_.find_room(*last_room_id_);
-    }
-    const RoomId room_id = room_manager_.create_room();
-    last_room_id_ = room_id;
-    return *room_manager_.find_room(room_id);
-}
-
-std::optional<int> GameServer::room_db_game_id() const noexcept {
-    for (const Room* active_room : room_manager_.active_rooms()) {
-        if (const RoomContext* context = find_context(active_room->id())) {
-            return context->db_game_id;
-        }
-    }
-    return std::nullopt;
-}
-
 IDatabaseConnection& GameServer::database() noexcept {
     return database_;
 }
@@ -104,16 +81,6 @@ IGameRepository& GameServer::game_repository() noexcept {
 
 IUserRepository& GameServer::user_repository() noexcept {
     return user_repository_;
-}
-
-GameServer::RoomContext* GameServer::find_context(RoomId room_id) {
-    const auto it = room_contexts_.find(room_id);
-    return it != room_contexts_.end() ? &it->second : nullptr;
-}
-
-const GameServer::RoomContext* GameServer::find_context(RoomId room_id) const {
-    const auto it = room_contexts_.find(room_id);
-    return it != room_contexts_.end() ? &it->second : nullptr;
 }
 
 Room* GameServer::find_session_room(const PlayerSession& session) {
@@ -221,26 +188,26 @@ void GameServer::prune_sessions() {
     }
 }
 
-void GameServer::probe_room_connections(const RoomContext& context) {
-    if (context.white_session != nullptr) {
-        if (ClientConnection* connection = context.white_session->connection()) {
+void GameServer::probe_room_connections(Room& room) {
+    if (PlayerSession* white_session = room.white_session()) {
+        if (ClientConnection* connection = white_session->connection()) {
             connection->probe_disconnect();
         }
     }
-    if (context.black_session != nullptr) {
-        if (ClientConnection* connection = context.black_session->connection()) {
+    if (PlayerSession* black_session = room.black_session()) {
+        if (ClientConnection* connection = black_session->connection()) {
             connection->probe_disconnect();
         }
     }
 }
 
-std::optional<PieceColor> GameServer::disconnected_player_color(const RoomContext& context) const {
-    if (context.white_session == nullptr || context.black_session == nullptr) {
+std::optional<PieceColor> GameServer::disconnected_player_color(const Room& room) const {
+    if (room.white_session() == nullptr || room.black_session() == nullptr) {
         return std::nullopt;
     }
 
-    const bool white_connected = is_room_player_connected(context.white_session);
-    const bool black_connected = is_room_player_connected(context.black_session);
+    const bool white_connected = is_room_player_connected(room.white_session());
+    const bool black_connected = is_room_player_connected(room.black_session());
     if (white_connected && black_connected) {
         return std::nullopt;
     }
@@ -253,9 +220,9 @@ std::optional<PieceColor> GameServer::disconnected_player_color(const RoomContex
     return std::nullopt;
 }
 
-bool GameServer::both_room_players_disconnected(const RoomContext& context) const {
-    return !is_room_player_connected(context.white_session) &&
-           !is_room_player_connected(context.black_session);
+bool GameServer::both_room_players_disconnected(const Room& room) const {
+    return !is_room_player_connected(room.white_session()) &&
+           !is_room_player_connected(room.black_session());
 }
 
 void GameServer::process_room_player_messages(Room& room, PlayerSession& session) {
@@ -295,8 +262,7 @@ void GameServer::process_playing_session_messages() {
 void GameServer::process_active_rooms(std::int64_t elapsed,
                                       std::chrono::steady_clock::time_point& last_tick) {
     for (Room* room : room_manager_.active_rooms()) {
-        RoomContext* context = find_context(room->id());
-        if (context == nullptr) {
+        if (room->white_session() == nullptr || room->black_session() == nullptr) {
             continue;
         }
 
@@ -304,11 +270,11 @@ void GameServer::process_active_rooms(std::int64_t elapsed,
             room->tick(elapsed);
 
             const std::string snapshot = room->generate_snapshot();
-            if (is_room_player_connected(context->white_session)) {
-                context->white_session->connection()->try_send(snapshot);
+            if (is_room_player_connected(room->white_session())) {
+                room->white_session()->connection()->try_send(snapshot);
             }
-            if (is_room_player_connected(context->black_session)) {
-                context->black_session->connection()->try_send(snapshot);
+            if (is_room_player_connected(room->black_session())) {
+                room->black_session()->connection()->try_send(snapshot);
             }
 
             last_tick = std::chrono::steady_clock::now();
@@ -321,24 +287,23 @@ void GameServer::process_active_rooms(std::int64_t elapsed,
 void GameServer::finish_room(RoomId room_id, std::optional<PieceColor> winner_color,
                              FinishReason reason) {
     Room* room = room_manager_.find_room(room_id);
-    RoomContext* context = find_context(room_id);
-    if (room == nullptr || context == nullptr) {
+    if (room == nullptr || room->white_session() == nullptr || room->black_session() == nullptr) {
         return;
     }
 
-    PlayerSession* white_session = context->white_session;
-    PlayerSession* black_session = context->black_session;
+    PlayerSession* white_session = room->white_session();
+    PlayerSession* black_session = room->black_session();
     ClientConnection* white_connection =
         white_session != nullptr ? white_session->connection() : nullptr;
     ClientConnection* black_connection =
         black_session != nullptr ? black_session->connection() : nullptr;
 
     std::optional<RatingChange> rating_change;
-    if (context->db_game_id.has_value()) {
+    if (room->db_game_id().has_value()) {
         if (winner_color.has_value()) {
-            rating_change = update_ratings_for_result(*room, *winner_color, *context->db_game_id);
+            rating_change = update_ratings_for_result(*room, *winner_color, *room->db_game_id());
         } else if (reason == FinishReason::Disconnect) {
-            game_repository_.finish_game_without_winner(*context->db_game_id);
+            game_repository_.finish_game_without_winner(*room->db_game_id());
         }
     }
 
@@ -383,16 +348,14 @@ std::optional<RatingChange> GameServer::update_ratings_for_result(const Room& ro
 
 void GameServer::cleanup_finished_room(RoomId room_id) {
     Room* room = room_manager_.find_room(room_id);
-    RoomContext* context = find_context(room_id);
-    if (room == nullptr || context == nullptr) {
+    if (room == nullptr) {
         return;
     }
 
-    PlayerSession* white = context->white_session;
-    PlayerSession* black = context->black_session;
+    PlayerSession* white = room->white_session();
+    PlayerSession* black = room->black_session();
 
     room->reset();
-    last_room_id_ = room_id;
 
     if (white != nullptr) {
         white->clear_side();
@@ -406,20 +369,7 @@ void GameServer::cleanup_finished_room(RoomId room_id) {
         refresh_session_player(*black);
         session_registry_.unregister_session(black->player().username());
     }
-
-    room_contexts_.erase(room_id);
 }
-
-#ifdef KFC_TEST_BUILD
-void GameServer::finish_active_room_for_tests(std::optional<PieceColor> winner_color,
-                                              FinishReason reason) {
-    const std::vector<Room*> active = room_manager_.active_rooms();
-    if (active.empty()) {
-        return;
-    }
-    finish_room(active.front()->id(), winner_color, reason);
-}
-#endif
 
 void GameServer::refresh_session_player(PlayerSession& session) {
     if (!session.has_user()) {
@@ -440,17 +390,16 @@ void GameServer::tick_once() {
         std::chrono::duration_cast<std::chrono::milliseconds>(now - last_tick_).count();
 
     for (Room* room : room_manager_.active_rooms()) {
-        const RoomContext* context = find_context(room->id());
-        if (context == nullptr) {
+        if (room->white_session() == nullptr || room->black_session() == nullptr) {
             continue;
         }
 
-        probe_room_connections(*context);
+        probe_room_connections(*room);
 
-        if (both_room_players_disconnected(*context)) {
+        if (both_room_players_disconnected(*room)) {
             finish_room(room->id(), std::nullopt, FinishReason::Disconnect);
         } else if (const std::optional<PieceColor> disconnected =
-                       disconnected_player_color(*context)) {
+                       disconnected_player_color(*room)) {
             const PieceColor winner =
                 *disconnected == PieceColor::White ? PieceColor::Black : PieceColor::White;
             finish_room(room->id(), winner, FinishReason::Disconnect);

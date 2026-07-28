@@ -22,10 +22,22 @@ void Room::activate(Player* white, Player* black) {
     active_ = true;
 }
 
+void Room::bind_sessions(PlayerSession* white, PlayerSession* black) {
+    white_session_ = white;
+    black_session_ = black;
+}
+
+void Room::set_db_game_id(int id) {
+    db_game_id_ = id;
+}
+
 void Room::reset() {
     active_ = false;
     white_player_ = nullptr;
     black_player_ = nullptr;
+    white_session_ = nullptr;
+    black_session_ = nullptr;
+    db_game_id_.reset();
     match_ = Match(default_board_);
 }
 
@@ -67,6 +79,26 @@ const Player* Room::white_player() const noexcept {
 
 const Player* Room::black_player() const noexcept {
     return black_player_;
+}
+
+PlayerSession* Room::white_session() noexcept {
+    return white_session_;
+}
+
+PlayerSession* Room::black_session() noexcept {
+    return black_session_;
+}
+
+const PlayerSession* Room::white_session() const noexcept {
+    return white_session_;
+}
+
+const PlayerSession* Room::black_session() const noexcept {
+    return black_session_;
+}
+
+std::optional<int> Room::db_game_id() const noexcept {
+    return db_game_id_;
 }
 
 Match& Room::match() noexcept {

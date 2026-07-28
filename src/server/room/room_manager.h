@@ -23,8 +23,6 @@ public:
 
     [[nodiscard]] std::vector<Room*> active_rooms() noexcept;
     [[nodiscard]] std::vector<const Room*> active_rooms() const noexcept;
-    [[nodiscard]] Room* first_room() noexcept;
-    [[nodiscard]] const Room* first_room() const noexcept;
 
 private:
     BoardModel default_board_;

@@ -1,4 +1,5 @@
 #include "server/player.h"
+#include "server/player_session.h"
 #include "server/room/room.h"
 #include "test_helpers.h"
 
@@ -47,6 +48,42 @@ TEST_CASE("RoomTest - ResetClearsActiveState") {
     CHECK(room.white_player() == nullptr);
     CHECK(room.black_player() == nullptr);
     CHECK_FALSE(room.match().is_game_over());
+}
+
+TEST_CASE("RoomTest - BindsSessions") {
+    kfc::PlayerSession white_session{1, nullptr};
+    kfc::PlayerSession black_session{2, nullptr};
+    kfc::Room room{1, kfc::test::make_board({{"wK", ".", "bK"}})};
+
+    room.bind_sessions(&white_session, &black_session);
+
+    CHECK(room.white_session() == &white_session);
+    CHECK(room.black_session() == &black_session);
+}
+
+TEST_CASE("RoomTest - StoresDbGameId") {
+    kfc::Room room{1, kfc::test::make_board({{"wK", ".", "bK"}})};
+
+    CHECK_FALSE(room.db_game_id().has_value());
+
+    room.set_db_game_id(42);
+
+    REQUIRE(room.db_game_id().has_value());
+    CHECK_EQ(*room.db_game_id(), 42);
+}
+
+TEST_CASE("RoomTest - ResetClearsSessionMetadata") {
+    kfc::PlayerSession white_session{1, nullptr};
+    kfc::PlayerSession black_session{2, nullptr};
+    kfc::Room room{1, kfc::test::make_board({{"wK", ".", "bK"}})};
+
+    room.bind_sessions(&white_session, &black_session);
+    room.set_db_game_id(99);
+    room.reset();
+
+    CHECK(room.white_session() == nullptr);
+    CHECK(room.black_session() == nullptr);
+    CHECK_FALSE(room.db_game_id().has_value());
 }
 
 TEST_CASE("RoomTest - TicksAndGeneratesSnapshot") {

@@ -1,6 +1,7 @@
 #include "network/websocket_client.h"
 #include "server/game_server.h"
 #include "test_game_server_fixture.h"
+#include "test_game_server_helpers.h"
 #include "test_helpers.h"
 
 #include <doctest/doctest.h>
@@ -60,18 +61,6 @@ void login_and_queue(kfc::GameServer& server, kfc::WebSocketClient& client,
     server.tick_once();
 }
 
-kfc::Room* find_room_for_player(kfc::GameServer& server, const std::string& username) {
-    for (kfc::Room* room : server.room_manager().active_rooms()) {
-        if (room->white_player() != nullptr && room->white_player()->username() == username) {
-            return room;
-        }
-        if (room->black_player() != nullptr && room->black_player()->username() == username) {
-            return room;
-        }
-    }
-    return nullptr;
-}
-
 void start_two_matches(kfc::GameServer& server, kfc::WebSocketClient& g1_white,
                        kfc::WebSocketClient& g1_black, kfc::WebSocketClient& g2_white,
                        kfc::WebSocketClient& g2_black) {
@@ -110,6 +99,34 @@ std::optional<std::string> drain_latest_snapshot(kfc::WebSocketClient& client) {
 
 }  // namespace
 
+TEST_CASE("GameServerMultiRoomTest - RoomsStoreSessionBindingsAndDbGameIds") {
+    kfc::test::GameServerFixture fixture{0, kfc::test::make_board({{"wK", ".", "bK"}})};
+    kfc::GameServer& server = fixture.server;
+    kfc::WebSocketClient g1_white{"127.0.0.1", server.websocket_server().port()};
+    kfc::WebSocketClient g1_black{"127.0.0.1", server.websocket_server().port()};
+    kfc::WebSocketClient g2_white{"127.0.0.1", server.websocket_server().port()};
+    kfc::WebSocketClient g2_black{"127.0.0.1", server.websocket_server().port()};
+
+    start_two_matches(server, g1_white, g1_black, g2_white, g2_black);
+
+    kfc::Room* room1 = kfc::test::find_room_for_player(server, "multi_g1_white");
+    kfc::Room* room2 = kfc::test::find_room_for_player(server, "multi_g2_white");
+    REQUIRE(room1 != nullptr);
+    REQUIRE(room2 != nullptr);
+
+    REQUIRE(room1->white_session() != nullptr);
+    REQUIRE(room1->black_session() != nullptr);
+    REQUIRE(room2->white_session() != nullptr);
+    REQUIRE(room2->black_session() != nullptr);
+    REQUIRE(room1->db_game_id().has_value());
+    REQUIRE(room2->db_game_id().has_value());
+    CHECK_NE(*room1->db_game_id(), *room2->db_game_id());
+    CHECK_EQ(room1->white_session()->player().username(), "multi_g1_white");
+    CHECK_EQ(room1->black_session()->player().username(), "multi_g1_black");
+    CHECK_EQ(room2->white_session()->player().username(), "multi_g2_white");
+    CHECK_EQ(room2->black_session()->player().username(), "multi_g2_black");
+}
+
 TEST_CASE("GameServerMultiRoomTest - TwoRoomsExistSimultaneously") {
     kfc::test::GameServerFixture fixture{0, kfc::test::make_board({{"wK", ".", "bK"}})};
     kfc::GameServer& server = fixture.server;
@@ -133,10 +150,10 @@ TEST_CASE("GameServerMultiRoomTest - PlayersAssignedToCorrectRoom") {
 
     start_two_matches(server, g1_white, g1_black, g2_white, g2_black);
 
-    kfc::Room* g1_white_room = find_room_for_player(server, "multi_g1_white");
-    kfc::Room* g1_black_room = find_room_for_player(server, "multi_g1_black");
-    kfc::Room* g2_white_room = find_room_for_player(server, "multi_g2_white");
-    kfc::Room* g2_black_room = find_room_for_player(server, "multi_g2_black");
+    kfc::Room* g1_white_room = kfc::test::find_room_for_player(server, "multi_g1_white");
+    kfc::Room* g1_black_room = kfc::test::find_room_for_player(server, "multi_g1_black");
+    kfc::Room* g2_white_room = kfc::test::find_room_for_player(server, "multi_g2_white");
+    kfc::Room* g2_black_room = kfc::test::find_room_for_player(server, "multi_g2_black");
 
     REQUIRE(g1_white_room != nullptr);
     REQUIRE(g1_black_room != nullptr);
@@ -158,8 +175,8 @@ TEST_CASE("GameServerMultiRoomTest - CommandsRoutedToCorrectRoom") {
 
     start_two_matches(server, g1_white, g1_black, g2_white, g2_black);
 
-    kfc::Room* room1 = find_room_for_player(server, "multi_g1_white");
-    kfc::Room* room2 = find_room_for_player(server, "multi_g2_white");
+    kfc::Room* room1 = kfc::test::find_room_for_player(server, "multi_g1_white");
+    kfc::Room* room2 = kfc::test::find_room_for_player(server, "multi_g2_white");
     REQUIRE(room1 != nullptr);
     REQUIRE(room2 != nullptr);
 
@@ -206,8 +223,8 @@ TEST_CASE("GameServerMultiRoomTest - RoomsTickIndependently") {
 
     start_two_matches(server, g1_white, g1_black, g2_white, g2_black);
 
-    kfc::Room* room1 = find_room_for_player(server, "multi_g1_white");
-    kfc::Room* room2 = find_room_for_player(server, "multi_g2_white");
+    kfc::Room* room1 = kfc::test::find_room_for_player(server, "multi_g1_white");
+    kfc::Room* room2 = kfc::test::find_room_for_player(server, "multi_g2_white");
     REQUIRE(room1 != nullptr);
     REQUIRE(room2 != nullptr);
 

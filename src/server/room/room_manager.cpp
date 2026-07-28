@@ -64,18 +64,4 @@ std::vector<const Room*> RoomManager::active_rooms() const noexcept {
     return result;
 }
 
-Room* RoomManager::first_room() noexcept {
-    if (rooms_.empty()) {
-        return nullptr;
-    }
-    return rooms_.begin()->second.get();
-}
-
-const Room* RoomManager::first_room() const noexcept {
-    if (rooms_.empty()) {
-        return nullptr;
-    }
-    return rooms_.begin()->second.get();
-}
-
 }  // namespace kfc

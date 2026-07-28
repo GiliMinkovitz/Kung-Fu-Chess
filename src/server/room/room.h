@@ -6,11 +6,14 @@
 #include "server/player.h"
 
 #include <cstdint>
+#include <optional>
 #include <string>
 
 namespace kfc {
 
 using RoomId = std::uint64_t;
+
+class PlayerSession;
 
 class Room {
 public:
@@ -20,6 +23,8 @@ public:
     [[nodiscard]] bool active() const noexcept;
 
     void activate(Player* white, Player* black);
+    void bind_sessions(PlayerSession* white, PlayerSession* black);
+    void set_db_game_id(int id);
     void reset();
 
     void tick(std::int64_t delta_ms);
@@ -34,6 +39,12 @@ public:
     [[nodiscard]] const Player* white_player() const noexcept;
     [[nodiscard]] const Player* black_player() const noexcept;
 
+    [[nodiscard]] PlayerSession* white_session() noexcept;
+    [[nodiscard]] PlayerSession* black_session() noexcept;
+    [[nodiscard]] const PlayerSession* white_session() const noexcept;
+    [[nodiscard]] const PlayerSession* black_session() const noexcept;
+    [[nodiscard]] std::optional<int> db_game_id() const noexcept;
+
     [[nodiscard]] Match& match() noexcept;
     [[nodiscard]] const Match& match() const noexcept;
 
@@ -44,6 +55,9 @@ private:
     bool active_ = false;
     Player* white_player_ = nullptr;
     Player* black_player_ = nullptr;
+    PlayerSession* white_session_ = nullptr;
+    PlayerSession* black_session_ = nullptr;
+    std::optional<int> db_game_id_;
 };
 
 }  // namespace kfc

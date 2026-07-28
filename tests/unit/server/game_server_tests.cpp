@@ -12,6 +12,7 @@
 #include "server/websocket_server.h"
 #include "test/socket_test_hooks.h"
 #include "test_game_server_fixture.h"
+#include "test_game_server_helpers.h"
 #include "test_helpers.h"
 
 #include <doctest/doctest.h>
@@ -174,14 +175,20 @@ void start_match(kfc::GameServer& server, kfc::WebSocketClient& white_client,
     login_and_queue(server, white_client, white_name);
     login_and_queue(server, black_client, black_name);
 
-    for (int attempt = 0; attempt < 50 && !server.room().active(); ++attempt) {
+    kfc::Room* room = nullptr;
+    for (int attempt = 0; attempt < 50; ++attempt) {
+        room = kfc::test::find_room_for_player(server, white_name);
+        if (room != nullptr && room->active()) {
+            break;
+        }
         server.tick_once();
         (void)white_client.try_receive_snapshot();
         (void)black_client.try_receive_snapshot();
     }
 
-    REQUIRE(server.room().active());
-    REQUIRE(server.room_db_game_id().has_value());
+    REQUIRE(room != nullptr);
+    REQUIRE(room->active());
+    REQUIRE(room->db_game_id().has_value());
 
     drain_client_messages(white_client, 200);
     drain_client_messages(black_client, 200);
@@ -221,6 +228,25 @@ TEST_CASE("GameServerTest - AcceptsClientAndProcessesLogin") {
     CHECK_EQ(user->username(), "server_user");
 }
 
+TEST_CASE("GameServerTest - CreatedRoomStoresSessionBindingsAndDbGameId") {
+    kfc::test::GameServerFixture fixture{0, kfc::test::make_board({{"wK", ".", "bK"}})};
+    kfc::GameServer& server = fixture.server;
+    kfc::WebSocketClient white_client{"127.0.0.1", server.websocket_server().port()};
+    kfc::WebSocketClient black_client{"127.0.0.1", server.websocket_server().port()};
+
+    start_match(server, white_client, black_client, "bound_white", "bound_black");
+
+    kfc::Room* room = kfc::test::find_room_for_player(server, "bound_white");
+    REQUIRE(room != nullptr);
+    REQUIRE(room->white_session() != nullptr);
+    REQUIRE(room->black_session() != nullptr);
+    REQUIRE(room->db_game_id().has_value());
+    CHECK_EQ(room->white_session()->player().username(), "bound_white");
+    CHECK_EQ(room->black_session()->player().username(), "bound_black");
+    CHECK(room->white_session()->has_side());
+    CHECK(room->black_session()->has_side());
+}
+
 TEST_CASE("GameServerTest - MatchmakingFlowFindsOpponents") {
     kfc::test::GameServerFixture fixture{0, kfc::test::make_board({{"wK", ".", "bK"}})};
     kfc::GameServer& server = fixture.server;
@@ -235,14 +261,20 @@ TEST_CASE("GameServerTest - MatchmakingFlowFindsOpponents") {
     REQUIRE_EQ(server.matchmaking_service().waiting_count(), 1u);
 
     login_and_queue(server, black_client, "black_user");
-    for (int attempt = 0; attempt < 50 && !server.room().active(); ++attempt) {
+    kfc::Room* room = nullptr;
+    for (int attempt = 0; attempt < 50; ++attempt) {
+        room = kfc::test::find_room_for_player(server, "white_user");
+        if (room != nullptr && room->active()) {
+            break;
+        }
         server.tick_once();
         (void)poll_message(white_client);
         (void)poll_message(black_client);
     }
 
-    CHECK(server.room().active());
-    REQUIRE(server.room_db_game_id().has_value());
+    REQUIRE(room != nullptr);
+    CHECK(room->active());
+    REQUIRE(room->db_game_id().has_value());
 }
 
 TEST_CASE("GameServerTest - ActiveRoomBroadcastsSnapshotsAndProcessesMoves") {
@@ -294,9 +326,11 @@ TEST_CASE("GameServerTest - FinishesGameAndUpdatesRatings") {
     const int loser_before = loser->rating();
     const kfc::RatingChange expected =
         kfc::RatingService{}.calculate(winner_before, loser_before);
-    const int game_id = *server.room_db_game_id();
+    kfc::Room* room = kfc::test::find_room_for_player(server, "winner");
+    REQUIRE(room != nullptr);
+    const int game_id = *room->db_game_id();
 
-    kfc::Match& match = server.room().match();
+    kfc::Match& match = room->match();
     match.submit_action(kfc::Select{0, 0});
     match.submit_action(kfc::MoveSelected{0, 2});
 
@@ -306,7 +340,7 @@ TEST_CASE("GameServerTest - FinishesGameAndUpdatesRatings") {
     REQUIRE(match.is_game_over());
     server.tick_once();
 
-    REQUIRE_FALSE(server.room().active());
+    REQUIRE(server.room_manager().active_rooms().empty());
 
     const auto winner_after = kfc::test::find_player_profile(server.user_repository(), "winner");
     const auto loser_after = kfc::test::find_player_profile(server.user_repository(), "loser");
@@ -342,13 +376,15 @@ TEST_CASE("GameServerTest - FinishesGameWithExplicitWinner") {
     REQUIRE(loser.has_value());
     const kfc::RatingChange expected =
         kfc::RatingService{}.calculate(winner->rating(), loser->rating());
-    const int game_id = *server.room_db_game_id();
+    kfc::Room* room = kfc::test::find_room_for_player(server, "explicit_winner");
+    REQUIRE(room != nullptr);
+    const int game_id = *room->db_game_id();
 
-    CHECK_FALSE(server.room().match().is_game_over());
+    CHECK_FALSE(room->match().is_game_over());
 
-    server.finish_active_room_for_tests(kfc::PieceColor::White, kfc::FinishReason::Disconnect);
+    server.finish_room(room->id(), kfc::PieceColor::White, kfc::FinishReason::Disconnect);
 
-    REQUIRE_FALSE(server.room().active());
+    REQUIRE(server.room_manager().active_rooms().empty());
 
     const auto winner_after =
         kfc::test::find_player_profile(server.user_repository(), "explicit_winner");
@@ -386,12 +422,14 @@ TEST_CASE("GameServerTest - DisconnectingPlayerLosesGame") {
     REQUIRE(black.has_value());
     const kfc::RatingChange expected =
         kfc::RatingService{}.calculate(black->rating(), white->rating());
-    const int game_id = *server.room_db_game_id();
+    kfc::Room* room = kfc::test::find_room_for_player(server, "dc_white");
+    REQUIRE(room != nullptr);
+    const int game_id = *room->db_game_id();
 
     white_client.disconnect();
     server.tick_once();
 
-    REQUIRE_FALSE(server.room().active());
+    REQUIRE(server.room_manager().active_rooms().empty());
 
     const auto black_after = kfc::test::find_player_profile(server.user_repository(), "dc_black");
     const auto white_after = kfc::test::find_player_profile(server.user_repository(), "dc_white");
@@ -427,12 +465,14 @@ TEST_CASE("GameServerTest - ResignFinishesGame") {
     REQUIRE(black.has_value());
     const kfc::RatingChange expected =
         kfc::RatingService{}.calculate(black->rating(), white->rating());
-    const int game_id = *server.room_db_game_id();
+    kfc::Room* room = kfc::test::find_room_for_player(server, "resign_white");
+    REQUIRE(room != nullptr);
+    const int game_id = *room->db_game_id();
 
     REQUIRE(white_client.try_send("resign"));
     server.tick_once();
 
-    REQUIRE_FALSE(server.room().active());
+    REQUIRE(server.room_manager().active_rooms().empty());
 
     const auto black_after =
         kfc::test::find_player_profile(server.user_repository(), "resign_black");
@@ -494,8 +534,10 @@ TEST_CASE("GameServerTest - GameResultSentOnExplicitFinish") {
     start_match(server, white_client, black_client, "result_explicit_white", "result_explicit_black");
 
     const kfc::RatingChange expected = kfc::RatingService{}.calculate(1000, 1000);
+    kfc::Room* room = kfc::test::find_room_for_player(server, "result_explicit_white");
+    REQUIRE(room != nullptr);
 
-    server.finish_active_room_for_tests(kfc::PieceColor::White, kfc::FinishReason::Resign);
+    server.finish_room(room->id(), kfc::PieceColor::White, kfc::FinishReason::Resign);
 
     const GameResultPair results = poll_both_game_results(white_client, black_client);
 
@@ -699,7 +741,9 @@ TEST_CASE("GameServerTest - RejectsMalformedGameCommands") {
     server.tick_once();
     REQUIRE(white_client.try_send("jump -1 0"));
     server.tick_once();
-    CHECK(server.room().active());
+    kfc::Room* room = kfc::test::find_room_for_player(server, "cmd_white");
+    REQUIRE(room != nullptr);
+    CHECK(room->active());
 }
 
 TEST_CASE("GameServerTest - ProcessesJumpCommandForAssignedSide") {
@@ -715,7 +759,9 @@ TEST_CASE("GameServerTest - ProcessesJumpCommandForAssignedSide") {
     server.tick_once();
     REQUIRE(white_client.try_send("jump 0 1"));
     server.tick_once();
-    CHECK(server.room().active());
+    kfc::Room* room = kfc::test::find_room_for_player(server, "jump_white");
+    REQUIRE(room != nullptr);
+    CHECK(room->active());
 }
 
 TEST_CASE("GameServerTest - RejectsMoveSelectedForWrongSide") {
@@ -730,7 +776,9 @@ TEST_CASE("GameServerTest - RejectsMoveSelectedForWrongSide") {
     server.tick_once();
     REQUIRE(black_client.try_send("move 0 1"));
     server.tick_once();
-    CHECK(server.room().active());
+    kfc::Room* room = kfc::test::find_room_for_player(server, "side_white");
+    REQUIRE(room != nullptr);
+    CHECK(room->active());
 }
 
 TEST_CASE("GameServerTest - ClampsLoserRatingAtZero") {
@@ -758,14 +806,20 @@ TEST_CASE("GameServerTest - ClampsLoserRatingAtZero") {
 
     REQUIRE(white_client.try_send("play"));
     REQUIRE(black_client.try_send("play"));
-    for (int attempt = 0; attempt < 50 && !server.room().active(); ++attempt) {
+    kfc::Room* room = nullptr;
+    for (int attempt = 0; attempt < 50; ++attempt) {
+        room = kfc::test::find_room_for_player(server, "clamp_winner");
+        if (room != nullptr && room->active()) {
+            break;
+        }
         server.tick_once();
         (void)poll_message(white_client);
         (void)poll_message(black_client);
     }
-    REQUIRE(server.room().active());
+    REQUIRE(room != nullptr);
+    REQUIRE(room->active());
 
-    kfc::Match& match = server.room().match();
+    kfc::Match& match = room->match();
     match.submit_action(kfc::Select{0, 0});
     match.submit_action(kfc::MoveSelected{0, 2});
     for (int ticks = 0; !match.is_game_over() && ticks < 10000; ++ticks) {
