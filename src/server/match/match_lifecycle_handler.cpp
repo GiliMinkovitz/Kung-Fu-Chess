@@ -1,5 +1,6 @@
 #include "server/match/match_lifecycle_handler.h"
 
+#include "app/i_runtime_store.h"
 #include "app/runtime_diagnostics.h"
 #include "database/i_game_repository.h"
 #include "model/piece.h"
@@ -7,16 +8,22 @@
 #include "server/player_session.h"
 #include "server/room/room.h"
 #include "server/room/room_manager.h"
+#include "server/user/user_id.h"
 
 #include <chrono>
 #include <iostream>
 #include <optional>
+#include <utility>
 
 namespace kfc {
 
 MatchLifecycleHandler::MatchLifecycleHandler(RoomManager& room_manager,
-                                             IGameRepository& game_repository)
-    : room_manager_(room_manager), game_repository_(game_repository) {}
+                                             IGameRepository& game_repository,
+                                             IRuntimeStore& runtime_store, std::string server_id)
+    : room_manager_(room_manager),
+      game_repository_(game_repository),
+      runtime_store_(runtime_store),
+      server_id_(std::move(server_id)) {}
 
 void MatchLifecycleHandler::bind_matchmaking_service(MatchmakingService& matchmaking_service) {
     matchmaking_service_ = &matchmaking_service;
@@ -42,6 +49,9 @@ RoomId MatchLifecycleHandler::create_match(PlayerSession* white, PlayerSession* 
 
     white->assign_room(room_id);
     black->assign_room(room_id);
+
+    runtime_store_.register_room(room_id, static_cast<UserId>(white->player().id()),
+                                 static_cast<UserId>(black->player().id()), server_id_);
 
     return room_id;
 }

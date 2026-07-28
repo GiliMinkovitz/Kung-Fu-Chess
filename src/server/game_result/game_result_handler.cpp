@@ -1,10 +1,12 @@
 #include "server/game_result/game_result_handler.h"
 
+#include "app/i_runtime_store.h"
 #include "server/client_connection.h"
 #include "server/game_result_message_writer.h"
 #include "server/player_session.h"
 #include "server/room/room.h"
 #include "server/session_registry.h"
+#include "server/user/user_id.h"
 
 #include <string>
 
@@ -12,11 +14,13 @@ namespace kfc {
 
 GameResultHandler::GameResultHandler(RoomManager& room_manager, IUserRepository& user_repository,
                                      IGameRepository& game_repository,
-                                     SessionRegistry& session_registry)
+                                     SessionRegistry& session_registry,
+                                     IRuntimeStore& runtime_store)
     : room_manager_(room_manager),
       user_repository_(user_repository),
       game_repository_(game_repository),
-      session_registry_(session_registry) {}
+      session_registry_(session_registry),
+      runtime_store_(runtime_store) {}
 
 void GameResultHandler::finish(RoomId room_id, std::optional<PieceColor> winner_color,
                                FinishReason reason) {
@@ -87,6 +91,11 @@ void GameResultHandler::cleanup_finished_room(RoomId room_id) {
 
     PlayerSession* white = room->white_session();
     PlayerSession* black = room->black_session();
+
+    if (white != nullptr && black != nullptr) {
+        runtime_store_.unregister_room(room_id, static_cast<UserId>(white->player().id()),
+                                       static_cast<UserId>(black->player().id()));
+    }
 
     room->reset();
 

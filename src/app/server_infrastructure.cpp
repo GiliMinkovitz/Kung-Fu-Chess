@@ -1,5 +1,6 @@
 #include "app/server_infrastructure.h"
 
+#include "app/in_memory_runtime_store.h"
 #include "app/server_health.h"
 #include "database/postgres_connection.h"
 #include "database/postgres_game_repository.h"
@@ -27,7 +28,8 @@ PostgresConnection::Settings make_postgres_settings(const DatabaseConfig& databa
 }  // namespace
 
 ServerInfrastructure::ServerInfrastructure(const DatabaseConfig& database_config)
-    : database_backend_(database_config.backend) {
+    : database_backend_(database_config.backend),
+      runtime_store_(std::make_unique<InMemoryRuntimeStore>()) {
     if (database_config.backend == DatabaseBackend::PostgreSQL) {
         auto postgres = std::make_unique<PostgresConnection>(make_postgres_settings(database_config));
         if (!postgres->open()) {
@@ -62,6 +64,7 @@ GameServerDependencies ServerInfrastructure::dependencies() noexcept {
         *user_repository_,
         *game_repository_,
         *authentication_service_,
+        *runtime_store_,
     };
 }
 
@@ -83,6 +86,10 @@ IGameRepository& ServerInfrastructure::game_repository() noexcept {
 
 AuthenticationService& ServerInfrastructure::authentication_service() noexcept {
     return *authentication_service_;
+}
+
+IRuntimeStore& ServerInfrastructure::runtime_store() noexcept {
+    return *runtime_store_;
 }
 
 }  // namespace kfc::app

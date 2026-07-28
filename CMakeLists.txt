@@ -58,6 +58,7 @@ set(KFC_APP_SOURCES
     src/app/config_loader.cpp
     src/app/database_config.cpp
     src/app/health_http_server.cpp
+    src/app/in_memory_runtime_store.cpp
     src/app/runtime_diagnostics.cpp
     src/app/server_health.cpp
     src/app/server_infrastructure.cpp

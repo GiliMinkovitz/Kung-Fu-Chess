@@ -16,11 +16,13 @@ class Player;
 class PlayerSession;
 class Room;
 class SessionRegistry;
+class IRuntimeStore;
 
 class GameResultHandler {
 public:
     GameResultHandler(RoomManager& room_manager, IUserRepository& user_repository,
-                      IGameRepository& game_repository, SessionRegistry& session_registry);
+                      IGameRepository& game_repository, SessionRegistry& session_registry,
+                      IRuntimeStore& runtime_store);
 
     void finish(RoomId room_id, std::optional<PieceColor> winner_color, FinishReason reason);
 
@@ -36,6 +38,7 @@ private:
     IUserRepository& user_repository_;
     IGameRepository& game_repository_;
     SessionRegistry& session_registry_;
+    IRuntimeStore& runtime_store_;
     RatingService rating_service_;
 };
 

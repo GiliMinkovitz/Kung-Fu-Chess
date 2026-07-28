@@ -3,6 +3,7 @@
 #include "app/database_config.h"
 #include "app/game_server_dependencies.h"
 #include "app/health_status.h"
+#include "app/i_runtime_store.h"
 #include "server/authentication_service.h"
 #include "server/database/i_user_repository.h"
 
@@ -25,6 +26,7 @@ public:
     [[nodiscard]] IUserRepository& user_repository() noexcept;
     [[nodiscard]] IGameRepository& game_repository() noexcept;
     [[nodiscard]] AuthenticationService& authentication_service() noexcept;
+    [[nodiscard]] IRuntimeStore& runtime_store() noexcept;
 
 private:
     DatabaseBackend database_backend_;
@@ -32,6 +34,7 @@ private:
     std::unique_ptr<IUserRepository> user_repository_;
     std::unique_ptr<IGameRepository> game_repository_;
     std::unique_ptr<AuthenticationService> authentication_service_;
+    std::unique_ptr<IRuntimeStore> runtime_store_;
 };
 
 }  // namespace kfc::app
