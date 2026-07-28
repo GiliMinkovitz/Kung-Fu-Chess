@@ -1,8 +1,12 @@
 #include "app/config_loader.h"
+#include "app/database_config.h"
+#include "app/logging_config.h"
+#include "app/matchmaking_config.h"
 #include "app/server_config.h"
 
 #include <doctest/doctest.h>
 
+#include <chrono>
 #include <cstdlib>
 #include <optional>
 #include <string>
@@ -73,6 +77,38 @@ void check_default_server_config(const kfc::app::ServerConfig& server) {
     CHECK_EQ(server.max_clients, kfc::app::ServerConfig::kDefaultMaxClients);
 }
 
+void check_default_database_config(const kfc::app::DatabaseConfig& database) {
+    CHECK(database.backend == kfc::app::DatabaseBackend::SQLite);
+    CHECK_EQ(database.path, "kfc.db");
+    CHECK_EQ(database.host, "localhost");
+    CHECK_EQ(database.port, 5432);
+    CHECK_EQ(database.database, "kfc");
+    CHECK(database.username.empty());
+    CHECK(database.password.empty());
+}
+
+constexpr std::pair<const char*, std::optional<const char*>> kClearDbBackend{"KFC_DB_BACKEND", std::nullopt};
+constexpr std::pair<const char*, std::optional<const char*>> kClearDbPath{"KFC_DB_PATH", std::nullopt};
+constexpr std::pair<const char*, std::optional<const char*>> kClearDbHost{"KFC_DB_HOST", std::nullopt};
+constexpr std::pair<const char*, std::optional<const char*>> kClearDbPort{"KFC_DB_PORT", std::nullopt};
+constexpr std::pair<const char*, std::optional<const char*>> kClearDbName{"KFC_DB_NAME", std::nullopt};
+constexpr std::pair<const char*, std::optional<const char*>> kClearDbUser{"KFC_DB_USER", std::nullopt};
+constexpr std::pair<const char*, std::optional<const char*>> kClearDbPassword{"KFC_DB_PASSWORD", std::nullopt};
+constexpr std::pair<const char*, std::optional<const char*>> kClearMatchMaxRatingDiff{
+    "KFC_MATCH_MAX_RATING_DIFF", std::nullopt};
+constexpr std::pair<const char*, std::optional<const char*>> kClearMatchQueueTimeout{
+    "KFC_MATCH_QUEUE_TIMEOUT_SEC", std::nullopt};
+constexpr std::pair<const char*, std::optional<const char*>> kClearDiagnostics{"KFC_DIAGNOSTICS", std::nullopt};
+
+void check_default_matchmaking_config(const kfc::app::MatchmakingConfig& matchmaking) {
+    CHECK_EQ(matchmaking.max_rating_difference, 100);
+    CHECK_EQ(matchmaking.queue_timeout, std::chrono::seconds(60));
+}
+
+void check_default_logging_config(const kfc::app::LoggingConfig& logging) {
+    CHECK(logging.diagnostics_enabled);
+}
+
 }  // namespace
 
 TEST_CASE("ConfigLoaderTest - DefaultConfigurationWithoutEnvironment") {
@@ -80,10 +116,412 @@ TEST_CASE("ConfigLoaderTest - DefaultConfigurationWithoutEnvironment") {
         {"KFC_PORT", std::nullopt},
         {"KFC_BIND_ADDRESS", std::nullopt},
         {"KFC_MAX_CLIENTS", std::nullopt},
+        kClearDbBackend,
+        kClearDbPath,
+        kClearDbHost,
+        kClearDbPort,
+        kClearDbName,
+        kClearDbUser,
+        kClearDbPassword,
+        kClearMatchMaxRatingDiff,
+        kClearMatchQueueTimeout,
+        kClearDiagnostics,
     };
 
     const kfc::app::AppConfig config = kfc::app::load_config_from_environment();
     check_default_server_config(config.server);
+    check_default_database_config(config.database);
+    check_default_matchmaking_config(config.matchmaking);
+    check_default_logging_config(config.logging);
+}
+
+TEST_CASE("ConfigLoaderTest - DefaultMatchmakingConfigurationWithoutEnvironment") {
+    const ScopedEnvironment env{
+        kClearMatchMaxRatingDiff,
+        kClearMatchQueueTimeout,
+    };
+
+    const kfc::app::AppConfig config = kfc::app::load_config_from_environment();
+    check_default_matchmaking_config(config.matchmaking);
+}
+
+TEST_CASE("ConfigLoaderTest - OverridesMatchmakingMaxRatingDifference") {
+    const ScopedEnvironment env{
+        {"KFC_MATCH_MAX_RATING_DIFF", "250"},
+        kClearMatchQueueTimeout,
+    };
+
+    const kfc::app::AppConfig config = kfc::app::load_config_from_environment();
+    CHECK_EQ(config.matchmaking.max_rating_difference, 250);
+    CHECK_EQ(config.matchmaking.queue_timeout, std::chrono::seconds(60));
+}
+
+TEST_CASE("ConfigLoaderTest - OverridesMatchmakingQueueTimeout") {
+    const ScopedEnvironment env{
+        kClearMatchMaxRatingDiff,
+        {"KFC_MATCH_QUEUE_TIMEOUT_SEC", "120"},
+    };
+
+    const kfc::app::AppConfig config = kfc::app::load_config_from_environment();
+    CHECK_EQ(config.matchmaking.max_rating_difference, 100);
+    CHECK_EQ(config.matchmaking.queue_timeout, std::chrono::seconds(120));
+}
+
+TEST_CASE("ConfigLoaderTest - AppliesMatchmakingOverridesTogether") {
+    const ScopedEnvironment env{
+        {"KFC_MATCH_MAX_RATING_DIFF", "250"},
+        {"KFC_MATCH_QUEUE_TIMEOUT_SEC", "120"},
+    };
+
+    const kfc::app::AppConfig config = kfc::app::load_config_from_environment();
+    CHECK_EQ(config.matchmaking.max_rating_difference, 250);
+    CHECK_EQ(config.matchmaking.queue_timeout, std::chrono::seconds(120));
+}
+
+TEST_CASE("ConfigLoaderTest - IgnoresInvalidMatchmakingValues") {
+    const ScopedEnvironment env{
+        {"KFC_MATCH_MAX_RATING_DIFF", "abc"},
+        {"KFC_MATCH_QUEUE_TIMEOUT_SEC", "not-a-number"},
+    };
+
+    const kfc::app::AppConfig config = kfc::app::load_config_from_environment();
+    check_default_matchmaking_config(config.matchmaking);
+}
+
+TEST_CASE("ConfigLoaderTest - IgnoresZeroMatchmakingValues") {
+    const ScopedEnvironment env{
+        {"KFC_MATCH_MAX_RATING_DIFF", "0"},
+        {"KFC_MATCH_QUEUE_TIMEOUT_SEC", "0"},
+    };
+
+    const kfc::app::AppConfig config = kfc::app::load_config_from_environment();
+    check_default_matchmaking_config(config.matchmaking);
+}
+
+TEST_CASE("ConfigLoaderTest - IgnoresNegativeMatchmakingValues") {
+    const ScopedEnvironment env{
+        {"KFC_MATCH_MAX_RATING_DIFF", "-50"},
+        {"KFC_MATCH_QUEUE_TIMEOUT_SEC", "-10"},
+    };
+
+    const kfc::app::AppConfig config = kfc::app::load_config_from_environment();
+    check_default_matchmaking_config(config.matchmaking);
+}
+
+TEST_CASE("ConfigLoaderTest - MissingMatchmakingVariablesKeepDefaults") {
+    const ScopedEnvironment env{
+        kClearMatchMaxRatingDiff,
+        kClearMatchQueueTimeout,
+    };
+
+    const kfc::app::AppConfig config = kfc::app::load_config_from_environment();
+    check_default_matchmaking_config(config.matchmaking);
+}
+
+TEST_CASE("ConfigLoaderTest - OverridesDiagnosticsEnabled") {
+    SUBCASE("True") {
+        const ScopedEnvironment env{{"KFC_DIAGNOSTICS", "true"}};
+        const kfc::app::AppConfig config = kfc::app::load_config_from_environment();
+        CHECK(config.logging.diagnostics_enabled);
+    }
+
+    SUBCASE("False") {
+        const ScopedEnvironment env{{"KFC_DIAGNOSTICS", "false"}};
+        const kfc::app::AppConfig config = kfc::app::load_config_from_environment();
+        CHECK_FALSE(config.logging.diagnostics_enabled);
+    }
+
+    SUBCASE("UppercaseTrue") {
+        const ScopedEnvironment env{{"KFC_DIAGNOSTICS", "TRUE"}};
+        const kfc::app::AppConfig config = kfc::app::load_config_from_environment();
+        CHECK(config.logging.diagnostics_enabled);
+    }
+
+    SUBCASE("UppercaseFalse") {
+        const ScopedEnvironment env{{"KFC_DIAGNOSTICS", "FALSE"}};
+        const kfc::app::AppConfig config = kfc::app::load_config_from_environment();
+        CHECK_FALSE(config.logging.diagnostics_enabled);
+    }
+
+    SUBCASE("One") {
+        const ScopedEnvironment env{{"KFC_DIAGNOSTICS", "1"}};
+        const kfc::app::AppConfig config = kfc::app::load_config_from_environment();
+        CHECK(config.logging.diagnostics_enabled);
+    }
+
+    SUBCASE("Zero") {
+        const ScopedEnvironment env{{"KFC_DIAGNOSTICS", "0"}};
+        const kfc::app::AppConfig config = kfc::app::load_config_from_environment();
+        CHECK_FALSE(config.logging.diagnostics_enabled);
+    }
+
+    SUBCASE("Yes") {
+        const ScopedEnvironment env{{"KFC_DIAGNOSTICS", "yes"}};
+        const kfc::app::AppConfig config = kfc::app::load_config_from_environment();
+        CHECK(config.logging.diagnostics_enabled);
+    }
+
+    SUBCASE("No") {
+        const ScopedEnvironment env{{"KFC_DIAGNOSTICS", "no"}};
+        const kfc::app::AppConfig config = kfc::app::load_config_from_environment();
+        CHECK_FALSE(config.logging.diagnostics_enabled);
+    }
+
+    SUBCASE("On") {
+        const ScopedEnvironment env{{"KFC_DIAGNOSTICS", "on"}};
+        const kfc::app::AppConfig config = kfc::app::load_config_from_environment();
+        CHECK(config.logging.diagnostics_enabled);
+    }
+
+    SUBCASE("Off") {
+        const ScopedEnvironment env{{"KFC_DIAGNOSTICS", "off"}};
+        const kfc::app::AppConfig config = kfc::app::load_config_from_environment();
+        CHECK_FALSE(config.logging.diagnostics_enabled);
+    }
+}
+
+TEST_CASE("ConfigLoaderTest - IgnoresInvalidDiagnosticsValues") {
+    SUBCASE("Banana") {
+        const ScopedEnvironment env{{"KFC_DIAGNOSTICS", "banana"}};
+        const kfc::app::AppConfig config = kfc::app::load_config_from_environment();
+        check_default_logging_config(config.logging);
+    }
+
+    SUBCASE("Abc") {
+        const ScopedEnvironment env{{"KFC_DIAGNOSTICS", "abc"}};
+        const kfc::app::AppConfig config = kfc::app::load_config_from_environment();
+        check_default_logging_config(config.logging);
+    }
+
+    SUBCASE("QuestionMarks") {
+        const ScopedEnvironment env{{"KFC_DIAGNOSTICS", "???"}};
+        const kfc::app::AppConfig config = kfc::app::load_config_from_environment();
+        check_default_logging_config(config.logging);
+    }
+
+    SUBCASE("Empty") {
+        const ScopedEnvironment env{{"KFC_DIAGNOSTICS", ""}};
+        const kfc::app::AppConfig config = kfc::app::load_config_from_environment();
+        check_default_logging_config(config.logging);
+    }
+}
+
+TEST_CASE("ConfigLoaderTest - DefaultDatabaseBackendWithoutEnvironment") {
+    const ScopedEnvironment env{
+        kClearDbBackend,
+        kClearDbPath,
+        kClearDbHost,
+        kClearDbPort,
+        kClearDbName,
+        kClearDbUser,
+        kClearDbPassword,
+    };
+
+    const kfc::app::AppConfig config = kfc::app::load_config_from_environment();
+    check_default_database_config(config.database);
+}
+
+TEST_CASE("ConfigLoaderTest - SelectsSqliteBackend") {
+    const ScopedEnvironment env{
+        {"KFC_DB_BACKEND", "SQLITE"},
+        kClearDbPath,
+        kClearDbHost,
+        kClearDbPort,
+        kClearDbName,
+        kClearDbUser,
+        kClearDbPassword,
+    };
+
+    const kfc::app::AppConfig config = kfc::app::load_config_from_environment();
+    CHECK(config.database.backend == kfc::app::DatabaseBackend::SQLite);
+}
+
+TEST_CASE("ConfigLoaderTest - SelectsPostgresBackend") {
+    const ScopedEnvironment env{
+        {"KFC_DB_BACKEND", "Postgres"},
+        kClearDbPath,
+        kClearDbHost,
+        kClearDbPort,
+        kClearDbName,
+        kClearDbUser,
+        kClearDbPassword,
+    };
+
+    const kfc::app::AppConfig config = kfc::app::load_config_from_environment();
+    CHECK(config.database.backend == kfc::app::DatabaseBackend::PostgreSQL);
+}
+
+TEST_CASE("ConfigLoaderTest - IgnoresInvalidDatabaseBackend") {
+    const ScopedEnvironment env{
+        {"KFC_DB_BACKEND", "mysql"},
+        kClearDbPath,
+        kClearDbHost,
+        kClearDbPort,
+        kClearDbName,
+        kClearDbUser,
+        kClearDbPassword,
+    };
+
+    const kfc::app::AppConfig config = kfc::app::load_config_from_environment();
+    CHECK(config.database.backend == kfc::app::DatabaseBackend::SQLite);
+}
+
+TEST_CASE("ConfigLoaderTest - OverridesDatabasePath") {
+    const ScopedEnvironment env{
+        kClearDbBackend,
+        {"KFC_DB_PATH", "/tmp/custom.db"},
+        kClearDbHost,
+        kClearDbPort,
+        kClearDbName,
+        kClearDbUser,
+        kClearDbPassword,
+    };
+
+    const kfc::app::AppConfig config = kfc::app::load_config_from_environment();
+    CHECK_EQ(config.database.path, "/tmp/custom.db");
+    CHECK(config.database.backend == kfc::app::DatabaseBackend::SQLite);
+}
+
+TEST_CASE("ConfigLoaderTest - OverridesPostgresHost") {
+    const ScopedEnvironment env{
+        kClearDbBackend,
+        kClearDbPath,
+        {"KFC_DB_HOST", "db.example.com"},
+        kClearDbPort,
+        kClearDbName,
+        kClearDbUser,
+        kClearDbPassword,
+    };
+
+    const kfc::app::AppConfig config = kfc::app::load_config_from_environment();
+    CHECK_EQ(config.database.host, "db.example.com");
+}
+
+TEST_CASE("ConfigLoaderTest - OverridesPostgresPort") {
+    const ScopedEnvironment env{
+        kClearDbBackend,
+        kClearDbPath,
+        kClearDbHost,
+        {"KFC_DB_PORT", "5433"},
+        kClearDbName,
+        kClearDbUser,
+        kClearDbPassword,
+    };
+
+    const kfc::app::AppConfig config = kfc::app::load_config_from_environment();
+    CHECK_EQ(config.database.port, 5433);
+}
+
+TEST_CASE("ConfigLoaderTest - OverridesPostgresDatabaseName") {
+    const ScopedEnvironment env{
+        kClearDbBackend,
+        kClearDbPath,
+        kClearDbHost,
+        kClearDbPort,
+        {"KFC_DB_NAME", "production"},
+        kClearDbUser,
+        kClearDbPassword,
+    };
+
+    const kfc::app::AppConfig config = kfc::app::load_config_from_environment();
+    CHECK_EQ(config.database.database, "production");
+}
+
+TEST_CASE("ConfigLoaderTest - OverridesPostgresUsername") {
+    const ScopedEnvironment env{
+        kClearDbBackend,
+        kClearDbPath,
+        kClearDbHost,
+        kClearDbPort,
+        kClearDbName,
+        {"KFC_DB_USER", "admin"},
+        kClearDbPassword,
+    };
+
+    const kfc::app::AppConfig config = kfc::app::load_config_from_environment();
+    CHECK_EQ(config.database.username, "admin");
+}
+
+TEST_CASE("ConfigLoaderTest - OverridesPostgresPassword") {
+    const ScopedEnvironment env{
+        kClearDbBackend,
+        kClearDbPath,
+        kClearDbHost,
+        kClearDbPort,
+        kClearDbName,
+        kClearDbUser,
+        {"KFC_DB_PASSWORD", "secret"},
+    };
+
+    const kfc::app::AppConfig config = kfc::app::load_config_from_environment();
+    CHECK_EQ(config.database.password, "secret");
+}
+
+TEST_CASE("ConfigLoaderTest - AppliesFullPostgresConfiguration") {
+    const ScopedEnvironment env{
+        {"KFC_DB_BACKEND", "postgres"},
+        kClearDbPath,
+        {"KFC_DB_HOST", "db.example.com"},
+        {"KFC_DB_PORT", "5433"},
+        {"KFC_DB_NAME", "production"},
+        {"KFC_DB_USER", "admin"},
+        {"KFC_DB_PASSWORD", "secret"},
+    };
+
+    const kfc::app::AppConfig config = kfc::app::load_config_from_environment();
+    CHECK(config.database.backend == kfc::app::DatabaseBackend::PostgreSQL);
+    CHECK_EQ(config.database.host, "db.example.com");
+    CHECK_EQ(config.database.port, 5433);
+    CHECK_EQ(config.database.database, "production");
+    CHECK_EQ(config.database.username, "admin");
+    CHECK_EQ(config.database.password, "secret");
+}
+
+TEST_CASE("ConfigLoaderTest - IgnoresInvalidPostgresPort") {
+    SUBCASE("NonNumericPort") {
+        const ScopedEnvironment env{
+            kClearDbBackend,
+            kClearDbPath,
+            kClearDbHost,
+            {"KFC_DB_PORT", "abc"},
+            kClearDbName,
+            kClearDbUser,
+            kClearDbPassword,
+        };
+
+        const kfc::app::AppConfig config = kfc::app::load_config_from_environment();
+        CHECK_EQ(config.database.port, 5432);
+    }
+
+    SUBCASE("OutOfRangePort") {
+        const ScopedEnvironment env{
+            kClearDbBackend,
+            kClearDbPath,
+            kClearDbHost,
+            {"KFC_DB_PORT", "70000"},
+            kClearDbName,
+            kClearDbUser,
+            kClearDbPassword,
+        };
+
+        const kfc::app::AppConfig config = kfc::app::load_config_from_environment();
+        CHECK_EQ(config.database.port, 5432);
+    }
+}
+
+TEST_CASE("ConfigLoaderTest - MissingDatabaseVariablesKeepDefaults") {
+    const ScopedEnvironment env{
+        kClearDbBackend,
+        kClearDbPath,
+        kClearDbHost,
+        kClearDbPort,
+        kClearDbName,
+        kClearDbUser,
+        kClearDbPassword,
+    };
+
+    const kfc::app::AppConfig config = kfc::app::load_config_from_environment();
+    check_default_database_config(config.database);
 }
 
 TEST_CASE("ConfigLoaderTest - OverridesPort") {
