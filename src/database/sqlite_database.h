@@ -16,6 +16,7 @@ public:
     bool open();
     bool initialize_schema();
 
+    [[nodiscard]] bool is_connected() const override;
     sqlite3* connection() override;
 
 private:

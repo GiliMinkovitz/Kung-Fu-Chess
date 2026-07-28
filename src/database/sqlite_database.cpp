@@ -87,6 +87,10 @@ bool SqliteDatabase::initialize_schema() {
            exec_sql(db_, kGamesTableSql);
 }
 
+bool SqliteDatabase::is_connected() const {
+    return db_ != nullptr;
+}
+
 sqlite3* SqliteDatabase::connection() {
     return db_;
 }

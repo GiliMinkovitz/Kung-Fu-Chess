@@ -1,5 +1,6 @@
 #include "app/server_infrastructure.h"
 
+#include "app/server_health.h"
 #include "database/postgres_connection.h"
 #include "database/postgres_game_repository.h"
 #include "database/sqlite_database.h"
@@ -25,7 +26,8 @@ PostgresConnection::Settings make_postgres_settings(const DatabaseConfig& databa
 
 }  // namespace
 
-ServerInfrastructure::ServerInfrastructure(const DatabaseConfig& database_config) {
+ServerInfrastructure::ServerInfrastructure(const DatabaseConfig& database_config)
+    : database_backend_(database_config.backend) {
     if (database_config.backend == DatabaseBackend::PostgreSQL) {
         auto postgres = std::make_unique<PostgresConnection>(make_postgres_settings(database_config));
         if (!postgres->open()) {
@@ -61,6 +63,10 @@ GameServerDependencies ServerInfrastructure::dependencies() noexcept {
         *game_repository_,
         *authentication_service_,
     };
+}
+
+HealthStatus ServerInfrastructure::get_health_status(const bool server_running) const {
+    return make_health_status(server_running, database_backend_, *database_connection_);
 }
 
 IDatabaseConnection& ServerInfrastructure::database() noexcept {

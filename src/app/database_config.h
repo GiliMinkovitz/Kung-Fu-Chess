@@ -19,4 +19,6 @@ struct DatabaseConfig {
     std::string password;
 };
 
+[[nodiscard]] const char* database_backend_name(DatabaseBackend backend);
+
 }  // namespace kfc::app

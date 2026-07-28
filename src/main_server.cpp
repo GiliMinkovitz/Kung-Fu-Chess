@@ -1,4 +1,5 @@
 #include "app/config_loader.h"
+#include "app/database_config.h"
 #include "app/server_builder.h"
 #include "model/board_model.h"
 
@@ -24,6 +25,8 @@ kfc::BoardModel default_board() {
 int main() {
     try {
         const kfc::app::AppConfig config = kfc::app::load_config_from_environment();
+        std::cout << "Database backend: "
+                  << kfc::app::database_backend_name(config.database.backend) << '\n';
         auto built = kfc::app::build_game_server(config, default_board());
         built.server.run();
     } catch (const std::exception& ex) {

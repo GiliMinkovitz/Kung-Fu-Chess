@@ -15,6 +15,10 @@ bool PostgresConnection::initialize_schema() {
     return false;
 }
 
+bool PostgresConnection::is_connected() const {
+    return false;
+}
+
 sqlite3* PostgresConnection::connection() {
     return nullptr;
 }

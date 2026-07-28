@@ -56,6 +56,8 @@ set(KFC_SERVER_WEBSOCKET_SOURCES
 set(KFC_APP_SOURCES
     src/app/app_config.cpp
     src/app/config_loader.cpp
+    src/app/database_config.cpp
+    src/app/server_health.cpp
     src/app/server_infrastructure.cpp
 )
 
@@ -372,6 +374,8 @@ set(KFC_TEST_SOURCES
     tests/unit/ui/board_view_builder_tests.cpp
     tests/unit/ui/board_view_model_tests.cpp
     tests/unit/app/config_loader_tests.cpp
+    tests/unit/app/database_config_tests.cpp
+    tests/unit/app/server_health_tests.cpp
     tests/unit/ui/asset_paths_tests.cpp
     tests/unit/ui/piece_sprite_selector_tests.cpp
     tests/unit/ui/ui_controller_tests.cpp

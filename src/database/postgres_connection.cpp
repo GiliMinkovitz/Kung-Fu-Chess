@@ -90,6 +90,10 @@ bool PostgresConnection::initialize_schema() {
     return exec_sql(connection_, kPlayersTableSql) && exec_sql(connection_, kGamesTableSql);
 }
 
+bool PostgresConnection::is_connected() const {
+    return connection_ != nullptr && PQstatus(connection_) == CONNECTION_OK;
+}
+
 sqlite3* PostgresConnection::connection() {
     return nullptr;
 }
