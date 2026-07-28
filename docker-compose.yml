@@ -1,0 +1,34 @@
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: kfc
+      POSTGRES_USER: kfc
+      POSTGRES_PASSWORD: kfc
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U kfc -d kfc"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  server:
+    build: .
+    ports:
+      - "8765:8765"
+    environment:
+      KFC_BIND_ADDRESS: 0.0.0.0
+      KFC_DB_BACKEND: postgres
+      KFC_DB_HOST: postgres
+      KFC_DB_PORT: "5432"
+      KFC_DB_NAME: kfc
+      KFC_DB_USER: kfc
+      KFC_DB_PASSWORD: kfc
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
