@@ -55,6 +55,7 @@ set(KFC_SERVER_WEBSOCKET_SOURCES
 
 set(KFC_APP_SOURCES
     src/app/app_config.cpp
+    src/app/config_loader.cpp
     src/app/server_infrastructure.cpp
 )
 
