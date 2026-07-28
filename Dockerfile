@@ -19,6 +19,7 @@ RUN cmake -S . -B build -DCMAKE_BUILD_TYPE=Release \
 FROM debian:bookworm-slim AS runtime
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
     libboost-system1.74.0 \
     libpq5 \
     libsqlite3-0 \
@@ -27,6 +28,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 WORKDIR /app
 COPY --from=build /src/build/KungFuChessServer /app/KungFuChessServer
 
-EXPOSE 8765
+EXPOSE 8765 8080
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+    CMD curl -f http://127.0.0.1:8080/health || exit 1
 
 CMD ["./KungFuChessServer"]

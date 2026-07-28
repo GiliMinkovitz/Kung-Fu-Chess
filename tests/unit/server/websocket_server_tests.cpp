@@ -1,3 +1,4 @@
+#include "app/server_config.h"
 #include "network/websocket_client.h"
 #include "server/websocket_server.h"
 
@@ -57,18 +58,19 @@ TEST_CASE("WebSocketServerTest - BroadcastsToConnectedClients") {
 
 TEST_CASE("WebSocketServerTest - EnforcesMaxClients") {
     kfc::WebSocketServer server{0};
+    const std::size_t max_clients = kfc::app::ServerConfig::kDefaultMaxClients;
     std::vector<std::unique_ptr<kfc::WebSocketClient>> clients;
-    clients.reserve(kfc::WebSocketServer::kMaxClients);
+    clients.reserve(max_clients);
 
-    for (std::size_t i = 0; i < kfc::WebSocketServer::kMaxClients; ++i) {
+    for (std::size_t i = 0; i < max_clients; ++i) {
         clients.push_back(
             std::make_unique<kfc::WebSocketClient>("127.0.0.1", server.port()));
         connect_client(server, *clients.back());
     }
-    CHECK_EQ(server.clients().size(), kfc::WebSocketServer::kMaxClients);
+    CHECK_EQ(server.clients().size(), max_clients);
 
     server.try_accept();
-    CHECK_EQ(server.clients().size(), kfc::WebSocketServer::kMaxClients);
+    CHECK_EQ(server.clients().size(), max_clients);
 }
 
 TEST_CASE("WebSocketServerTest - PrunesDisconnectedClients") {

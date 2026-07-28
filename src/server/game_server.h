@@ -1,7 +1,8 @@
 #pragma once
 
+#include "app/app_config.h"
 #include "app/game_server_dependencies.h"
-#include "app/server_config.h"
+#include "app/server_metrics.h"
 #include "server/game_result/game_result_handler.h"
 #include "server/lobby/lobby_message_handler.h"
 #include "server/match/match_lifecycle_handler.h"
@@ -23,14 +24,14 @@ namespace kfc {
 
 class GameServer {
 public:
-    GameServer(const app::ServerConfig& server_config, BoardModel default_board,
+    GameServer(const app::AppConfig& config, BoardModel default_board,
                app::GameServerDependencies dependencies);
     ~GameServer();
 
     void run();
     void tick_once();
-#ifdef KFC_TEST_BUILD
     void request_stop() noexcept { stop_requested_ = true; }
+#ifdef KFC_TEST_BUILD
     void finish_room(RoomId room_id, std::optional<PieceColor> winner_color, FinishReason reason) {
         game_result_handler_.finish(room_id, winner_color, reason);
     }
@@ -40,6 +41,7 @@ public:
     [[nodiscard]] MatchmakingService& matchmaking_service() noexcept;
     [[nodiscard]] RoomManager& room_manager() noexcept;
     [[nodiscard]] IUserRepository& user_repository() noexcept;
+    [[nodiscard]] app::ServerMetrics metrics() const;
 
 private:
     WebSocketServer websocket_server_;
@@ -52,10 +54,10 @@ private:
     ClientSessionManager session_manager_;
     LobbyMessageHandler lobby_handler_;
     GameResultHandler game_result_handler_;
+    std::chrono::steady_clock::time_point started_at_{};
     std::chrono::steady_clock::time_point last_tick_{};
-#ifdef KFC_TEST_BUILD
+    std::int64_t last_tick_duration_ms_ = 0;
     bool stop_requested_ = false;
-#endif
 };
 
 }  // namespace kfc

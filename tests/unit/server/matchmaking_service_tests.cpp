@@ -1,3 +1,4 @@
+#include "app/matchmaking_config.h"
 #include "database/player_repository.h"
 #include "database/sqlite_database.h"
 #include "model/piece.h"
@@ -92,12 +93,16 @@ private:
     std::vector<std::pair<kfc::PlayerSession*, kfc::PlayerSession*>> created_matches_;
 };
 
+kfc::MatchmakingService make_test_service(kfc::IMatchCreatedHandler& handler) {
+    return kfc::MatchmakingService{handler, kfc::app::MatchmakingConfig{}};
+}
+
 }  // namespace
 
 TEST_CASE("MatchmakingServiceTest - PlayerEntersQueue") {
     TestSessionFactory factory;
     RecordingMatchHandler handler;
-    kfc::MatchmakingService service{handler};
+    kfc::MatchmakingService service = make_test_service(handler);
     const auto now = std::chrono::steady_clock::now();
 
     kfc::PlayerSession& first = factory.create("queue_alice", 1000);
@@ -109,7 +114,7 @@ TEST_CASE("MatchmakingServiceTest - PlayerEntersQueue") {
 TEST_CASE("MatchmakingServiceTest - TwoPlayersCreateMatch") {
     TestSessionFactory factory;
     RecordingMatchHandler handler;
-    kfc::MatchmakingService service{handler};
+    kfc::MatchmakingService service = make_test_service(handler);
     const auto now = std::chrono::steady_clock::now();
 
     kfc::PlayerSession& first = factory.create("match_alice", 1000);
@@ -130,7 +135,7 @@ TEST_CASE("MatchmakingServiceTest - TwoPlayersCreateMatch") {
 TEST_CASE("MatchmakingServiceTest - MatchedPlayersReceiveSameRoomId") {
     TestSessionFactory factory;
     RecordingMatchHandler handler;
-    kfc::MatchmakingService service{handler};
+    kfc::MatchmakingService service = make_test_service(handler);
     const auto now = std::chrono::steady_clock::now();
 
     kfc::PlayerSession& first = factory.create("room_alice", 1000);
@@ -154,7 +159,7 @@ TEST_CASE("MatchmakingServiceTest - MatchedPlayersReceiveSameRoomId") {
 TEST_CASE("MatchmakingServiceTest - DifferentMatchesCreateDifferentRooms") {
     TestSessionFactory factory;
     RecordingMatchHandler handler;
-    kfc::MatchmakingService service{handler};
+    kfc::MatchmakingService service = make_test_service(handler);
     const auto now = std::chrono::steady_clock::now();
 
     kfc::PlayerSession& g1_white = factory.create("g1_white", 1000);
@@ -179,7 +184,7 @@ TEST_CASE("MatchmakingServiceTest - DifferentMatchesCreateDifferentRooms") {
 TEST_CASE("MatchmakingServiceTest - RemovesPlayerFromQueue") {
     TestSessionFactory factory;
     RecordingMatchHandler handler;
-    kfc::MatchmakingService service{handler};
+    kfc::MatchmakingService service = make_test_service(handler);
     const auto now = std::chrono::steady_clock::now();
 
     kfc::PlayerSession& waiting = factory.create("remove_alice", 1000);
@@ -193,11 +198,11 @@ TEST_CASE("MatchmakingServiceTest - RemovesPlayerFromQueue") {
 TEST_CASE("MatchmakingServiceTest - ReportsQueueTimeouts") {
     TestSessionFactory factory;
     RecordingMatchHandler handler;
-    kfc::MatchmakingService service{handler};
+    kfc::MatchmakingService service = make_test_service(handler);
     const auto now = std::chrono::steady_clock::now();
 
     kfc::PlayerSession& waiting = factory.create("timeout_alice", 1000);
-    CHECK_FALSE(service.enqueue(waiting, now - kfc::MatchmakingQueue::kQueueTimeout).has_value());
+    CHECK_FALSE(service.enqueue(waiting, now - std::chrono::seconds(60)).has_value());
 
     const auto timed_out = service.check_timeouts(now);
     REQUIRE_EQ(timed_out.size(), 1u);

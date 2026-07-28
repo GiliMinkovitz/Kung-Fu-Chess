@@ -1,5 +1,6 @@
 #pragma once
 
+#include "app/matchmaking_config.h"
 #include "server/matchmaking/match_created_handler.h"
 #include "server/matchmaking/matchmaking_queue.h"
 
@@ -12,7 +13,7 @@ namespace kfc {
 
 class MatchmakingService {
 public:
-    explicit MatchmakingService(IMatchCreatedHandler& handler);
+    MatchmakingService(IMatchCreatedHandler& handler, const app::MatchmakingConfig& config);
 
     [[nodiscard]] std::optional<MatchCreated> enqueue(
         PlayerSession& session,
@@ -25,9 +26,7 @@ public:
 
     [[nodiscard]] std::size_t waiting_count() const noexcept;
 
-#ifdef KFC_TEST_BUILD
     void set_queue_timeout(std::chrono::milliseconds timeout);
-#endif
 
 private:
     [[nodiscard]] MatchCreated finalize_match(PlayerSession* white, PlayerSession* black);

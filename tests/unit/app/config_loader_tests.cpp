@@ -73,7 +73,10 @@ private:
 
 void check_default_server_config(const kfc::app::ServerConfig& server) {
     CHECK_EQ(server.port, 8765);
+    CHECK_EQ(server.health_port, 8080);
     CHECK_EQ(server.bind_address, "127.0.0.1");
+    CHECK_EQ(server.server_id, "local");
+    CHECK_EQ(server.region, "local");
     CHECK_EQ(server.max_clients, kfc::app::ServerConfig::kDefaultMaxClients);
 }
 
@@ -116,6 +119,9 @@ TEST_CASE("ConfigLoaderTest - DefaultConfigurationWithoutEnvironment") {
         {"KFC_PORT", std::nullopt},
         {"KFC_BIND_ADDRESS", std::nullopt},
         {"KFC_MAX_CLIENTS", std::nullopt},
+        {"KFC_HEALTH_PORT", std::nullopt},
+        {"KFC_SERVER_ID", std::nullopt},
+        {"KFC_REGION", std::nullopt},
         kClearDbBackend,
         kClearDbPath,
         kClearDbHost,
@@ -629,6 +635,52 @@ TEST_CASE("ConfigLoaderTest - IgnoresEmptyBindAddress") {
 
     const kfc::app::AppConfig config = kfc::app::load_config_from_environment();
     CHECK_EQ(config.server.bind_address, "127.0.0.1");
+}
+
+TEST_CASE("ConfigLoaderTest - OverridesHealthPort") {
+    const ScopedEnvironment env{
+        {"KFC_HEALTH_PORT", "9090"},
+    };
+
+    const kfc::app::AppConfig config = kfc::app::load_config_from_environment();
+    CHECK_EQ(config.server.health_port, 9090);
+}
+
+TEST_CASE("ConfigLoaderTest - IgnoresInvalidHealthPort") {
+    SUBCASE("NonNumeric") {
+        const ScopedEnvironment env{
+            {"KFC_HEALTH_PORT", "abc"},
+        };
+        const kfc::app::AppConfig config = kfc::app::load_config_from_environment();
+        CHECK_EQ(config.server.health_port, 8080);
+    }
+
+    SUBCASE("Zero") {
+        const ScopedEnvironment env{
+            {"KFC_HEALTH_PORT", "0"},
+        };
+        const kfc::app::AppConfig config = kfc::app::load_config_from_environment();
+        CHECK_EQ(config.server.health_port, 8080);
+    }
+
+    SUBCASE("OutOfRange") {
+        const ScopedEnvironment env{
+            {"KFC_HEALTH_PORT", "70000"},
+        };
+        const kfc::app::AppConfig config = kfc::app::load_config_from_environment();
+        CHECK_EQ(config.server.health_port, 8080);
+    }
+}
+
+TEST_CASE("ConfigLoaderTest - OverridesServerIdAndRegion") {
+    const ScopedEnvironment env{
+        {"KFC_SERVER_ID", "game-eu-1"},
+        {"KFC_REGION", "eu-west"},
+    };
+
+    const kfc::app::AppConfig config = kfc::app::load_config_from_environment();
+    CHECK_EQ(config.server.server_id, "game-eu-1");
+    CHECK_EQ(config.server.region, "eu-west");
 }
 
 TEST_CASE("ConfigLoaderTest - MissingVariablesKeepDefaults") {

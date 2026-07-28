@@ -11,11 +11,9 @@ namespace kfc {
 
 class MatchmakingQueue {
 public:
-    static constexpr int kMaxRatingDifference = 100;
-    static constexpr std::chrono::seconds kQueueTimeout{60};
-#ifdef KFC_TEST_BUILD
+    MatchmakingQueue(int max_rating_difference, std::chrono::milliseconds queue_timeout);
+
     void set_queue_timeout(std::chrono::milliseconds timeout) { queue_timeout_ = timeout; }
-#endif
 
     struct WaitingEntry {
         PlayerSession* session;
@@ -34,13 +32,12 @@ public:
     [[nodiscard]] std::size_t waiting_count() const noexcept;
 
 private:
-    [[nodiscard]] static bool are_compatible(const PlayerSession& a, const PlayerSession& b);
+    [[nodiscard]] bool are_compatible(const PlayerSession& a, const PlayerSession& b) const;
     [[nodiscard]] static bool is_eligible(const PlayerSession& session);
 
+    int max_rating_difference_;
+    std::chrono::milliseconds queue_timeout_;
     std::vector<WaitingEntry> waiting_;
-#ifdef KFC_TEST_BUILD
-    std::chrono::milliseconds queue_timeout_{kQueueTimeout};
-#endif
 };
 
 }  // namespace kfc

@@ -15,7 +15,7 @@ ClientSessionManager::ClientSessionManager(WebSocketServer& websocket_server,
       matchmaking_service_(matchmaking_service) {}
 
 void ClientSessionManager::accept_new_clients() {
-    if (websocket_server_.clients().size() >= WebSocketServer::kMaxClients) {
+    if (websocket_server_.clients().size() >= websocket_server_.max_clients()) {
         return;
     }
 

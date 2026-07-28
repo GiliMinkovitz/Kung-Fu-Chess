@@ -57,6 +57,8 @@ set(KFC_APP_SOURCES
     src/app/app_config.cpp
     src/app/config_loader.cpp
     src/app/database_config.cpp
+    src/app/health_http_server.cpp
+    src/app/runtime_diagnostics.cpp
     src/app/server_health.cpp
     src/app/server_infrastructure.cpp
 )
@@ -380,6 +382,7 @@ set(KFC_TEST_SOURCES
     tests/unit/ui/board_view_model_tests.cpp
     tests/unit/app/config_loader_tests.cpp
     tests/unit/app/database_config_tests.cpp
+    tests/unit/app/health_http_server_tests.cpp
     tests/unit/app/server_health_tests.cpp
     tests/unit/ui/asset_paths_tests.cpp
     tests/unit/ui/piece_sprite_selector_tests.cpp

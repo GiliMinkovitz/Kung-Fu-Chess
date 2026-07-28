@@ -5,6 +5,10 @@
 
 namespace kfc {
 
+MatchmakingQueue::MatchmakingQueue(const int max_rating_difference,
+                                   const std::chrono::milliseconds queue_timeout)
+    : max_rating_difference_(max_rating_difference), queue_timeout_(queue_timeout) {}
+
 void MatchmakingQueue::remove(PlayerSession& session) {
     waiting_.erase(
         std::remove_if(
@@ -47,12 +51,7 @@ std::vector<PlayerSession*> MatchmakingQueue::check_timeouts(
             continue;
         }
 
-#ifdef KFC_TEST_BUILD
-        const auto timeout = queue_timeout_;
-#else
-        const auto timeout = kQueueTimeout;
-#endif
-        if (now - it->enqueue_time >= timeout) {
+        if (now - it->enqueue_time >= queue_timeout_) {
             timed_out.push_back(it->session);
             it = waiting_.erase(it);
         } else {
@@ -67,8 +66,8 @@ std::size_t MatchmakingQueue::waiting_count() const noexcept {
     return waiting_.size();
 }
 
-bool MatchmakingQueue::are_compatible(const PlayerSession& a, const PlayerSession& b) {
-    return std::abs(a.rating() - b.rating()) <= kMaxRatingDifference;
+bool MatchmakingQueue::are_compatible(const PlayerSession& a, const PlayerSession& b) const {
+    return std::abs(a.rating() - b.rating()) <= max_rating_difference_;
 }
 
 bool MatchmakingQueue::is_eligible(const PlayerSession& session) {

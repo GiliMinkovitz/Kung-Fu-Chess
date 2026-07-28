@@ -1,5 +1,7 @@
 #include "server/game_server.h"
 
+#include "app/runtime_diagnostics.h"
+
 #include "model/game_config.h"
 
 #include <chrono>
@@ -10,12 +12,12 @@
 
 namespace kfc {
 
-GameServer::GameServer(const app::ServerConfig& server_config, BoardModel default_board,
+GameServer::GameServer(const app::AppConfig& config, BoardModel default_board,
                        app::GameServerDependencies dependencies)
-    : websocket_server_(server_config),
+    : websocket_server_(config.server),
       room_manager_(std::move(default_board)),
       match_lifecycle_handler_(room_manager_, dependencies.game_repository),
-      matchmaking_service_(match_lifecycle_handler_),
+      matchmaking_service_(match_lifecycle_handler_, config.matchmaking),
       active_room_processor_(room_manager_),
       user_repository_(dependencies.user_repository),
       session_manager_(websocket_server_, session_registry_, matchmaking_service_),
@@ -23,6 +25,7 @@ GameServer::GameServer(const app::ServerConfig& server_config, BoardModel defaul
                      session_manager_, match_lifecycle_handler_),
       game_result_handler_(room_manager_, user_repository_, dependencies.game_repository,
                            session_registry_) {
+    app::configure_logging(config.logging);
     match_lifecycle_handler_.bind_matchmaking_service(matchmaking_service_);
     last_tick_ = std::chrono::steady_clock::now();
 }
@@ -45,6 +48,21 @@ IUserRepository& GameServer::user_repository() noexcept {
     return user_repository_;
 }
 
+app::ServerMetrics GameServer::metrics() const {
+    app::ServerMetrics result;
+    result.active_rooms = room_manager_.active_room_count();
+    result.connected_sessions = session_manager_.sessions().size();
+    result.matchmaking_queue = matchmaking_service_.waiting_count();
+
+    const auto now = std::chrono::steady_clock::now();
+    if (started_at_.time_since_epoch().count() != 0) {
+        result.server_uptime_seconds =
+            std::chrono::duration_cast<std::chrono::seconds>(now - started_at_).count();
+    }
+    result.last_tick_duration_ms = last_tick_duration_ms_;
+    return result;
+}
+
 void GameServer::tick_once() {
     session_manager_.accept_new_clients();
     lobby_handler_.process();
@@ -53,6 +71,7 @@ void GameServer::tick_once() {
     const auto now = std::chrono::steady_clock::now();
     const auto elapsed =
         std::chrono::duration_cast<std::chrono::milliseconds>(now - last_tick_).count();
+    last_tick_duration_ms_ = elapsed;
 
     active_room_processor_.process(
         elapsed, last_tick_,
@@ -73,12 +92,9 @@ void GameServer::run() {
     std::cout << "Server started\n";
 #endif
     last_tick_ = std::chrono::steady_clock::now();
+    started_at_ = last_tick_;
 
-#ifdef KFC_TEST_BUILD
     while (!stop_requested_) {
-#else
-    while (true) {
-#endif
         tick_once();
     }
 }

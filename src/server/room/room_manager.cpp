@@ -64,4 +64,14 @@ std::vector<const Room*> RoomManager::active_rooms() const noexcept {
     return result;
 }
 
+std::size_t RoomManager::active_room_count() const noexcept {
+    std::size_t count = 0;
+    for (const auto& [id, room] : rooms_) {
+        if (room->active()) {
+            ++count;
+        }
+    }
+    return count;
+}
+
 }  // namespace kfc

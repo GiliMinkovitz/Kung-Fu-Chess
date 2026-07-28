@@ -13,12 +13,11 @@ namespace kfc {
 
 class WebSocketServer {
 public:
-    static constexpr std::size_t kMaxClients = app::ServerConfig::kDefaultMaxClients;
-
     explicit WebSocketServer(unsigned short port);
     explicit WebSocketServer(const app::ServerConfig& server_config);
 
     [[nodiscard]] unsigned short port() const;
+    [[nodiscard]] std::size_t max_clients() const noexcept { return max_clients_; }
 
     void try_accept();
     void prune_disconnected();

@@ -1,5 +1,6 @@
 #include "server/match/match_lifecycle_handler.h"
 
+#include "app/runtime_diagnostics.h"
 #include "database/i_game_repository.h"
 #include "model/piece.h"
 #include "server/matchmaking/matchmaking_service.h"
@@ -60,8 +61,10 @@ void MatchLifecycleHandler::process_timeouts() {
     const auto now = std::chrono::steady_clock::now();
     for (PlayerSession* session : matchmaking_service_->check_timeouts(now)) {
 #ifndef KFC_TEST_BUILD
-        std::cout << "Matchmaking timeout for session " << session->id() << " (player "
-                  << session->player().username() << ")\n";
+        if (app::diagnostics_enabled()) {
+            std::cout << "Matchmaking timeout for session " << session->id() << " (player "
+                      << session->player().username() << ")\n";
+        }
 #endif
         session->connection()->try_send("search_timeout");
         session->cancel_search();

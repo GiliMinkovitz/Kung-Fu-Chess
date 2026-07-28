@@ -99,6 +99,22 @@ void override_server_config(kfc::app::ServerConfig& server) {
             }
         }
     }
+
+    if (const auto health_port_value = read_environment("KFC_HEALTH_PORT")) {
+        if (const auto health_port = parse_unsigned(*health_port_value)) {
+            if (*health_port >= 1 && *health_port <= 65535) {
+                server.health_port = static_cast<unsigned short>(*health_port);
+            }
+        }
+    }
+
+    if (const auto server_id_value = read_environment("KFC_SERVER_ID")) {
+        server.server_id = *server_id_value;
+    }
+
+    if (const auto region_value = read_environment("KFC_REGION")) {
+        server.region = *region_value;
+    }
 }
 
 void override_database_config(kfc::app::DatabaseConfig& database) {

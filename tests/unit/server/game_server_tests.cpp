@@ -928,3 +928,11 @@ TEST_CASE("GameServerTest - RunLoopCanBeStoppedInTests") {
     server.request_stop();
     server_thread.join();
 }
+
+TEST_CASE("GameServerTest - RequestStopCausesRunToExit") {
+    kfc::test::GameServerFixture fixture{0, kfc::test::make_board({{"wK", ".", "bK"}})};
+    kfc::GameServer& server = fixture.server;
+
+    server.request_stop();
+    server.run();
+}

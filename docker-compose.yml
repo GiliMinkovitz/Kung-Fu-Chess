@@ -18,14 +18,29 @@ services:
     build: .
     ports:
       - "8765:8765"
+      - "8080:8080"
     environment:
+      KFC_PORT: "8765"
       KFC_BIND_ADDRESS: 0.0.0.0
+      KFC_HEALTH_PORT: "8080"
+      KFC_MAX_CLIENTS: "8"
+      KFC_SERVER_ID: local
+      KFC_REGION: local
+      KFC_DIAGNOSTICS: "true"
+      KFC_MATCH_MAX_RATING_DIFF: "100"
+      KFC_MATCH_QUEUE_TIMEOUT_SEC: "60"
       KFC_DB_BACKEND: postgres
       KFC_DB_HOST: postgres
       KFC_DB_PORT: "5432"
       KFC_DB_NAME: kfc
       KFC_DB_USER: kfc
       KFC_DB_PASSWORD: kfc
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://127.0.0.1:8080/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
     depends_on:
       postgres:
         condition: service_healthy

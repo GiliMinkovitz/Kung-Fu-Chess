@@ -1,7 +1,7 @@
 #pragma once
 
+#include "app/app_config.h"
 #include "app/database_config.h"
-#include "app/server_config.h"
 #include "app/server_infrastructure.h"
 #include "model/board_model.h"
 #include "server/game_server.h"
@@ -17,7 +17,7 @@ struct GameServerFixture {
 
     GameServerFixture(unsigned short port, BoardModel board, const std::string& db_path = ":memory:")
         : infrastructure(make_database_config(db_path)),
-          server(make_server_config(port), std::move(board), infrastructure.dependencies()) {}
+          server(make_app_config(port), std::move(board), infrastructure.dependencies()) {}
 
 private:
     static app::DatabaseConfig make_database_config(const std::string& db_path) {
@@ -26,9 +26,9 @@ private:
         return config;
     }
 
-    static app::ServerConfig make_server_config(unsigned short port) {
-        app::ServerConfig config;
-        config.port = port;
+    static app::AppConfig make_app_config(unsigned short port) {
+        app::AppConfig config;
+        config.server.port = port;
         return config;
     }
 };

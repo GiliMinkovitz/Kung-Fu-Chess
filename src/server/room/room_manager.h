@@ -23,6 +23,7 @@ public:
 
     [[nodiscard]] std::vector<Room*> active_rooms() noexcept;
     [[nodiscard]] std::vector<const Room*> active_rooms() const noexcept;
+    [[nodiscard]] std::size_t active_room_count() const noexcept;
 
 private:
     BoardModel default_board_;
