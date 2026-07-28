@@ -371,6 +371,7 @@ set(KFC_TEST_SOURCES
     tests/unit/ui/board_layout_calculator_tests.cpp
     tests/unit/ui/board_view_builder_tests.cpp
     tests/unit/ui/board_view_model_tests.cpp
+    tests/unit/app/config_loader_tests.cpp
     tests/unit/ui/asset_paths_tests.cpp
     tests/unit/ui/piece_sprite_selector_tests.cpp
     tests/unit/ui/ui_controller_tests.cpp
