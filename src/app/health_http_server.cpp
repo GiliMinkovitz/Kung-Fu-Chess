@@ -4,12 +4,26 @@
 #include <boost/beast/core.hpp>
 #include <boost/beast/http.hpp>
 
+#include <chrono>
+#include <future>
+#include <thread>
+
 namespace beast = boost::beast;
 namespace http = beast::http;
 namespace net = boost::asio;
 using tcp = net::ip::tcp;
 
 namespace kfc::app {
+
+namespace {
+
+void close_socket(tcp::socket& socket) {
+    beast::error_code ec;
+    socket.shutdown(tcp::socket::shutdown_both, ec);
+    socket.close(ec);
+}
+
+}  // namespace
 
 HealthHttpServer::HealthHttpServer(std::string bind_address, unsigned short port,
                                    MetricsProvider metrics_provider)
@@ -31,8 +45,15 @@ void HealthHttpServer::start() {
     acceptor_ = std::make_unique<tcp::acceptor>(
         *io_context_, tcp::endpoint{net::ip::make_address(bind_address_), port_});
     acceptor_->set_option(net::socket_base::reuse_address{true});
+    acceptor_->non_blocking(true);
 
-    thread_ = std::thread([this] { run_loop(); });
+    auto ready = std::make_shared<std::promise<void>>();
+    std::future<void> ready_future = ready->get_future();
+    thread_ = std::thread([this, ready] {
+        ready->set_value();
+        run_loop();
+    });
+    ready_future.wait();
     running_ = true;
 }
 
@@ -43,8 +64,10 @@ void HealthHttpServer::stop() {
 
     stop_requested_ = true;
 
-    beast::error_code ec;
-    acceptor_->close(ec);
+    if (acceptor_ != nullptr) {
+        beast::error_code ec;
+        acceptor_->close(ec);
+    }
 
     if (thread_.joinable()) {
         thread_.join();
@@ -68,6 +91,7 @@ void HealthHttpServer::handle_connection(tcp::socket socket) {
     http::request<http::empty_body> request;
     http::read(socket, buffer, request, ec);
     if (ec) {
+        close_socket(socket);
         return;
     }
 
@@ -97,19 +121,29 @@ void HealthHttpServer::handle_connection(tcp::socket socket) {
 
     response.prepare_payload();
     http::write(socket, response, ec);
-    socket.shutdown(tcp::socket::shutdown_send, ec);
+    close_socket(socket);
 }
 
 void HealthHttpServer::run_loop() {
     while (!stop_requested_) {
+        if (acceptor_ == nullptr || !acceptor_->is_open()) {
+            break;
+        }
+
         beast::error_code ec;
         tcp::socket socket(acceptor_->get_executor());
         acceptor_->accept(socket, ec);
+
+        if (ec == net::error::would_block) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(1));
+            continue;
+        }
 
         if (ec) {
             if (stop_requested_) {
                 break;
             }
+            std::this_thread::sleep_for(std::chrono::milliseconds(1));
             continue;
         }
 
