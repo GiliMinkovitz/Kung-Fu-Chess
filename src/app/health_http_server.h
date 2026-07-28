@@ -10,14 +10,6 @@
 #include <string>
 #include <thread>
 
-namespace boost::asio {
-class io_context;
-
-namespace ip::tcp {
-class acceptor;
-}  // namespace ip::tcp
-}  // namespace boost::asio
-
 namespace kfc::app {
 
 using MetricsProvider = std::function<ServerMetrics()>;
