@@ -34,6 +34,4 @@ docker compose down -v
 
 ### PostgreSQL schema
 
-> **TODO:** PostgreSQL schema initialization is not yet implemented in the application. `PostgresConnection::initialize_schema()` currently only verifies connectivity; it does not create tables. Expected tables are documented in `src/server/database/postgres_user_repository.h` and `src/database/postgres_game_repository.h`. Apply migrations through future repository-layer tooling before relying on user registration or game persistence in Docker.
-
-Until schema migration is implemented, the server will start and connect to PostgreSQL, but database-backed features will fail at runtime.
+On first startup against an empty database, the server automatically creates the `players` and `games` tables through `PostgresConnection::initialize_schema()`. No manual SQL is required.

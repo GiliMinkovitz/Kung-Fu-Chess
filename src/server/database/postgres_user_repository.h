@@ -8,23 +8,7 @@
 
 namespace kfc {
 
-// Expected PostgreSQL schema (apply via external migration tooling; not created here):
-//
-// CREATE TABLE players (
-//     id SERIAL PRIMARY KEY,
-//     username TEXT NOT NULL UNIQUE,
-//     rating INTEGER NOT NULL DEFAULT 1000,
-//     password_hash TEXT
-// );
-//
-// CREATE TABLE games (
-//     id SERIAL PRIMARY KEY,
-//     white_player_id INTEGER,
-//     black_player_id INTEGER,
-//     winner_id INTEGER,
-//     status TEXT NOT NULL,
-//     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-// );
+// Requires players/games tables created by PostgresConnection::initialize_schema().
 
 class PostgresUserRepository final : public IUserRepository {
 public:

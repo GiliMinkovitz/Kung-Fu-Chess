@@ -4,6 +4,54 @@
 
 namespace kfc {
 
+namespace {
+
+constexpr const char* kPlayersTableSql = R"(
+CREATE TABLE IF NOT EXISTS players (
+    id SERIAL PRIMARY KEY,
+    username TEXT NOT NULL UNIQUE,
+    rating INTEGER NOT NULL DEFAULT 1000,
+    password_hash TEXT
+);
+)";
+
+constexpr const char* kGamesTableSql = R"(
+CREATE TABLE IF NOT EXISTS games (
+    id SERIAL PRIMARY KEY,
+    white_player_id INTEGER,
+    black_player_id INTEGER,
+    winner_id INTEGER,
+    status TEXT NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+)";
+
+struct PgResultGuard {
+    PGresult* result = nullptr;
+
+    ~PgResultGuard() {
+        if (result != nullptr) {
+            PQclear(result);
+        }
+    }
+};
+
+bool exec_sql(PGconn* connection, const char* sql) {
+    if (connection == nullptr || PQstatus(connection) != CONNECTION_OK) {
+        return false;
+    }
+
+    PgResultGuard guard;
+    guard.result = PQexec(connection, sql);
+    if (guard.result == nullptr) {
+        return false;
+    }
+
+    return PQresultStatus(guard.result) == PGRES_COMMAND_OK;
+}
+
+}  // namespace
+
 PostgresConnection::PostgresConnection(Settings settings)
     : settings_(std::move(settings)) {}
 
@@ -35,7 +83,11 @@ bool PostgresConnection::open() {
 }
 
 bool PostgresConnection::initialize_schema() {
-    return connection_ != nullptr && PQstatus(connection_) == CONNECTION_OK;
+    if (connection_ == nullptr || PQstatus(connection_) != CONNECTION_OK) {
+        return false;
+    }
+
+    return exec_sql(connection_, kPlayersTableSql) && exec_sql(connection_, kGamesTableSql);
 }
 
 sqlite3* PostgresConnection::connection() {
