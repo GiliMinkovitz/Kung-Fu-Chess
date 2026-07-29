@@ -2,25 +2,20 @@
 
 #include "model/game_config.h"
 #include "server/game_message_parser.h"
-#include "server/player_session.h"
+#include "server/network/i_message_sink.h"
+#include "server/room/game_player.h"
 #include "server/room/room.h"
-#include "server/client_connection.h"
 
 #include <string>
 
-namespace {
-
-[[nodiscard]] bool is_room_player_connected(const kfc::PlayerSession* session) {
-    return session != nullptr && session->connection() != nullptr &&
-           session->connection()->is_open();
-}
-
-}  // namespace
-
 namespace kfc {
 
-ActiveRoomProcessor::ActiveRoomProcessor(RoomManager& room_manager)
-    : room_manager_(room_manager) {}
+ActiveRoomProcessor::ActiveRoomProcessor(RoomManager& room_manager,
+                                         GameInputDispatcher& input_dispatcher,
+                                         IMessageSink& message_sink)
+    : room_manager_(room_manager),
+      input_dispatcher_(input_dispatcher),
+      message_sink_(message_sink) {}
 
 void ActiveRoomProcessor::process(std::int64_t elapsed,
                                   std::chrono::steady_clock::time_point& last_tick,
@@ -30,17 +25,20 @@ void ActiveRoomProcessor::process(std::int64_t elapsed,
     }
 
     for (Room* room : room_manager_.active_rooms()) {
-        if (room->white_session() == nullptr || room->black_session() == nullptr) {
+        const GamePlayer* white = room->white_player();
+        const GamePlayer* black = room->black_player();
+        if (white == nullptr || black == nullptr) {
             continue;
         }
 
-        probe_room_connections(*room);
+        input_dispatcher_.probe_room(*room);
 
-        if (both_room_players_disconnected(*room)) {
+        if (input_dispatcher_.both_room_players_disconnected(*room)) {
             finish_callback(room->id(), std::nullopt, FinishReason::Disconnect);
             continue;
         }
-        if (const std::optional<PieceColor> disconnected = disconnected_player_color(*room)) {
+        if (const std::optional<PieceColor> disconnected =
+                input_dispatcher_.disconnected_player_color(*room)) {
             const PieceColor winner =
                 *disconnected == PieceColor::White ? PieceColor::Black : PieceColor::White;
             finish_callback(room->id(), winner, FinishReason::Disconnect);
@@ -51,19 +49,18 @@ void ActiveRoomProcessor::process(std::int64_t elapsed,
             room->tick(elapsed);
 
             const std::string snapshot = room->generate_snapshot();
-            if (is_room_player_connected(room->white_session())) {
-                room->white_session()->connection()->try_send(snapshot);
+            if (input_dispatcher_.is_player_connected(white->player_id)) {
+                message_sink_.send(white->player_id, snapshot);
             }
-            if (is_room_player_connected(room->black_session())) {
-                room->black_session()->connection()->try_send(snapshot);
+            if (input_dispatcher_.is_player_connected(black->player_id)) {
+                message_sink_.send(black->player_id, snapshot);
             }
 
             last_tick = std::chrono::steady_clock::now();
         }
 
         if (room->active() && !room->is_game_over()) {
-            process_room_player_messages_if_playing(*room, room->white_session(), finish_callback);
-            process_room_player_messages_if_playing(*room, room->black_session(), finish_callback);
+            apply_room_inputs(*room, input_dispatcher_.poll_room_inputs(*room), finish_callback);
         }
 
         if (room->is_game_over()) {
@@ -73,69 +70,18 @@ void ActiveRoomProcessor::process(std::int64_t elapsed,
     }
 }
 
-void ActiveRoomProcessor::probe_room_connections(Room& room) {
-    if (PlayerSession* white_session = room.white_session()) {
-        if (ClientConnection* connection = white_session->connection()) {
-            connection->probe_disconnect();
-        }
-    }
-    if (PlayerSession* black_session = room.black_session()) {
-        if (ClientConnection* connection = black_session->connection()) {
-            connection->probe_disconnect();
-        }
-    }
-}
-
-std::optional<PieceColor> ActiveRoomProcessor::disconnected_player_color(
-    const Room& room) const {
-    if (room.white_session() == nullptr || room.black_session() == nullptr) {
-        return std::nullopt;
-    }
-
-    const bool white_connected = is_room_player_connected(room.white_session());
-    const bool black_connected = is_room_player_connected(room.black_session());
-    if (white_connected && black_connected) {
-        return std::nullopt;
-    }
-    if (!white_connected && black_connected) {
-        return PieceColor::White;
-    }
-    if (white_connected && !black_connected) {
-        return PieceColor::Black;
-    }
-    return std::nullopt;
-}
-
-bool ActiveRoomProcessor::both_room_players_disconnected(const Room& room) const {
-    return !is_room_player_connected(room.white_session()) &&
-           !is_room_player_connected(room.black_session());
-}
-
-void ActiveRoomProcessor::process_room_player_messages_if_playing(
-    Room& room, PlayerSession* session, FinishCallback& finish_callback) {
-    if (session == nullptr || session->state() != PlayerSessionState::Playing ||
-        !session->has_room()) {
-        return;
-    }
-    process_room_player_messages(room, *session, finish_callback);
-}
-
-void ActiveRoomProcessor::process_room_player_messages(Room& room, PlayerSession& session,
-                                                       FinishCallback& finish_callback) {
-    if (const auto raw_message = session.connection()->try_read()) {
-        if (parse_resign_message(*raw_message)) {
-            if (room.contains_player(&session.player()) && session.has_side()) {
-                const PieceColor winner =
-                    session.side() == PieceColor::White ? PieceColor::Black : PieceColor::White;
-                finish_callback(room.id(), winner, FinishReason::Resign);
-            }
+void ActiveRoomProcessor::apply_room_inputs(Room& room, const std::vector<RoomPlayerInput>& inputs,
+                                            FinishCallback& finish_callback) {
+    for (const RoomPlayerInput& input : inputs) {
+        if (input.kind == RoomPlayerInput::Kind::Resign) {
+            const PieceColor winner =
+                input.player_side == PieceColor::White ? PieceColor::Black : PieceColor::White;
+            finish_callback(room.id(), winner, FinishReason::Resign);
             return;
         }
 
-        if (const auto action = parse_message(*raw_message)) {
-            if (is_action_allowed(session, room.match(), *action)) {
-                room.submit_action(*action);
-            }
+        if (is_action_allowed(input.player_side, room.match(), input.action)) {
+            room.submit_action(input.action);
         }
     }
 }

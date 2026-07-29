@@ -2,6 +2,7 @@
 
 #include "server/client_connection.h"
 #include "server/matchmaking/matchmaking_service.h"
+#include "server/network/player_id.h"
 #include "server/session_registry.h"
 #include "server/websocket_server.h"
 
@@ -13,6 +14,24 @@ ClientSessionManager::ClientSessionManager(WebSocketServer& websocket_server,
     : websocket_server_(websocket_server),
       session_registry_(session_registry),
       matchmaking_service_(matchmaking_service) {}
+
+PlayerSession* ClientSessionManager::find_session(const PlayerId player_id) noexcept {
+    for (PlayerSession& session : sessions_) {
+        if (session.id() == player_id) {
+            return &session;
+        }
+    }
+    return nullptr;
+}
+
+const PlayerSession* ClientSessionManager::find_session(const PlayerId player_id) const noexcept {
+    for (const PlayerSession& session : sessions_) {
+        if (session.id() == player_id) {
+            return &session;
+        }
+    }
+    return nullptr;
+}
 
 void ClientSessionManager::accept_new_clients() {
     if (websocket_server_.clients().size() >= websocket_server_.max_clients()) {

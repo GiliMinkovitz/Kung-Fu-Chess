@@ -83,6 +83,8 @@ set(KFC_SERVER_ARCH_SOURCES
     src/server/authentication_service.cpp
     src/server/session_registry.cpp
     src/server/session/client_session_manager.cpp
+    src/server/network/session_message_sink.cpp
+    src/server/network/game_input_dispatcher.cpp
     src/server/lobby/lobby_message_handler.cpp
     src/server/match/match_lifecycle_handler.cpp
     src/server/game_server.cpp

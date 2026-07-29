@@ -16,15 +16,10 @@ bool Room::active() const noexcept {
     return active_;
 }
 
-void Room::activate(Player* white, Player* black) {
+void Room::activate(const GamePlayer& white, const GamePlayer& black) {
     white_player_ = white;
     black_player_ = black;
     active_ = true;
-}
-
-void Room::bind_sessions(PlayerSession* white, PlayerSession* black) {
-    white_session_ = white;
-    black_session_ = black;
 }
 
 void Room::set_db_game_id(int id) {
@@ -33,10 +28,8 @@ void Room::set_db_game_id(int id) {
 
 void Room::reset() {
     active_ = false;
-    white_player_ = nullptr;
-    black_player_ = nullptr;
-    white_session_ = nullptr;
-    black_session_ = nullptr;
+    white_player_.reset();
+    black_player_.reset();
     db_game_id_.reset();
     match_ = Match(default_board_);
 }
@@ -58,43 +51,17 @@ bool Room::is_game_over() const noexcept {
     return match_.is_game_over();
 }
 
-bool Room::contains_player(const Player* player) const noexcept {
-    if (player == nullptr) {
-        return false;
-    }
-    return player == white_player_ || player == black_player_;
+bool Room::contains_player(const UserId user_id) const noexcept {
+    return (white_player_.has_value() && white_player_->user_id == user_id) ||
+           (black_player_.has_value() && black_player_->user_id == user_id);
 }
 
-Player* Room::white_player() noexcept {
-    return white_player_;
+const GamePlayer* Room::white_player() const noexcept {
+    return white_player_ ? &*white_player_ : nullptr;
 }
 
-Player* Room::black_player() noexcept {
-    return black_player_;
-}
-
-const Player* Room::white_player() const noexcept {
-    return white_player_;
-}
-
-const Player* Room::black_player() const noexcept {
-    return black_player_;
-}
-
-PlayerSession* Room::white_session() noexcept {
-    return white_session_;
-}
-
-PlayerSession* Room::black_session() noexcept {
-    return black_session_;
-}
-
-const PlayerSession* Room::white_session() const noexcept {
-    return white_session_;
-}
-
-const PlayerSession* Room::black_session() const noexcept {
-    return black_session_;
+const GamePlayer* Room::black_player() const noexcept {
+    return black_player_ ? &*black_player_ : nullptr;
 }
 
 std::optional<int> Room::db_game_id() const noexcept {

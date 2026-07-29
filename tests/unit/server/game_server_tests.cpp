@@ -238,13 +238,19 @@ TEST_CASE("GameServerTest - CreatedRoomStoresSessionBindingsAndDbGameId") {
 
     kfc::Room* room = kfc::test::find_room_for_player(server, "bound_white");
     REQUIRE(room != nullptr);
-    REQUIRE(room->white_session() != nullptr);
-    REQUIRE(room->black_session() != nullptr);
+    REQUIRE(room->white_player() != nullptr);
+    REQUIRE(room->black_player() != nullptr);
     REQUIRE(room->db_game_id().has_value());
-    CHECK_EQ(room->white_session()->player().username(), "bound_white");
-    CHECK_EQ(room->black_session()->player().username(), "bound_black");
-    CHECK(room->white_session()->has_side());
-    CHECK(room->black_session()->has_side());
+    const std::optional<kfc::Player> white_profile =
+        server.user_repository().find_profile_by_id(room->white_player()->user_id);
+    const std::optional<kfc::Player> black_profile =
+        server.user_repository().find_profile_by_id(room->black_player()->user_id);
+    REQUIRE(white_profile.has_value());
+    REQUIRE(black_profile.has_value());
+    CHECK_EQ(white_profile->username(), "bound_white");
+    CHECK_EQ(black_profile->username(), "bound_black");
+    CHECK_EQ(room->white_player()->side, kfc::PieceColor::White);
+    CHECK_EQ(room->black_player()->side, kfc::PieceColor::Black);
 }
 
 TEST_CASE("GameServerTest - MatchmakingFlowFindsOpponents") {

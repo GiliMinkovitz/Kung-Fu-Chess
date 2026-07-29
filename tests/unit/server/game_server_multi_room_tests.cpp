@@ -1,5 +1,7 @@
 #include "network/websocket_client.h"
 #include "server/game_server.h"
+#include "server/player.h"
+#include "server/room/game_player.h"
 #include "test_game_server_fixture.h"
 #include "test_game_server_helpers.h"
 #include "test_helpers.h"
@@ -114,17 +116,29 @@ TEST_CASE("GameServerMultiRoomTest - RoomsStoreSessionBindingsAndDbGameIds") {
     REQUIRE(room1 != nullptr);
     REQUIRE(room2 != nullptr);
 
-    REQUIRE(room1->white_session() != nullptr);
-    REQUIRE(room1->black_session() != nullptr);
-    REQUIRE(room2->white_session() != nullptr);
-    REQUIRE(room2->black_session() != nullptr);
+    REQUIRE(room1->white_player() != nullptr);
+    REQUIRE(room1->black_player() != nullptr);
+    REQUIRE(room2->white_player() != nullptr);
+    REQUIRE(room2->black_player() != nullptr);
     REQUIRE(room1->db_game_id().has_value());
     REQUIRE(room2->db_game_id().has_value());
     CHECK_NE(*room1->db_game_id(), *room2->db_game_id());
-    CHECK_EQ(room1->white_session()->player().username(), "multi_g1_white");
-    CHECK_EQ(room1->black_session()->player().username(), "multi_g1_black");
-    CHECK_EQ(room2->white_session()->player().username(), "multi_g2_white");
-    CHECK_EQ(room2->black_session()->player().username(), "multi_g2_black");
+    const std::optional<kfc::Player> room1_white =
+        server.user_repository().find_profile_by_id(room1->white_player()->user_id);
+    const std::optional<kfc::Player> room1_black =
+        server.user_repository().find_profile_by_id(room1->black_player()->user_id);
+    const std::optional<kfc::Player> room2_white =
+        server.user_repository().find_profile_by_id(room2->white_player()->user_id);
+    const std::optional<kfc::Player> room2_black =
+        server.user_repository().find_profile_by_id(room2->black_player()->user_id);
+    REQUIRE(room1_white.has_value());
+    REQUIRE(room1_black.has_value());
+    REQUIRE(room2_white.has_value());
+    REQUIRE(room2_black.has_value());
+    CHECK_EQ(room1_white->username(), "multi_g1_white");
+    CHECK_EQ(room1_black->username(), "multi_g1_black");
+    CHECK_EQ(room2_white->username(), "multi_g2_white");
+    CHECK_EQ(room2_black->username(), "multi_g2_black");
 }
 
 TEST_CASE("GameServerMultiRoomTest - TwoRoomsExistSimultaneously") {

@@ -2,6 +2,8 @@
 
 #include "server/player_session.h"
 
+#include "server/network/player_id.h"
+
 #include <cstddef>
 #include <list>
 
@@ -18,6 +20,9 @@ public:
 
     void accept_new_clients();
     void prune_sessions();
+
+    [[nodiscard]] PlayerSession* find_session(PlayerId player_id) noexcept;
+    [[nodiscard]] const PlayerSession* find_session(PlayerId player_id) const noexcept;
 
     [[nodiscard]] std::list<PlayerSession>& sessions() noexcept { return sessions_; }
     [[nodiscard]] const std::list<PlayerSession>& sessions() const noexcept { return sessions_; }

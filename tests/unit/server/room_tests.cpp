@@ -1,5 +1,4 @@
-#include "server/player.h"
-#include "server/player_session.h"
+#include "server/room/game_player.h"
 #include "server/room/room.h"
 #include "test_helpers.h"
 
@@ -7,58 +6,57 @@
 
 #include <string>
 
+namespace {
+
+kfc::GamePlayer make_game_player(kfc::UserId user_id, kfc::PieceColor side, kfc::PlayerId player_id) {
+    return kfc::GamePlayer{user_id, side, player_id};
+}
+
+}  // namespace
+
 TEST_CASE("RoomTest - StartsInactive") {
     kfc::Room room{1, kfc::test::make_board({{"wK", ".", "bK"}})};
 
     CHECK_EQ(room.id(), 1u);
     CHECK_FALSE(room.active());
-    CHECK_FALSE(room.contains_player(nullptr));
+    CHECK_FALSE(room.contains_player(99));
     CHECK(room.white_player() == nullptr);
     CHECK(room.black_player() == nullptr);
     CHECK_FALSE(room.is_game_over());
 }
 
 TEST_CASE("RoomTest - ActivatesAndTracksPlayers") {
-    kfc::Player white{1, "white_room", 1000};
-    kfc::Player black{2, "black_room", 1000};
+    const kfc::GamePlayer white = make_game_player(1, kfc::PieceColor::White, 10);
+    const kfc::GamePlayer black = make_game_player(2, kfc::PieceColor::Black, 20);
     kfc::Room room{1, kfc::test::make_board({{"wK", ".", "bK"}})};
 
-    room.activate(&white, &black);
+    room.activate(white, black);
 
     CHECK(room.active());
-    CHECK(room.contains_player(&white));
-    CHECK(room.contains_player(&black));
-    CHECK_FALSE(room.contains_player(nullptr));
-    CHECK(room.white_player() == &white);
-    CHECK(room.black_player() == &black);
-    CHECK_EQ(room.white_player()->username(), "white_room");
-    CHECK_EQ(room.black_player()->username(), "black_room");
+    CHECK(room.contains_player(1));
+    CHECK(room.contains_player(2));
+    CHECK_FALSE(room.contains_player(99));
+    REQUIRE(room.white_player() != nullptr);
+    REQUIRE(room.black_player() != nullptr);
+    CHECK_EQ(room.white_player()->user_id, 1u);
+    CHECK_EQ(room.black_player()->user_id, 2u);
+    CHECK_EQ(room.white_player()->side, kfc::PieceColor::White);
+    CHECK_EQ(room.black_player()->side, kfc::PieceColor::Black);
     CHECK_FALSE(room.match().is_game_over());
 }
 
 TEST_CASE("RoomTest - ResetClearsActiveState") {
-    kfc::Player white{1, "reset_white", 1000};
-    kfc::Player black{2, "reset_black", 1000};
+    const kfc::GamePlayer white = make_game_player(1, kfc::PieceColor::White, 10);
+    const kfc::GamePlayer black = make_game_player(2, kfc::PieceColor::Black, 20);
     kfc::Room room{1, kfc::test::make_board({{"wK", ".", "bK"}})};
 
-    room.activate(&white, &black);
+    room.activate(white, black);
     room.reset();
 
     CHECK_FALSE(room.active());
     CHECK(room.white_player() == nullptr);
     CHECK(room.black_player() == nullptr);
     CHECK_FALSE(room.match().is_game_over());
-}
-
-TEST_CASE("RoomTest - BindsSessions") {
-    kfc::PlayerSession white_session{1, nullptr};
-    kfc::PlayerSession black_session{2, nullptr};
-    kfc::Room room{1, kfc::test::make_board({{"wK", ".", "bK"}})};
-
-    room.bind_sessions(&white_session, &black_session);
-
-    CHECK(room.white_session() == &white_session);
-    CHECK(room.black_session() == &black_session);
 }
 
 TEST_CASE("RoomTest - StoresDbGameId") {
@@ -72,17 +70,17 @@ TEST_CASE("RoomTest - StoresDbGameId") {
     CHECK_EQ(*room.db_game_id(), 42);
 }
 
-TEST_CASE("RoomTest - ResetClearsSessionMetadata") {
-    kfc::PlayerSession white_session{1, nullptr};
-    kfc::PlayerSession black_session{2, nullptr};
+TEST_CASE("RoomTest - ResetClearsPlayerMetadata") {
+    const kfc::GamePlayer white = make_game_player(1, kfc::PieceColor::White, 10);
+    const kfc::GamePlayer black = make_game_player(2, kfc::PieceColor::Black, 20);
     kfc::Room room{1, kfc::test::make_board({{"wK", ".", "bK"}})};
 
-    room.bind_sessions(&white_session, &black_session);
+    room.activate(white, black);
     room.set_db_game_id(99);
     room.reset();
 
-    CHECK(room.white_session() == nullptr);
-    CHECK(room.black_session() == nullptr);
+    CHECK(room.white_player() == nullptr);
+    CHECK(room.black_player() == nullptr);
     CHECK_FALSE(room.db_game_id().has_value());
 }
 

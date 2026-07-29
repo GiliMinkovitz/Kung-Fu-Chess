@@ -7,6 +7,8 @@
 #include "server/lobby/lobby_message_handler.h"
 #include "server/match/match_lifecycle_handler.h"
 #include "server/matchmaking/matchmaking_service.h"
+#include "server/network/session_message_sink.h"
+#include "server/network/game_input_dispatcher.h"
 #include "server/room/active_room_processor.h"
 #include "server/room/room_manager.h"
 #include "server/database/i_user_repository.h"
@@ -57,11 +59,13 @@ private:
     std::string region_;
     MatchLifecycleHandler match_lifecycle_handler_;
     MatchmakingService matchmaking_service_;
+    SessionRegistry session_registry_;
+    ClientSessionManager session_manager_;
+    SessionMessageSink session_message_sink_;
+    GameInputDispatcher game_input_dispatcher_;
     ActiveRoomProcessor active_room_processor_;
     IUserRepository& user_repository_;
     IRuntimeStore& runtime_store_;
-    SessionRegistry session_registry_;
-    ClientSessionManager session_manager_;
     LobbyMessageHandler lobby_handler_;
     GameResultHandler game_result_handler_;
     bool redis_enabled_ = false;

@@ -215,12 +215,7 @@ std::optional<GameAction> parse_message(std::string_view message) {
     return std::nullopt;
 }
 
-bool is_action_allowed(const PlayerSession& session, const Match& match, const GameAction& action) {
-    if (!session.has_side()) {
-        return false;
-    }
-
-    const PieceColor player_side = session.side();
+bool is_action_allowed(const PieceColor player_side, const Match& match, const GameAction& action) {
     const GameState& state = match.state();
 
     return std::visit(
@@ -248,6 +243,14 @@ bool is_action_allowed(const PlayerSession& session, const Match& match, const G
             return false;
         },
         action);
+}
+
+bool is_action_allowed(const PlayerSession& session, const Match& match, const GameAction& action) {
+    if (!session.has_side()) {
+        return false;
+    }
+
+    return is_action_allowed(session.side(), match, action);
 }
 
 }  // namespace kfc
