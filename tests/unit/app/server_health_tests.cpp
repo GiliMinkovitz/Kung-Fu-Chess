@@ -95,7 +95,8 @@ TEST_CASE("ServerHealthTest - PostgreSQLConfigurationHealthStatus") {
         return;
     }
 
-    kfc::app::AppConfig app_config = *config;
+    kfc::app::AppConfig app_config;
+    app_config.database = *config;
     kfc::app::ServerInfrastructure infrastructure{app_config};
     const kfc::app::HealthStatus status = infrastructure.get_health_status(true);
 
