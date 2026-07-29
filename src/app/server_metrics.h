@@ -15,6 +15,7 @@ struct ServerMetrics {
     std::string server_id;
     std::string region;
     std::string endpoint;
+    std::string allocation_endpoint;
     bool redis_enabled = false;
     bool redis_connected = false;
 };

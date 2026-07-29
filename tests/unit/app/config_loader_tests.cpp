@@ -1,3 +1,4 @@
+#include "app/allocation_config.h"
 #include "app/config_loader.h"
 #include "app/database_config.h"
 #include "app/logging_config.h"
@@ -73,12 +74,17 @@ private:
 
 void check_default_server_config(const kfc::app::ServerConfig& server) {
     CHECK_EQ(server.port, 8765);
+    CHECK_EQ(server.game_port, 8766);
     CHECK_EQ(server.health_port, 8080);
+    CHECK_EQ(server.game_health_port, 8081);
+    CHECK_EQ(server.game_internal_port, 8767);
     CHECK_EQ(server.bind_address, "127.0.0.1");
     CHECK_EQ(server.server_id, "local");
+    CHECK_EQ(server.gateway_server_id, "gateway-local");
     CHECK_EQ(server.region, "local");
     CHECK(server.endpoint.empty());
     CHECK_EQ(server.max_clients, kfc::app::ServerConfig::kDefaultMaxClients);
+    CHECK_EQ(server.game_max_clients, kfc::app::ServerConfig::kDefaultMaxClients);
 }
 
 void check_default_database_config(const kfc::app::DatabaseConfig& database) {
@@ -692,6 +698,21 @@ TEST_CASE("ConfigLoaderTest - OverridesGameEndpoint") {
 
     const kfc::app::AppConfig config = kfc::app::load_config_from_environment();
     CHECK_EQ(config.server.endpoint, "ws://games.example:8765");
+}
+
+TEST_CASE("ConfigLoaderTest - OverridesAllocationConfiguration") {
+    const ScopedEnvironment env{
+        {"KFC_INTERNAL_SERVICE_TOKEN", "secret-token"},
+        {"KFC_ALLOCATION_TIMEOUT_MS", "2500"},
+        {"KFC_ALLOCATION_RETRY_COUNT", "5"},
+        {"KFC_GAME_SERVER_TTL_SECONDS", "30"},
+    };
+
+    const kfc::app::AppConfig config = kfc::app::load_config_from_environment();
+    CHECK_EQ(config.allocation.internal_service_token, "secret-token");
+    CHECK_EQ(config.allocation.allocation_timeout, std::chrono::milliseconds(2500));
+    CHECK_EQ(config.allocation.allocation_retry_count, 5u);
+    CHECK_EQ(config.allocation.game_server_ttl, std::chrono::seconds(30));
 }
 
 TEST_CASE("ConfigLoaderTest - MissingVariablesKeepDefaults") {

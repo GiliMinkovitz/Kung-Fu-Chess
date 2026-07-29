@@ -1,22 +1,19 @@
 #pragma once
 
-namespace kfc {
+#include "server/room/room_manager.h"
+#include "server/session/client_session_manager.h"
 
-class ClientSessionManager;
-class IUserRepository;
-class RoomManager;
+namespace kfc {
 
 class GameJoinHandler {
 public:
-    GameJoinHandler(RoomManager& room_manager, ClientSessionManager& session_manager,
-                    IUserRepository& user_repository);
+    GameJoinHandler(RoomManager& room_manager, ClientSessionManager& session_manager);
 
     void process();
 
 private:
     RoomManager& room_manager_;
     ClientSessionManager& session_manager_;
-    IUserRepository& user_repository_;
 };
 
 }  // namespace kfc

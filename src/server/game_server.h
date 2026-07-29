@@ -3,29 +3,25 @@
 #include "app/app_config.h"
 #include "app/game_server_dependencies.h"
 #include "app/server_metrics.h"
+#include "matchmaking/local_matchmaking_join_client.h"
+#include "server/client_connection_plane.h"
 #include "server/game/local_game_allocator.h"
 #include "server/game/local_game_host.h"
-#include "server/game/game_join_handler.h"
-#include "server/gateway/local_game_completion_gateway.h"
+#include "server/game/game_allocation_handler.h"
 #include "server/gateway/local_game_gateway.h"
-#include "server/game_result/game_result_handler.h"
-#include "server/lobby/lobby_message_handler.h"
+#include "server/gateway/monolith_matchmaking_disconnect_handler.h"
+#include "server/gateway_server.h"
+#include "server/game_server_runtime.h"
 #include "server/match/match_lifecycle_handler.h"
 #include "server/matchmaking/matchmaking_service.h"
-#include "server/network/session_message_sink.h"
-#include "server/network/game_input_dispatcher.h"
-#include "server/room/active_room_processor.h"
-#include "server/room/room_manager.h"
-#include "server/database/i_user_repository.h"
-#include "server/session/client_session_manager.h"
-#include "server/session_registry.h"
 #include "server/websocket_server.h"
+#include "server/database/i_user_repository.h"
+#include "server/room/room_manager.h"
 
 #include "model/board_model.h"
 #include "model/piece.h"
 
 #include <atomic>
-#include <chrono>
 #include <optional>
 #include <string>
 
@@ -41,11 +37,9 @@ public:
 
     void run();
     void tick_once();
-    void request_stop() noexcept { stop_requested_.store(true, std::memory_order_relaxed); }
+    void request_stop() noexcept;
 #ifdef KFC_TEST_BUILD
-    void finish_room(RoomId room_id, std::optional<PieceColor> winner_color, FinishReason reason) {
-        game_result_handler_.finish(room_id, winner_color, reason);
-    }
+    void finish_room(RoomId room_id, std::optional<PieceColor> winner_color, FinishReason reason);
 #endif
 
     [[nodiscard]] WebSocketServer& websocket_server() noexcept;
@@ -56,35 +50,20 @@ public:
     [[nodiscard]] app::ServerMetrics metrics() const;
 
 private:
-    void maybe_publish_heartbeat();
-
-    WebSocketServer websocket_server_;
     RoomManager room_manager_;
     LocalGameHost local_game_host_;
+    GameAllocationHandler allocation_handler_;
     LocalGameAllocator local_game_allocator_;
-    std::string server_id_;
-    std::string region_;
-    std::string game_endpoint_;
     MatchLifecycleHandler match_lifecycle_handler_;
     MatchmakingService matchmaking_service_;
-    SessionRegistry session_registry_;
-    ClientSessionManager session_manager_;
-    SessionMessageSink session_message_sink_;
+    MonolithMatchmakingDisconnectHandler disconnect_handler_;
+    ClientConnectionPlane client_plane_;
+    matchmaking::LocalMatchmakingJoinClient matchmaking_join_client_;
     LocalGameGateway local_game_gateway_;
-    LocalGameCompletionGateway local_game_completion_gateway_;
-    GameInputDispatcher game_input_dispatcher_;
-    ActiveRoomProcessor active_room_processor_;
+    GatewayServer gateway_;
+    GameServerRuntime runtime_;
     IUserRepository& user_repository_;
     IRuntimeStore& runtime_store_;
-    LobbyMessageHandler lobby_handler_;
-    GameJoinHandler game_join_handler_;
-    GameResultHandler game_result_handler_;
-    bool redis_enabled_ = false;
-    std::chrono::seconds heartbeat_interval_{1};
-    std::chrono::steady_clock::time_point started_at_{};
-    std::chrono::steady_clock::time_point last_tick_{};
-    std::chrono::steady_clock::time_point last_heartbeat_at_{};
-    std::int64_t last_tick_duration_ms_ = 0;
     std::atomic<bool> stop_requested_{false};
 };
 

@@ -51,8 +51,12 @@ RoomId MatchLifecycleHandler::create_match(PlayerSession* white, PlayerSession* 
     white->assign_room(room_id);
     black->assign_room(room_id);
 
+    const std::string routing_server_id =
+        response.game_server_id.empty() ? server_id_ : response.game_server_id;
+    const std::string routing_endpoint = resolve_routing(response, white->user_id()).endpoint;
     runtime_store_.register_room(room_id, static_cast<UserId>(white->player().id()),
-                                 static_cast<UserId>(black->player().id()), server_id_);
+                               static_cast<UserId>(black->player().id()), routing_server_id,
+                               routing_endpoint);
 
     send_game_redirects(white, black, response);
 

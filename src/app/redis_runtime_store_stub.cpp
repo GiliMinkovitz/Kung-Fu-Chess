@@ -1,13 +1,13 @@
 #include "app/redis_runtime_store.h"
 
 #include <utility>
+#include <vector>
 
 namespace kfc {
 
 struct RedisRuntimeStore::Impl {};
 
-RedisRuntimeStore::RedisRuntimeStore(const app::RedisConfig&, std::string game_server_endpoint)
-    : impl_(std::make_unique<Impl>()), game_server_endpoint_(std::move(game_server_endpoint)) {}
+RedisRuntimeStore::RedisRuntimeStore(const app::RedisConfig&) : impl_(std::make_unique<Impl>()) {}
 
 RedisRuntimeStore::~RedisRuntimeStore() = default;
 
@@ -15,7 +15,7 @@ bool RedisRuntimeStore::is_available() const {
     return false;
 }
 
-void RedisRuntimeStore::register_room(RoomId, UserId, UserId, std::string_view) {
+void RedisRuntimeStore::register_room(RoomId, UserId, UserId, std::string_view, std::string_view) {
     // TODO(phase-11.4): Implement Redis SET for room:{id} and player:{id} mappings when hiredis is available.
 }
 
@@ -34,6 +34,21 @@ void RedisRuntimeStore::deregister_server(std::string_view) {
 
 std::optional<GameServerLocation> RedisRuntimeStore::find_player_location(UserId) const {
     return std::nullopt;
+}
+
+std::vector<GameServerRecord> RedisRuntimeStore::list_game_servers() const {
+    return {};
+}
+
+std::optional<GameServerRecord> RedisRuntimeStore::get_game_server(std::string_view) const {
+    return std::nullopt;
+}
+
+void RedisRuntimeStore::set_matchmaking_queue(std::string_view, const std::vector<matchmaking::QueuedPlayer>&) {
+}
+
+std::vector<matchmaking::QueuedPlayer> RedisRuntimeStore::list_matchmaking_queue(std::string_view) const {
+    return {};
 }
 
 }  // namespace kfc

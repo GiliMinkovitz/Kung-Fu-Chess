@@ -1,0 +1,39 @@
+# syntax=docker/dockerfile:1
+
+FROM debian:bookworm-slim AS build
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    cmake \
+    libboost-system-dev \
+    libhiredis-dev \
+    libpq-dev \
+    libsqlite3-dev \
+    pkg-config \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /src
+COPY . .
+
+RUN cmake -S . -B build -DCMAKE_BUILD_TYPE=Release \
+    && cmake --build build --target KungFuChessGateway -j"$(nproc)"
+
+FROM debian:bookworm-slim AS runtime
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    libboost-system1.74.0 \
+    libhiredis0.14 \
+    libpq5 \
+    libsqlite3-0 \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+COPY --from=build /src/build/KungFuChessGateway /app/KungFuChessGateway
+
+EXPOSE 8765 8080
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
+    CMD curl -fsS http://127.0.0.1:8080/health || exit 1
+
+CMD ["./KungFuChessGateway"]

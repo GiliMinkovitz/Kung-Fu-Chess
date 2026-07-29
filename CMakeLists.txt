@@ -63,19 +63,13 @@ set(KFC_APP_SOURCES
     src/app/server_infrastructure.cpp
 )
 
-set(KFC_SERVER_ARCH_SOURCES
+set(KFC_SERVER_CORE_SOURCES
     src/server/player.cpp
     src/server/player_session.cpp
     src/server/user/user.cpp
     src/server/database/in_memory_user_repository.cpp
     src/server/database/postgres_user_repository.cpp
     src/server/database/sqlite_user_repository.cpp
-    src/server/matchmaking/matchmaking_queue.cpp
-    src/server/matchmaking/matchmaking_service.cpp
-    src/server/room/room.cpp
-    src/server/room/room_manager.cpp
-    src/server/room/active_room_processor.cpp
-    src/server/game_result/game_result_handler.cpp
     src/server/game_message_parser.cpp
     src/server/rating_service.cpp
     src/server/password_hasher.cpp
@@ -83,16 +77,95 @@ set(KFC_SERVER_ARCH_SOURCES
     src/server/session_registry.cpp
     src/server/session/client_session_manager.cpp
     src/server/network/session_message_sink.cpp
-    src/server/network/game_input_dispatcher.cpp
+    src/server/client_connection_plane.cpp
+)
+
+set(KFC_GATEWAY_LOBBY_SOURCES
+    src/server/matchmaking/matchmaking_queue.cpp
+    src/server/matchmaking/matchmaking_service.cpp
     src/server/lobby/lobby_message_handler.cpp
-    src/server/game/local_game_host.cpp
-    src/server/game/local_game_allocator.cpp
-    src/server/game/game_join_handler.cpp
+    src/server/gateway_server.cpp
     src/server/gateway/local_game_gateway.cpp
-    src/server/gateway/local_game_completion_gateway.cpp
     src/server/match/match_lifecycle_handler.cpp
-    src/server/game_server.cpp
+)
+
+set(KFC_SERVER_SHARED_SOURCES
+    ${KFC_SERVER_CORE_SOURCES}
+    ${KFC_GATEWAY_LOBBY_SOURCES}
+)
+
+set(KFC_MATCHMAKING_CODEC_SOURCES
+    src/matchmaking/protocol/matchmaking_codec.cpp
+)
+
+set(KFC_SERVER_INFRA_SOURCES
+    src/server/player.cpp
+    src/server/user/user.cpp
+    src/server/database/sqlite_user_repository.cpp
+    src/server/database/postgres_user_repository.cpp
+    src/server/password_hasher.cpp
+    src/server/authentication_service.cpp
+)
+
+set(KFC_DISTRIBUTED_GATEWAY_SOURCES
+    src/server/gateway/gateway_notification_handler.cpp
+    src/server/gateway/gateway_notification_listener.cpp
+    src/server/gateway/gateway_matchmaking_disconnect_handler.cpp
+    src/matchmaking/http/matchmaking_http_client.cpp
+)
+
+set(KFC_MONOLITH_EXTRA_SOURCES
+    src/server/game/local_game_allocator.cpp
+    src/server/gateway/monolith_matchmaking_disconnect_handler.cpp
+    src/matchmaking/local_matchmaking_join_client.cpp
+)
+
+set(KFC_MATCHMAKER_ONLY_SOURCES
+    src/server/game/remote_game_allocator.cpp
+    src/server/game/runtime_store_game_server_registry.cpp
+    src/server/game/game_allocation_http_client.cpp
+    src/matchmaking/player_matchmaking_queue.cpp
+    src/matchmaking/remote_matchmaking_service.cpp
+    src/matchmaking/http/matchmaking_http_server.cpp
+    src/matchmaking/http/gateway_notifier_http_client.cpp
+    src/matchmaking/matchmaker_runtime.cpp
+)
+
+set(KFC_MATCHMAKER_RUNTIME_SOURCES
+    ${KFC_MATCHMAKER_ONLY_SOURCES}
+    ${KFC_MATCHMAKING_CODEC_SOURCES}
+    src/server/game/protocol/game_creation_codec.cpp
+)
+
+set(KFC_INTEGRATION_ALLOCATION_SOURCES
+    src/server/game/local_game_allocator.cpp
+    src/server/game/remote_game_allocator.cpp
+    src/server/game/runtime_store_game_server_registry.cpp
+    src/server/game/game_allocation_http_client.cpp
+)
+
+set(KFC_GAME_SERVER_RUNTIME_SOURCES
+    src/server/room/room.cpp
+    src/server/room/room_manager.cpp
+    src/server/room/active_room_processor.cpp
+    src/server/game_result/game_result_handler.cpp
+    src/server/network/game_input_dispatcher.cpp
+    src/server/game_server_runtime.cpp
+    src/server/game/local_game_host.cpp
+    src/server/game/game_allocation_handler.cpp
+    src/server/game/game_creation_listener.cpp
+    src/server/game/game_join_handler.cpp
+    src/server/gateway/local_game_completion_gateway.cpp
     src/server/game_result_message_writer.cpp
+    src/server/game/protocol/game_creation_codec.cpp
+)
+
+set(KFC_SERVER_ARCH_SOURCES
+    ${KFC_SERVER_SHARED_SOURCES}
+    ${KFC_MONOLITH_EXTRA_SOURCES}
+    ${KFC_MATCHMAKING_CODEC_SOURCES}
+    ${KFC_GAME_SERVER_RUNTIME_SOURCES}
+    src/server/game_server.cpp
 )
 
 set(KFC_DATABASE_SOURCES
@@ -277,35 +350,45 @@ add_executable(KungFuChessServer
     ${KFC_SOURCES}
 )
 
-target_include_directories(KungFuChessServer PUBLIC
-    ${CMAKE_CURRENT_SOURCE_DIR}/src
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/model
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/logic
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/realtime
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/rules
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/io
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/engine
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/server
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/ui
+add_executable(KungFuChessGateway
+    src/main_gateway.cpp
+    src/server/client_connection.cpp
+    src/server/websocket_server.cpp
+    ${KFC_APP_SOURCES}
+    ${KFC_SERVER_CORE_SOURCES}
+    src/server/lobby/lobby_message_handler.cpp
+    src/server/gateway_server.cpp
+    src/server/gateway/local_game_gateway.cpp
+    ${KFC_DISTRIBUTED_GATEWAY_SOURCES}
+    ${KFC_MATCHMAKING_CODEC_SOURCES}
+    ${KFC_DATABASE_SOURCES}
+    ${KFC_SOURCES}
+)
+
+add_executable(KungFuChessMatchmaker
+    src/main_matchmaker.cpp
+    ${KFC_APP_SOURCES}
+    ${KFC_SERVER_INFRA_SOURCES}
+    ${KFC_MATCHMAKER_RUNTIME_SOURCES}
+    ${KFC_DATABASE_SOURCES}
+    ${KFC_SOURCES}
+)
+
+add_executable(KungFuChessGameServer
+    src/main_game_server.cpp
+    src/server/client_connection.cpp
+    src/server/snapshot_writer.cpp
+    src/server/websocket_server.cpp
+    ${KFC_APP_SOURCES}
+    ${KFC_SERVER_CORE_SOURCES}
+    ${KFC_GAME_SERVER_RUNTIME_SOURCES}
+    ${KFC_DATABASE_SOURCES}
+    ${KFC_SOURCES}
 )
 
 # Boost (Asio/Beast). On Windows, vcpkg.json supplies these via manifest mode.
 # Boost 1.89+ removed the boost_system CMake package (header-only since 1.69).
 find_package(Boost 1.74 REQUIRED CONFIG OPTIONAL_COMPONENTS system)
-
-if(TARGET Boost::headers)
-    target_link_libraries(KungFuChessServer PRIVATE Boost::headers)
-else()
-    target_include_directories(KungFuChessServer PRIVATE ${Boost_INCLUDE_DIRS})
-endif()
-
-if(TARGET Boost::system)
-    target_link_libraries(KungFuChessServer PRIVATE Boost::system)
-endif()
-
-if(WIN32)
-    target_link_libraries(KungFuChessServer PRIVATE ws2_32 wsock32)
-endif()
 
 function(kfc_link_boost target)
     if(TARGET Boost::headers)
@@ -357,16 +440,35 @@ function(kfc_link_sqlite target)
         "or vendor the amalgamation at third_party/sqlite/sqlite3.c")
 endfunction()
 
-kfc_link_sqlite(KungFuChessServer)
+function(kfc_configure_server_target target)
+    target_include_directories(${target} PUBLIC
+        ${CMAKE_CURRENT_SOURCE_DIR}/src
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/model
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/logic
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/realtime
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/rules
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/io
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/engine
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/server
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/ui
+    )
 
-kfc_link_postgresql(KungFuChessServer)
-kfc_link_hiredis(KungFuChessServer)
+    kfc_link_boost(${target})
+    kfc_link_sqlite(${target})
+    kfc_link_postgresql(${target})
+    kfc_link_hiredis(${target})
 
-if(MSVC)
-    target_compile_options(KungFuChessServer PRIVATE /W4 /permissive-)
-else()
-    target_compile_options(KungFuChessServer PRIVATE -Wall -Wextra -Wpedantic)
-endif()
+    if(MSVC)
+        target_compile_options(${target} PRIVATE /W4 /permissive-)
+    else()
+        target_compile_options(${target} PRIVATE -Wall -Wextra -Wpedantic)
+    endif()
+endfunction()
+
+kfc_configure_server_target(KungFuChessServer)
+kfc_configure_server_target(KungFuChessGateway)
+kfc_configure_server_target(KungFuChessGameServer)
+kfc_configure_server_target(KungFuChessMatchmaker)
 
 # ---------------------------------------------------------------------------
 # Windows GUI (OpenCV + CTD26)
@@ -467,6 +569,8 @@ set(KFC_TEST_SOURCES
     tests/unit/server/matchmaking_service_tests.cpp
     tests/unit/server/local_game_gateway_tests.cpp
     tests/unit/server/match_lifecycle_handler_tests.cpp
+    tests/unit/server/game_creation_codec_tests.cpp
+    tests/unit/server/runtime_store_game_server_registry_tests.cpp
     tests/unit/server/room_tests.cpp
     tests/unit/server/room_manager_tests.cpp
     tests/unit/server/match_tests.cpp
@@ -490,6 +594,7 @@ set(KFC_TEST_SOURCES
     tests/unit/network/login_message_reader_tests.cpp
     tests/unit/network/game_result_message_reader_tests.cpp
     tests/integration/integration_test.cpp
+    tests/integration/allocation_integration_test.cpp
 )
 
 add_executable(KungFuChessTests
@@ -499,6 +604,8 @@ add_executable(KungFuChessTests
     ${KFC_SERVER_WEBSOCKET_SOURCES}
     ${KFC_APP_SOURCES}
     ${KFC_SERVER_ARCH_SOURCES}
+    ${KFC_DISTRIBUTED_GATEWAY_SOURCES}
+    ${KFC_MATCHMAKER_ONLY_SOURCES}
     ${KFC_DATABASE_SOURCES}
     src/server/snapshot_writer.cpp
 )

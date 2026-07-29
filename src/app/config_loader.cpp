@@ -4,6 +4,7 @@
 #include "app/logging_config.h"
 #include "app/matchmaking_config.h"
 #include "app/redis_config.h"
+#include "app/allocation_config.h"
 
 #include <chrono>
 #include <cstdlib>
@@ -120,6 +121,79 @@ void override_server_config(kfc::app::ServerConfig& server) {
     if (const auto endpoint_value = read_environment("KFC_GAME_ENDPOINT")) {
         server.endpoint = *endpoint_value;
     }
+
+    if (const auto allocation_endpoint_value = read_environment("KFC_ALLOCATION_ENDPOINT")) {
+        server.allocation_endpoint = *allocation_endpoint_value;
+    }
+
+    if (const auto game_port_value = read_environment("KFC_GAME_PORT")) {
+        if (const auto game_port = parse_unsigned(*game_port_value)) {
+            if (*game_port >= 1 && *game_port <= 65535) {
+                server.game_port = static_cast<unsigned short>(*game_port);
+            }
+        }
+    }
+
+    if (const auto game_health_port_value = read_environment("KFC_GAME_HEALTH_PORT")) {
+        if (const auto game_health_port = parse_unsigned(*game_health_port_value)) {
+            if (*game_health_port >= 1 && *game_health_port <= 65535) {
+                server.game_health_port = static_cast<unsigned short>(*game_health_port);
+            }
+        }
+    }
+
+    if (const auto game_internal_port_value = read_environment("KFC_GAME_INTERNAL_PORT")) {
+        if (const auto game_internal_port = parse_unsigned(*game_internal_port_value)) {
+            if (*game_internal_port >= 1 && *game_internal_port <= 65535) {
+                server.game_internal_port = static_cast<unsigned short>(*game_internal_port);
+            }
+        }
+    }
+
+    if (const auto gateway_server_id_value = read_environment("KFC_GATEWAY_SERVER_ID")) {
+        server.gateway_server_id = *gateway_server_id_value;
+    }
+
+    if (const auto game_max_clients_value = read_environment("KFC_GAME_MAX_CLIENTS")) {
+        if (const auto game_max_clients = parse_unsigned(*game_max_clients_value)) {
+            if (*game_max_clients > 0) {
+                server.game_max_clients = static_cast<std::size_t>(*game_max_clients);
+            }
+        }
+    }
+
+    if (const auto matchmaker_port_value = read_environment("KFC_MATCHMAKER_PORT")) {
+        if (const auto matchmaker_port = parse_unsigned(*matchmaker_port_value)) {
+            if (*matchmaker_port >= 1 && *matchmaker_port <= 65535) {
+                server.matchmaker_port = static_cast<unsigned short>(*matchmaker_port);
+            }
+        }
+    }
+
+    if (const auto matchmaker_health_port_value = read_environment("KFC_MATCHMAKER_HEALTH_PORT")) {
+        if (const auto matchmaker_health_port = parse_unsigned(*matchmaker_health_port_value)) {
+            if (*matchmaker_health_port >= 1 && *matchmaker_health_port <= 65535) {
+                server.matchmaker_health_port = static_cast<unsigned short>(*matchmaker_health_port);
+            }
+        }
+    }
+
+    if (const auto gateway_internal_port_value = read_environment("KFC_GATEWAY_INTERNAL_PORT")) {
+        if (const auto gateway_internal_port = parse_unsigned(*gateway_internal_port_value)) {
+            if (*gateway_internal_port >= 1 && *gateway_internal_port <= 65535) {
+                server.gateway_internal_port = static_cast<unsigned short>(*gateway_internal_port);
+            }
+        }
+    }
+
+    if (const auto matchmaker_endpoint_value = read_environment("KFC_MATCHMAKER_ENDPOINT")) {
+        server.matchmaker_endpoint = *matchmaker_endpoint_value;
+    }
+
+    if (const auto gateway_notification_endpoint_value =
+            read_environment("KFC_GATEWAY_NOTIFICATION_ENDPOINT")) {
+        server.gateway_notification_endpoint = *gateway_notification_endpoint_value;
+    }
 }
 
 void override_database_config(kfc::app::DatabaseConfig& database) {
@@ -214,6 +288,36 @@ void override_redis_config(kfc::app::RedisConfig& redis) {
     }
 }
 
+void override_allocation_config(kfc::app::AllocationConfig& allocation) {
+    if (const auto token_value = read_environment("KFC_INTERNAL_SERVICE_TOKEN")) {
+        allocation.internal_service_token = *token_value;
+    }
+
+    if (const auto timeout_value = read_environment("KFC_ALLOCATION_TIMEOUT_MS")) {
+        if (const auto timeout = parse_unsigned(*timeout_value)) {
+            if (*timeout > 0) {
+                allocation.allocation_timeout = std::chrono::milliseconds(*timeout);
+            }
+        }
+    }
+
+    if (const auto retry_value = read_environment("KFC_ALLOCATION_RETRY_COUNT")) {
+        if (const auto retry_count = parse_unsigned(*retry_value)) {
+            if (*retry_count > 0) {
+                allocation.allocation_retry_count = static_cast<std::size_t>(*retry_count);
+            }
+        }
+    }
+
+    if (const auto ttl_value = read_environment("KFC_GAME_SERVER_TTL_SECONDS")) {
+        if (const auto ttl = parse_unsigned(*ttl_value)) {
+            if (*ttl > 0) {
+                allocation.game_server_ttl = std::chrono::seconds(*ttl);
+            }
+        }
+    }
+}
+
 }  // namespace
 
 namespace kfc::app {
@@ -225,6 +329,7 @@ AppConfig load_config_from_environment() {
     override_matchmaking_config(config.matchmaking);
     override_logging_config(config.logging);
     override_redis_config(config.redis);
+    override_allocation_config(config.allocation);
     return config;
 }
 

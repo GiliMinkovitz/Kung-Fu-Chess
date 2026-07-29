@@ -27,8 +27,11 @@ GamePlayer to_game_player(const UserId user_id, const PieceColor side, const Pla
 
 }  // namespace
 
-LocalGameHost::LocalGameHost(RoomManager& room_manager, std::string game_server_id)
-    : room_manager_(room_manager), game_server_id_(std::move(game_server_id)) {}
+LocalGameHost::LocalGameHost(RoomManager& room_manager, std::string game_server_id,
+                             std::string endpoint)
+    : room_manager_(room_manager),
+      game_server_id_(std::move(game_server_id)),
+      endpoint_(std::move(endpoint)) {}
 
 void LocalGameHost::bind_session_manager(ClientSessionManager& session_manager) {
     session_manager_ = &session_manager;
@@ -60,7 +63,7 @@ GameCreationResponse LocalGameHost::create_room(const GameCreationRequest& reque
         room->set_db_game_id(*request.db_game_id);
     }
 
-    return GameCreationResponse{room_id, game_server_id_, std::nullopt};
+    return GameCreationResponse{room_id, game_server_id_, endpoint_};
 }
 
 }  // namespace kfc

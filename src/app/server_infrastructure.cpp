@@ -1,5 +1,6 @@
 #include "app/server_infrastructure.h"
 
+#include "app/runtime_endpoint.h"
 #include "app/in_memory_runtime_store.h"
 #include "app/redis_runtime_store.h"
 #include "app/server_health.h"
@@ -28,9 +29,9 @@ PostgresConnection::Settings make_postgres_settings(const DatabaseConfig& databa
 
 std::unique_ptr<IRuntimeStore> make_runtime_store(const AppConfig& config) {
     if (config.redis.enabled) {
-        return std::make_unique<RedisRuntimeStore>(config.redis, config.server.endpoint);
+        return std::make_unique<RedisRuntimeStore>(config.redis);
     }
-    return std::make_unique<InMemoryRuntimeStore>(config.server.endpoint);
+    return std::make_unique<InMemoryRuntimeStore>();
 }
 
 }  // namespace

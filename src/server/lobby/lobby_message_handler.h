@@ -1,23 +1,25 @@
 #pragma once
 
+#include <string>
+
 namespace kfc {
 
 class AuthenticationService;
 class ClientSessionManager;
-class MatchCreated;
-class MatchLifecycleHandler;
-class MatchmakingService;
 class Player;
 class PlayerSession;
 class SessionRegistry;
 
+namespace matchmaking {
+class IMatchmakingJoinClient;
+}
+
 class LobbyMessageHandler {
 public:
     LobbyMessageHandler(AuthenticationService& authentication_service,
-                        MatchmakingService& matchmaking_service,
+                        matchmaking::IMatchmakingJoinClient& matchmaking_client,
                         SessionRegistry& session_registry,
-                        ClientSessionManager& session_manager,
-                        MatchLifecycleHandler& match_lifecycle_handler);
+                        ClientSessionManager& session_manager, std::string region);
 
     void process();
 
@@ -25,10 +27,10 @@ private:
     void bind_authenticated_user(PlayerSession& session, const Player& authenticated_player);
 
     AuthenticationService& authentication_service_;
-    MatchmakingService& matchmaking_service_;
+    matchmaking::IMatchmakingJoinClient& matchmaking_client_;
     SessionRegistry& session_registry_;
     ClientSessionManager& session_manager_;
-    MatchLifecycleHandler& match_lifecycle_handler_;
+    std::string region_;
 };
 
 }  // namespace kfc

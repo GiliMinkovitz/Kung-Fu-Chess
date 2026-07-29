@@ -1,5 +1,6 @@
 #pragma once
 
+#include "app/allocation_config.h"
 #include "app/database_config.h"
 #include "app/logging_config.h"
 #include "app/matchmaking_config.h"
@@ -14,6 +15,7 @@ struct AppConfig {
     RedisConfig redis;
     MatchmakingConfig matchmaking;
     LoggingConfig logging;
+    AllocationConfig allocation;
 };
 
 [[nodiscard]] AppConfig make_default_config();

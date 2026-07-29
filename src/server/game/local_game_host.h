@@ -11,7 +11,7 @@ class ClientSessionManager;
 
 class LocalGameHost : public IGameHost {
 public:
-    LocalGameHost(RoomManager& room_manager, std::string game_server_id);
+    LocalGameHost(RoomManager& room_manager, std::string game_server_id, std::string endpoint = {});
 
     void bind_session_manager(ClientSessionManager& session_manager);
 
@@ -20,6 +20,7 @@ public:
 private:
     RoomManager& room_manager_;
     std::string game_server_id_;
+    std::string endpoint_;
     ClientSessionManager* session_manager_ = nullptr;
 };
 

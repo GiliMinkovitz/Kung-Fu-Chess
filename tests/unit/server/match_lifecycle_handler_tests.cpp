@@ -108,11 +108,11 @@ TEST_CASE("MatchLifecycleHandlerTest - SendsRedirectAfterAllocation") {
 
     const kfc::RoomId allocated_room_id = 55;
     const kfc::GameCreationResponse allocation_response{
-        allocated_room_id, "game-server-1", std::nullopt};
+        allocated_room_id, "game-server-1", std::string{"ws://localhost:8765"}};
 
     StubGameRepository repository;
     StubGameAllocator allocator{allocation_response};
-    kfc::InMemoryRuntimeStore runtime_store{"ws://localhost:8765"};
+    kfc::InMemoryRuntimeStore runtime_store;
     RecordingGameGateway gateway;
 
     kfc::MatchLifecycleHandler handler{allocator, repository, runtime_store, "gateway-server"};
@@ -146,7 +146,7 @@ TEST_CASE("MatchLifecycleHandlerTest - PrefersAllocationEndpointWhenProvided") {
 
     StubGameRepository repository;
     StubGameAllocator allocator{allocation_response};
-    kfc::InMemoryRuntimeStore runtime_store{"ws://localhost:8765"};
+    kfc::InMemoryRuntimeStore runtime_store;
     RecordingGameGateway gateway;
 
     kfc::MatchLifecycleHandler handler{allocator, repository, runtime_store, "gateway-server"};
@@ -165,8 +165,8 @@ TEST_CASE("MatchLifecycleHandlerTest - SkipsRedirectWhenGatewayUnbound") {
     kfc::PlayerSession& black = fixture.make_session(21, "no_gateway_black");
 
     StubGameRepository repository;
-    StubGameAllocator allocator{kfc::GameCreationResponse{1, "server", std::nullopt}};
-    kfc::InMemoryRuntimeStore runtime_store{"ws://localhost:8765"};
+    StubGameAllocator allocator{kfc::GameCreationResponse{1, "server", std::string{"ws://localhost:8765"}}};
+    kfc::InMemoryRuntimeStore runtime_store;
 
     kfc::MatchLifecycleHandler handler{allocator, repository, runtime_store, "gateway-server"};
 

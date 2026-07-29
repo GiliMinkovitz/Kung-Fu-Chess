@@ -9,14 +9,14 @@
 
 namespace kfc {
 
-class MatchmakingService;
 class SessionRegistry;
 class WebSocketServer;
+class ISessionDisconnectHandler;
 
 class ClientSessionManager {
 public:
     ClientSessionManager(WebSocketServer& websocket_server, SessionRegistry& session_registry,
-                         MatchmakingService& matchmaking_service);
+                         ISessionDisconnectHandler* disconnect_handler = nullptr);
 
     void accept_new_clients();
     void prune_sessions();
@@ -30,7 +30,7 @@ public:
 private:
     WebSocketServer& websocket_server_;
     SessionRegistry& session_registry_;
-    MatchmakingService& matchmaking_service_;
+    ISessionDisconnectHandler* disconnect_handler_;
     std::list<PlayerSession> sessions_;
     std::size_t next_session_id_ = 0;
 };

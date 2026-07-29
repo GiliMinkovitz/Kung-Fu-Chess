@@ -1,29 +1,28 @@
 #include "server/lobby/lobby_message_handler.h"
 
+#include "matchmaking/i_matchmaking_join_client.h"
+#include "matchmaking/protocol/match_request.h"
 #include "server/authentication_service.h"
 #include "server/game_message_parser.h"
-#include "server/match/match_lifecycle_handler.h"
-#include "server/matchmaking/matchmaking_service.h"
+#include "server/network/player_id.h"
 #include "server/player.h"
 #include "server/player_session.h"
 #include "server/session/client_session_manager.h"
 #include "server/session_registry.h"
 #include "server/user/user_id.h"
 
-#include <chrono>
-
 namespace kfc {
 
 LobbyMessageHandler::LobbyMessageHandler(AuthenticationService& authentication_service,
-                                         MatchmakingService& matchmaking_service,
+                                         matchmaking::IMatchmakingJoinClient& matchmaking_client,
                                          SessionRegistry& session_registry,
                                          ClientSessionManager& session_manager,
-                                         MatchLifecycleHandler& match_lifecycle_handler)
+                                         std::string region)
     : authentication_service_(authentication_service),
-      matchmaking_service_(matchmaking_service),
+      matchmaking_client_(matchmaking_client),
       session_registry_(session_registry),
       session_manager_(session_manager),
-      match_lifecycle_handler_(match_lifecycle_handler) {}
+      region_(std::move(region)) {}
 
 void LobbyMessageHandler::bind_authenticated_user(PlayerSession& session,
                                                     const Player& authenticated_player) {
@@ -68,11 +67,20 @@ void LobbyMessageHandler::process() {
             if (parse_play_message(*raw_message)) {
                 session.request_play();
                 if (session.state() == PlayerSessionState::Searching) {
-                    const auto now = std::chrono::steady_clock::now();
-                    if (const auto match = matchmaking_service_.enqueue(session, now)) {
-                        match_lifecycle_handler_.notify_match_created(*match);
+                    const matchmaking::MatchRequest request{
+                        static_cast<PlayerId>(session.id()), session.user_id(), session.rating(),
+                        region_};
+                    if (const std::optional<matchmaking::MatchResponse> response =
+                            matchmaking_client_.join(request)) {
+                        if (response->status == matchmaking::MatchJoinStatus::Error) {
+                            session.cancel_search();
+                            session.connection()->try_send("search_failed");
+                        } else {
+                            session.connection()->try_send("searching");
+                        }
                     } else {
-                        session.connection()->try_send("searching");
+                        session.cancel_search();
+                        session.connection()->try_send("search_failed");
                     }
                 }
             }

@@ -1,8 +1,8 @@
 #include "server/session/client_session_manager.h"
 
 #include "server/client_connection.h"
-#include "server/matchmaking/matchmaking_service.h"
 #include "server/network/player_id.h"
+#include "server/session/i_session_disconnect_handler.h"
 #include "server/session_registry.h"
 #include "server/websocket_server.h"
 
@@ -10,10 +10,10 @@ namespace kfc {
 
 ClientSessionManager::ClientSessionManager(WebSocketServer& websocket_server,
                                            SessionRegistry& session_registry,
-                                           MatchmakingService& matchmaking_service)
+                                           ISessionDisconnectHandler* disconnect_handler)
     : websocket_server_(websocket_server),
       session_registry_(session_registry),
-      matchmaking_service_(matchmaking_service) {}
+      disconnect_handler_(disconnect_handler) {}
 
 PlayerSession* ClientSessionManager::find_session(const PlayerId player_id) noexcept {
     for (PlayerSession& session : sessions_) {
@@ -56,7 +56,9 @@ void ClientSessionManager::prune_sessions() {
             if (it->has_user()) {
                 session_registry_.unregister_session(it->player().username());
             }
-            matchmaking_service_.remove(*it);
+            if (disconnect_handler_ != nullptr) {
+                disconnect_handler_->on_session_disconnected(*it);
+            }
             it = sessions_.erase(it);
         } else {
             ++it;
