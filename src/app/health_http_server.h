@@ -1,7 +1,5 @@
 #pragma once
 
-#include "app/server_metrics.h"
-
 #include <boost/asio/ip/tcp.hpp>
 
 #include <atomic>
@@ -12,7 +10,7 @@
 
 namespace kfc::app {
 
-using MetricsProvider = std::function<ServerMetrics()>;
+using MetricsProvider = std::function<std::string()>;
 using ReadinessProvider = std::function<bool()>;
 
 class HealthHttpServer {

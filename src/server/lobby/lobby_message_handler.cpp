@@ -1,5 +1,8 @@
 #include "server/lobby/lobby_message_handler.h"
 
+#include "app/observability/correlation_id.h"
+#include "app/observability/metric_counters.h"
+#include "app/observability/structured_logger.h"
 #include "matchmaking/i_matchmaking_join_client.h"
 #include "matchmaking/protocol/match_request.h"
 #include "server/authentication_service.h"
@@ -60,6 +63,10 @@ void LobbyMessageHandler::process() {
                     bind_authenticated_user(session, *auth.player);
                     session_registry_.register_session(auth.player->username());
                     session.connection()->try_send("login_ok " + std::to_string(auth.player->rating()));
+                    kfc::app::observability::logger().log(
+                        kfc::app::observability::LogLevel::Info, "player_login",
+                        {{"username", auth.player->username()},
+                         {"player_id", std::to_string(auth.player->id())}});
                 }
                 continue;
             }
@@ -70,15 +77,23 @@ void LobbyMessageHandler::process() {
                     const matchmaking::MatchRequest request{
                         static_cast<PlayerId>(session.id()), session.user_id(), session.rating(),
                         region_};
+                    kfc::app::observability::set_correlation_id(
+                        kfc::app::observability::generate_correlation_id());
+                    kfc::app::observability::metrics().matchmaking_requests_total.fetch_add(
+                        1, std::memory_order_relaxed);
                     if (const std::optional<matchmaking::MatchResponse> response =
                             matchmaking_client_.join(request)) {
                         if (response->status == matchmaking::MatchJoinStatus::Error) {
+                            kfc::app::observability::metrics().matchmaking_failures_total.fetch_add(
+                                1, std::memory_order_relaxed);
                             session.cancel_search();
                             session.connection()->try_send("search_failed");
                         } else {
                             session.connection()->try_send("searching");
                         }
                     } else {
+                        kfc::app::observability::metrics().matchmaking_failures_total.fetch_add(
+                            1, std::memory_order_relaxed);
                         session.cancel_search();
                         session.connection()->try_send("search_failed");
                     }

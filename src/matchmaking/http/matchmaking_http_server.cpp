@@ -1,5 +1,7 @@
 #include "matchmaking/http/matchmaking_http_server.h"
 
+#include "app/observability/observability.h"
+#include "app/observability/correlation_id.h"
 #include "matchmaking/protocol/matchmaking_codec.h"
 
 #include <boost/beast/core.hpp>
@@ -81,6 +83,10 @@ void MatchmakingHttpServer::handle_connection(tcp::socket socket) {
         close_socket(socket);
         return;
     }
+
+    kfc::app::observability::extract_correlation_id_from_request(request);
+    const kfc::app::observability::CorrelationScope correlation_scope{
+        kfc::app::observability::current_correlation_id()};
 
     http::response<http::string_body> response;
     response.version(request.version());

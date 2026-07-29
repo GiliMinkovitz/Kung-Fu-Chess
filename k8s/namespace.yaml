@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: kung-fu-chess
+  labels:
+    app.kubernetes.io/name: kung-fu-chess
+    app.kubernetes.io/part-of: kung-fu-chess

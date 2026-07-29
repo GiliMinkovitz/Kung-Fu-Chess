@@ -61,6 +61,12 @@ set(KFC_APP_SOURCES
     src/app/runtime_diagnostics.cpp
     src/app/server_health.cpp
     src/app/server_infrastructure.cpp
+    src/app/observability/correlation_id.cpp
+    src/app/observability/metric_counters.cpp
+    src/app/observability/observability.cpp
+    src/app/observability/prometheus_formatter.cpp
+    src/app/observability/readiness_checker.cpp
+    src/app/observability/structured_logger.cpp
 )
 
 set(KFC_SERVER_CORE_SOURCES
@@ -117,6 +123,7 @@ set(KFC_DISTRIBUTED_GATEWAY_SOURCES
 set(KFC_MONOLITH_EXTRA_SOURCES
     src/server/game/local_game_allocator.cpp
     src/server/gateway/monolith_matchmaking_disconnect_handler.cpp
+    src/server/gateway_server_monolith.cpp
     src/matchmaking/local_matchmaking_join_client.cpp
 )
 
@@ -563,6 +570,7 @@ set(KFC_TEST_SOURCES
     tests/unit/database/sqlite_database_tests.cpp
     tests/unit/database/postgres_connection_tests.cpp
     tests/unit/database/postgres_game_repository_tests.cpp
+    tests/unit/database/postgres_repository_integration_tests.cpp
     tests/unit/database/player_repository_tests.cpp
     tests/unit/database/game_repository_tests.cpp
     tests/unit/server/matchmaking_tests.cpp

@@ -10,6 +10,24 @@ services:
       retries: 5
       start_period: 5s
 
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: kfc
+      POSTGRES_USER: kfc
+      POSTGRES_PASSWORD: kfc-dev-password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database/migrations/001_initial_schema.sql:/docker-entrypoint-initdb.d/001_initial_schema.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U kfc -d kfc"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
   game-server:
     build:
       context: .
@@ -27,14 +45,17 @@ services:
       KFC_GAME_MAX_CLIENTS: "8"
       KFC_GAME_ENDPOINT: "ws://localhost:8766"
       KFC_ALLOCATION_ENDPOINT: "http://game-server:8767/allocate"
-      KFC_DB_PATH: "/data/kfc.db"
+      KFC_DATABASE_TYPE: "postgres"
+      KFC_POSTGRES_HOST: "postgres"
+      KFC_POSTGRES_PORT: "5432"
+      KFC_POSTGRES_DB: "kfc"
+      KFC_POSTGRES_USER: "kfc"
+      KFC_POSTGRES_PASSWORD: "kfc-dev-password"
       KFC_REDIS_ENABLED: "true"
       KFC_REDIS_HOST: "redis"
       KFC_REDIS_PORT: "6379"
       KFC_INTERNAL_SERVICE_TOKEN: "docker-dev-token"
       KFC_DIAGNOSTICS: "true"
-    volumes:
-      - game_server_data:/data
     healthcheck:
       test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:8081/health && curl -fsS http://127.0.0.1:8081/ready"]
       interval: 30s
@@ -43,6 +64,8 @@ services:
       start_period: 20s
     depends_on:
       redis:
+        condition: service_healthy
+      postgres:
         condition: service_healthy
 
   matchmaker:
@@ -59,7 +82,12 @@ services:
       KFC_MATCHMAKER_PORT: "8770"
       KFC_MATCHMAKER_HEALTH_PORT: "8772"
       KFC_GATEWAY_NOTIFICATION_ENDPOINT: "http://gateway:8771"
-      KFC_DB_PATH: "/data/kfc.db"
+      KFC_DATABASE_TYPE: "postgres"
+      KFC_POSTGRES_HOST: "postgres"
+      KFC_POSTGRES_PORT: "5432"
+      KFC_POSTGRES_DB: "kfc"
+      KFC_POSTGRES_USER: "kfc"
+      KFC_POSTGRES_PASSWORD: "kfc-dev-password"
       KFC_REDIS_ENABLED: "true"
       KFC_REDIS_HOST: "redis"
       KFC_REDIS_PORT: "6379"
@@ -68,8 +96,6 @@ services:
       KFC_ALLOCATION_RETRY_COUNT: "3"
       KFC_GAME_SERVER_TTL_SECONDS: "10"
       KFC_DIAGNOSTICS: "true"
-    volumes:
-      - matchmaker_data:/data
     healthcheck:
       test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:8772/health && curl -fsS http://127.0.0.1:8772/ready"]
       interval: 30s
@@ -78,6 +104,8 @@ services:
       start_period: 20s
     depends_on:
       redis:
+        condition: service_healthy
+      postgres:
         condition: service_healthy
       game-server:
         condition: service_healthy
@@ -98,13 +126,16 @@ services:
       KFC_GATEWAY_SERVER_ID: "gateway-1"
       KFC_REGION: "local"
       KFC_MATCHMAKER_ENDPOINT: "http://matchmaker:8770"
-      KFC_DB_PATH: "/data/kfc.db"
+      KFC_DATABASE_TYPE: "postgres"
+      KFC_POSTGRES_HOST: "postgres"
+      KFC_POSTGRES_PORT: "5432"
+      KFC_POSTGRES_DB: "kfc"
+      KFC_POSTGRES_USER: "kfc"
+      KFC_POSTGRES_PASSWORD: "kfc-dev-password"
       KFC_REDIS_ENABLED: "true"
       KFC_REDIS_HOST: "redis"
       KFC_REDIS_PORT: "6379"
       KFC_DIAGNOSTICS: "true"
-    volumes:
-      - gateway_data:/data
     healthcheck:
       test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:8080/health && curl -fsS http://127.0.0.1:8080/ready"]
       interval: 30s
@@ -114,10 +145,10 @@ services:
     depends_on:
       redis:
         condition: service_healthy
+      postgres:
+        condition: service_healthy
       matchmaker:
         condition: service_healthy
 
 volumes:
-  game_server_data:
-  gateway_data:
-  matchmaker_data:
+  postgres_data:

@@ -1,10 +1,13 @@
 #include "server/game_server_runtime.h"
 
 #include "app/i_runtime_store.h"
+#include "app/observability/metric_counters.h"
 #include "app/runtime_endpoint.h"
 #include "database/i_game_repository.h"
 #include "model/game_config.h"
 #include "server/database/i_user_repository.h"
+#include "server/room/game_player.h"
+#include "server/room/room.h"
 
 #include <chrono>
 #include <iostream>
@@ -87,6 +90,23 @@ app::ServerMetrics GameServerRuntime::metrics() const {
     return result;
 }
 
+std::size_t GameServerRuntime::active_player_count() const {
+    std::size_t count = 0;
+    for (Room* room : room_manager_.active_rooms()) {
+        if (room->white_player() != nullptr) {
+            ++count;
+        }
+        if (room->black_player() != nullptr) {
+            ++count;
+        }
+    }
+    return count;
+}
+
+bool GameServerRuntime::is_allocation_api_active() const {
+    return creation_listener_ != nullptr && creation_listener_->is_active();
+}
+
 void GameServerRuntime::maybe_publish_heartbeat() {
     const auto now = std::chrono::steady_clock::now();
     if (last_heartbeat_at_.time_since_epoch().count() != 0 &&
@@ -127,6 +147,8 @@ void GameServerRuntime::tick_once() {
     const auto elapsed =
         std::chrono::duration_cast<std::chrono::milliseconds>(now - last_tick_).count();
     last_tick_duration_ms_ = elapsed;
+
+    kfc::app::observability::record_tick_duration_ms(static_cast<std::uint64_t>(elapsed));
 
     active_room_processor_.process(
         elapsed, last_tick_,

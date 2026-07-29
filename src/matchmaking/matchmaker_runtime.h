@@ -36,6 +36,7 @@ public:
 
     [[nodiscard]] app::ServerMetrics metrics() const;
     [[nodiscard]] bool is_ready() const;
+    [[nodiscard]] std::size_t active_game_server_count() const;
 
 private:
     void maybe_publish_heartbeat();

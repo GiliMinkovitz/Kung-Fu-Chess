@@ -1,5 +1,9 @@
 #include "server/game/game_creation_listener.h"
 
+#include "app/observability/correlation_id.h"
+#include "app/observability/metric_counters.h"
+#include "app/observability/observability.h"
+#include "app/observability/structured_logger.h"
 #include "server/game/protocol/game_creation_codec.h"
 
 #include <boost/asio/ip/tcp.hpp>
@@ -94,6 +98,10 @@ unsigned short GameCreationListener::port() const {
     return current != 0 ? current : configured_port_;
 }
 
+bool GameCreationListener::is_active() const {
+    return !stop_requested_.load() && acceptor_ != nullptr && acceptor_->is_open();
+}
+
 void GameCreationListener::handle_connection(tcp::socket socket) {
     beast::error_code ec;
     beast::flat_buffer buffer;
@@ -103,6 +111,10 @@ void GameCreationListener::handle_connection(tcp::socket socket) {
         close_socket(socket);
         return;
     }
+
+    kfc::app::observability::extract_correlation_id_from_request(request);
+    const kfc::app::observability::CorrelationScope correlation_scope{
+        kfc::app::observability::current_correlation_id()};
 
     http::response<http::string_body> response;
     response.version(request.version());
@@ -117,6 +129,10 @@ void GameCreationListener::handle_connection(tcp::socket socket) {
         response.body() = "Unauthorized";
     } else if (const std::optional<GameCreationRequest> decoded =
                    decode_game_creation_request(request.body())) {
+        kfc::app::observability::metrics().allocation_requests_total.fetch_add(
+            1, std::memory_order_relaxed);
+        kfc::app::observability::logger().log(kfc::app::observability::LogLevel::Info,
+                                              "allocation_started");
         const GameCreationResponse created = allocation_handler_.allocate(*decoded);
         response.result(http::status::ok);
         response.body() = encode_game_creation_response(created);

@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgres-data
+  namespace: kung-fu-chess
+  labels:
+    app.kubernetes.io/name: postgres
+    app.kubernetes.io/component: postgres
+    app.kubernetes.io/part-of: kung-fu-chess
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi

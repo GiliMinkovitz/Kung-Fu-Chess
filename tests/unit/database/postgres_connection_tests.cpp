@@ -86,7 +86,10 @@ TEST_CASE("ServerInfrastructureTest - PostgreSQLBackendFailsWithoutServer") {
 namespace {
 
 std::optional<kfc::PostgresConnection::Settings> live_postgres_settings_from_environment() {
-    const char* host = std::getenv("KFC_DB_HOST");
+    const char* host = std::getenv("KFC_POSTGRES_HOST");
+    if (host == nullptr || host[0] == '\0') {
+        host = std::getenv("KFC_DB_HOST");
+    }
     if (host == nullptr || host[0] == '\0') {
         return std::nullopt;
     }
@@ -98,16 +101,24 @@ std::optional<kfc::PostgresConnection::Settings> live_postgres_settings_from_env
     settings.username = "kfc";
     settings.password = "kfc";
 
-    if (const char* port = std::getenv("KFC_DB_PORT"); port != nullptr && port[0] != '\0') {
+    if (const char* port = std::getenv("KFC_POSTGRES_PORT"); port != nullptr && port[0] != '\0') {
+        settings.port = std::atoi(port);
+    } else if (const char* port = std::getenv("KFC_DB_PORT"); port != nullptr && port[0] != '\0') {
         settings.port = std::atoi(port);
     }
-    if (const char* database = std::getenv("KFC_DB_NAME"); database != nullptr && database[0] != '\0') {
+    if (const char* database = std::getenv("KFC_POSTGRES_DB"); database != nullptr && database[0] != '\0') {
+        settings.database = database;
+    } else if (const char* database = std::getenv("KFC_DB_NAME"); database != nullptr && database[0] != '\0') {
         settings.database = database;
     }
-    if (const char* username = std::getenv("KFC_DB_USER"); username != nullptr && username[0] != '\0') {
+    if (const char* username = std::getenv("KFC_POSTGRES_USER"); username != nullptr && username[0] != '\0') {
+        settings.username = username;
+    } else if (const char* username = std::getenv("KFC_DB_USER"); username != nullptr && username[0] != '\0') {
         settings.username = username;
     }
-    if (const char* password = std::getenv("KFC_DB_PASSWORD"); password != nullptr) {
+    if (const char* password = std::getenv("KFC_POSTGRES_PASSWORD"); password != nullptr) {
+        settings.password = password;
+    } else if (const char* password = std::getenv("KFC_DB_PASSWORD"); password != nullptr) {
         settings.password = password;
     }
 

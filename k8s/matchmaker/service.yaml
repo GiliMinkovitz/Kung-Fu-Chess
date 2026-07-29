@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: matchmaker-service
+  namespace: kung-fu-chess
+  labels:
+    app.kubernetes.io/name: matchmaker
+    app.kubernetes.io/component: matchmaker
+    app.kubernetes.io/part-of: kung-fu-chess
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: matchmaker
+    app.kubernetes.io/component: matchmaker
+  ports:
+    - name: api
+      port: 8770
+      targetPort: api
+      protocol: TCP
+    - name: health
+      port: 8772
+      targetPort: health
+      protocol: TCP

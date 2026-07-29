@@ -197,7 +197,11 @@ void override_server_config(kfc::app::ServerConfig& server) {
 }
 
 void override_database_config(kfc::app::DatabaseConfig& database) {
-    if (const auto backend_value = read_environment("KFC_DB_BACKEND")) {
+    if (const auto type_value = read_environment("KFC_DATABASE_TYPE")) {
+        if (const auto backend = parse_database_backend(*type_value)) {
+            database.backend = *backend;
+        }
+    } else if (const auto backend_value = read_environment("KFC_DB_BACKEND")) {
         if (const auto backend = parse_database_backend(*backend_value)) {
             database.backend = *backend;
         }
@@ -207,11 +211,19 @@ void override_database_config(kfc::app::DatabaseConfig& database) {
         database.path = *path_value;
     }
 
-    if (const auto host_value = read_environment("KFC_DB_HOST")) {
+    if (const auto host_value = read_environment("KFC_POSTGRES_HOST")) {
+        database.host = *host_value;
+    } else if (const auto host_value = read_environment("KFC_DB_HOST")) {
         database.host = *host_value;
     }
 
-    if (const auto port_value = read_environment("KFC_DB_PORT")) {
+    if (const auto port_value = read_environment("KFC_POSTGRES_PORT")) {
+        if (const auto port = parse_unsigned(*port_value)) {
+            if (*port >= 1 && *port <= 65535) {
+                database.port = static_cast<int>(*port);
+            }
+        }
+    } else if (const auto port_value = read_environment("KFC_DB_PORT")) {
         if (const auto port = parse_unsigned(*port_value)) {
             if (*port >= 1 && *port <= 65535) {
                 database.port = static_cast<int>(*port);
@@ -219,15 +231,21 @@ void override_database_config(kfc::app::DatabaseConfig& database) {
         }
     }
 
-    if (const auto database_value = read_environment("KFC_DB_NAME")) {
+    if (const auto database_value = read_environment("KFC_POSTGRES_DB")) {
+        database.database = *database_value;
+    } else if (const auto database_value = read_environment("KFC_DB_NAME")) {
         database.database = *database_value;
     }
 
-    if (const auto username_value = read_environment("KFC_DB_USER")) {
+    if (const auto username_value = read_environment("KFC_POSTGRES_USER")) {
+        database.username = *username_value;
+    } else if (const auto username_value = read_environment("KFC_DB_USER")) {
         database.username = *username_value;
     }
 
-    if (const auto password_value = read_environment("KFC_DB_PASSWORD")) {
+    if (const auto password_value = read_environment("KFC_POSTGRES_PASSWORD")) {
+        database.password = *password_value;
+    } else if (const auto password_value = read_environment("KFC_DB_PASSWORD")) {
         database.password = *password_value;
     }
 }

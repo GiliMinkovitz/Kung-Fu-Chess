@@ -26,6 +26,7 @@ public:
     void stop();
 
     [[nodiscard]] unsigned short port() const;
+    [[nodiscard]] bool is_active() const;
 
 private:
     void run_loop();

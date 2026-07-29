@@ -49,9 +49,6 @@ ServerInfrastructure::ServerInfrastructure(const AppConfig& config)
         if (!postgres->open()) {
             throw std::runtime_error("Failed to connect to PostgreSQL");
         }
-        if (!postgres->initialize_schema()) {
-            throw std::runtime_error("Failed to initialize PostgreSQL connection");
-        }
 
         database_connection_ = std::move(postgres);
         auto& postgres_connection = static_cast<PostgresConnection&>(*database_connection_);

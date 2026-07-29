@@ -1,7 +1,10 @@
 #include "server/game_result/game_result_handler.h"
 
 #include "app/i_runtime_store.h"
+#include "app/observability/structured_logger.h"
 #include "server/gateway/i_game_completion_gateway.h"
+
+#include <string>
 #include "server/player.h"
 #include "server/room/game_player.h"
 #include "server/room/room.h"
@@ -41,6 +44,11 @@ void GameResultHandler::finish(RoomId room_id, std::optional<PieceColor> winner_
         completion_gateway_.notify_game_finished(white->player_id, black->player_id, *winner_color,
                                                  reason, *rating_change);
     }
+
+    kfc::app::observability::logger().log(
+        kfc::app::observability::LogLevel::Info, "game_finished",
+        {{"room_id", std::to_string(room_id)},
+         {"winner", winner_color.has_value() ? "yes" : "no"}});
 
     cleanup_finished_room(room_id);
 }
@@ -107,6 +115,9 @@ void GameResultHandler::cleanup_finished_room(RoomId room_id) {
     if (white != nullptr && black != nullptr) {
         runtime_store_.unregister_room(room_id, white->user_id, black->user_id);
     }
+
+    kfc::app::observability::logger().log(kfc::app::observability::LogLevel::Info, "room_destroyed",
+                                          {{"room_id", std::to_string(room_id)}});
 
     room->reset();
 

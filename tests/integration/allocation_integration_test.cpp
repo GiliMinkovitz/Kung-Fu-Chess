@@ -148,7 +148,9 @@ TEST_CASE("AllocationIntegrationTest - GatewayAllocatesRoomThroughGameServer") {
     black.request_play();
 
     const auto now = std::chrono::steady_clock::now();
-    const std::optional<kfc::MatchCreated> match = harness.matchmaking_service.enqueue(white, now);
+    CHECK_FALSE(harness.matchmaking_service.enqueue(white, now).has_value());
+    const std::optional<kfc::MatchCreated> match =
+        harness.matchmaking_service.enqueue(black, now);
     REQUIRE(match.has_value());
     harness.lifecycle_handler.notify_match_created(*match);
 

@@ -98,12 +98,18 @@ void check_default_database_config(const kfc::app::DatabaseConfig& database) {
 }
 
 constexpr std::pair<const char*, std::optional<const char*>> kClearDbBackend{"KFC_DB_BACKEND", std::nullopt};
+constexpr std::pair<const char*, std::optional<const char*>> kClearDatabaseType{"KFC_DATABASE_TYPE", std::nullopt};
 constexpr std::pair<const char*, std::optional<const char*>> kClearDbPath{"KFC_DB_PATH", std::nullopt};
 constexpr std::pair<const char*, std::optional<const char*>> kClearDbHost{"KFC_DB_HOST", std::nullopt};
+constexpr std::pair<const char*, std::optional<const char*>> kClearPostgresHost{"KFC_POSTGRES_HOST", std::nullopt};
 constexpr std::pair<const char*, std::optional<const char*>> kClearDbPort{"KFC_DB_PORT", std::nullopt};
+constexpr std::pair<const char*, std::optional<const char*>> kClearPostgresPort{"KFC_POSTGRES_PORT", std::nullopt};
 constexpr std::pair<const char*, std::optional<const char*>> kClearDbName{"KFC_DB_NAME", std::nullopt};
+constexpr std::pair<const char*, std::optional<const char*>> kClearPostgresDb{"KFC_POSTGRES_DB", std::nullopt};
 constexpr std::pair<const char*, std::optional<const char*>> kClearDbUser{"KFC_DB_USER", std::nullopt};
+constexpr std::pair<const char*, std::optional<const char*>> kClearPostgresUser{"KFC_POSTGRES_USER", std::nullopt};
 constexpr std::pair<const char*, std::optional<const char*>> kClearDbPassword{"KFC_DB_PASSWORD", std::nullopt};
+constexpr std::pair<const char*, std::optional<const char*>> kClearPostgresPassword{"KFC_POSTGRES_PASSWORD", std::nullopt};
 constexpr std::pair<const char*, std::optional<const char*>> kClearMatchMaxRatingDiff{
     "KFC_MATCH_MAX_RATING_DIFF", std::nullopt};
 constexpr std::pair<const char*, std::optional<const char*>> kClearMatchQueueTimeout{
@@ -131,12 +137,18 @@ TEST_CASE("ConfigLoaderTest - DefaultConfigurationWithoutEnvironment") {
         {"KFC_REGION", std::nullopt},
         {"KFC_GAME_ENDPOINT", std::nullopt},
         kClearDbBackend,
+        kClearDatabaseType,
         kClearDbPath,
         kClearDbHost,
+        kClearPostgresHost,
         kClearDbPort,
+        kClearPostgresPort,
         kClearDbName,
+        kClearPostgresDb,
         kClearDbUser,
+        kClearPostgresUser,
         kClearDbPassword,
+        kClearPostgresPassword,
         kClearMatchMaxRatingDiff,
         kClearMatchQueueTimeout,
         kClearDiagnostics,
@@ -323,12 +335,18 @@ TEST_CASE("ConfigLoaderTest - IgnoresInvalidDiagnosticsValues") {
 TEST_CASE("ConfigLoaderTest - DefaultDatabaseBackendWithoutEnvironment") {
     const ScopedEnvironment env{
         kClearDbBackend,
+        kClearDatabaseType,
         kClearDbPath,
         kClearDbHost,
+        kClearPostgresHost,
         kClearDbPort,
+        kClearPostgresPort,
         kClearDbName,
+        kClearPostgresDb,
         kClearDbUser,
+        kClearPostgresUser,
         kClearDbPassword,
+        kClearPostgresPassword,
     };
 
     const kfc::app::AppConfig config = kfc::app::load_config_from_environment();
@@ -474,12 +492,18 @@ TEST_CASE("ConfigLoaderTest - OverridesPostgresPassword") {
 TEST_CASE("ConfigLoaderTest - AppliesFullPostgresConfiguration") {
     const ScopedEnvironment env{
         {"KFC_DB_BACKEND", "postgres"},
+        kClearDatabaseType,
         kClearDbPath,
         {"KFC_DB_HOST", "db.example.com"},
+        kClearPostgresHost,
         {"KFC_DB_PORT", "5433"},
+        kClearPostgresPort,
         {"KFC_DB_NAME", "production"},
+        kClearPostgresDb,
         {"KFC_DB_USER", "admin"},
+        kClearPostgresUser,
         {"KFC_DB_PASSWORD", "secret"},
+        kClearPostgresPassword,
     };
 
     const kfc::app::AppConfig config = kfc::app::load_config_from_environment();
@@ -489,6 +513,73 @@ TEST_CASE("ConfigLoaderTest - AppliesFullPostgresConfiguration") {
     CHECK_EQ(config.database.database, "production");
     CHECK_EQ(config.database.username, "admin");
     CHECK_EQ(config.database.password, "secret");
+}
+
+TEST_CASE("ConfigLoaderTest - SelectsPostgresBackendFromDatabaseType") {
+    const ScopedEnvironment env{
+        kClearDbBackend,
+        {"KFC_DATABASE_TYPE", "postgres"},
+        kClearDbPath,
+        kClearDbHost,
+        kClearPostgresHost,
+        kClearDbPort,
+        kClearPostgresPort,
+        kClearDbName,
+        kClearPostgresDb,
+        kClearDbUser,
+        kClearPostgresUser,
+        kClearDbPassword,
+        kClearPostgresPassword,
+    };
+
+    const kfc::app::AppConfig config = kfc::app::load_config_from_environment();
+    CHECK(config.database.backend == kfc::app::DatabaseBackend::PostgreSQL);
+}
+
+TEST_CASE("ConfigLoaderTest - DatabaseTypeTakesPrecedenceOverDbBackend") {
+    const ScopedEnvironment env{
+        {"KFC_DB_BACKEND", "postgres"},
+        {"KFC_DATABASE_TYPE", "sqlite"},
+        kClearDbPath,
+        kClearDbHost,
+        kClearPostgresHost,
+        kClearDbPort,
+        kClearPostgresPort,
+        kClearDbName,
+        kClearPostgresDb,
+        kClearDbUser,
+        kClearPostgresUser,
+        kClearDbPassword,
+        kClearPostgresPassword,
+    };
+
+    const kfc::app::AppConfig config = kfc::app::load_config_from_environment();
+    CHECK(config.database.backend == kfc::app::DatabaseBackend::SQLite);
+}
+
+TEST_CASE("ConfigLoaderTest - PrefersPostgresSpecificEnvironmentVariables") {
+    const ScopedEnvironment env{
+        kClearDbBackend,
+        kClearDatabaseType,
+        kClearDbPath,
+        {"KFC_DB_HOST", "legacy.example.com"},
+        {"KFC_POSTGRES_HOST", "postgres.example.com"},
+        {"KFC_DB_PORT", "5432"},
+        {"KFC_POSTGRES_PORT", "5433"},
+        {"KFC_DB_NAME", "legacy"},
+        {"KFC_POSTGRES_DB", "kfc"},
+        {"KFC_DB_USER", "legacy"},
+        {"KFC_POSTGRES_USER", "kfc"},
+        {"KFC_DB_PASSWORD", "legacy-secret"},
+        {"KFC_POSTGRES_PASSWORD", "postgres-secret"},
+    };
+
+    const kfc::app::AppConfig config = kfc::app::load_config_from_environment();
+    CHECK_EQ(config.database.host, "postgres.example.com");
+    CHECK_EQ(config.database.port, 5433);
+    CHECK_EQ(config.database.database, "kfc");
+    CHECK_EQ(config.database.username, "kfc");
+    CHECK_EQ(config.database.password, "postgres-secret");
 }
 
 TEST_CASE("ConfigLoaderTest - IgnoresInvalidPostgresPort") {
@@ -526,12 +617,18 @@ TEST_CASE("ConfigLoaderTest - IgnoresInvalidPostgresPort") {
 TEST_CASE("ConfigLoaderTest - MissingDatabaseVariablesKeepDefaults") {
     const ScopedEnvironment env{
         kClearDbBackend,
+        kClearDatabaseType,
         kClearDbPath,
         kClearDbHost,
+        kClearPostgresHost,
         kClearDbPort,
+        kClearPostgresPort,
         kClearDbName,
+        kClearPostgresDb,
         kClearDbUser,
+        kClearPostgresUser,
         kClearDbPassword,
+        kClearPostgresPassword,
     };
 
     const kfc::app::AppConfig config = kfc::app::load_config_from_environment();

@@ -55,6 +55,10 @@ bool MatchmakerRuntime::is_ready() const {
     return !runtime_store_.list_game_servers().empty();
 }
 
+std::size_t MatchmakerRuntime::active_game_server_count() const {
+    return runtime_store_.list_game_servers().size();
+}
+
 void MatchmakerRuntime::maybe_publish_heartbeat() {
     const auto now = std::chrono::steady_clock::now();
     if (last_heartbeat_at_.time_since_epoch().count() != 0 &&

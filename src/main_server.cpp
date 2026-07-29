@@ -1,6 +1,9 @@
 #include "app/config_loader.h"
 #include "app/database_config.h"
 #include "app/health_http_server.h"
+#include "app/observability/metric_counters.h"
+#include "app/observability/observability.h"
+#include "app/observability/prometheus_formatter.h"
 #include "app/server_builder.h"
 #include "model/board_model.h"
 #include "server/game_server.h"
@@ -45,12 +48,17 @@ kfc::BoardModel default_board() {
 int main() {
     try {
         const kfc::app::AppConfig config = kfc::app::load_config_from_environment();
+        kfc::app::observability::configure_observability("monolith", config.server.server_id);
         std::cout << "Database backend: "
                   << kfc::app::database_backend_name(config.database.backend) << '\n';
         auto built = kfc::app::build_game_server(config, default_board());
         kfc::app::HealthHttpServer health_server(
             config.server.bind_address, config.server.health_port,
-            [&built]() { return built.server.metrics(); },
+            [&built]() {
+                return kfc::app::observability::format_prometheus_metrics(
+                    kfc::app::observability::ServiceKind::GameServer, built.server.metrics(),
+                    kfc::app::observability::metrics());
+            },
             [&built, &config]() {
                 if (!config.redis.enabled) {
                     return true;

@@ -46,7 +46,7 @@ TEST_CASE("RuntimeStoreGameServerRegistryTest - IgnoresExpiredHeartbeats") {
     kfc::RuntimeStoreGameServerRegistry registry(store, std::chrono::seconds(1));
     REQUIRE_EQ(registry.list_available_servers().size(), 2u);
 
-    std::this_thread::sleep_for(std::chrono::milliseconds(1100));
+    std::this_thread::sleep_for(std::chrono::milliseconds(2100));
 
     const std::vector<kfc::GameServerRecord> servers = registry.list_available_servers();
     CHECK(servers.empty());

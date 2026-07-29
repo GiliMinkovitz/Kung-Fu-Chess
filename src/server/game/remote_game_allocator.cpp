@@ -1,5 +1,6 @@
 #include "server/game/remote_game_allocator.h"
 
+#include "app/observability/metric_counters.h"
 #include "server/game/game_allocation_http_client.h"
 #include "server/game/i_game_server_registry.h"
 
@@ -34,6 +35,8 @@ GameCreationResponse RemoteGameAllocator::allocate_game(const GameCreationReques
             http_client.allocate(server.allocation_endpoint, request);
         ++attempts;
         if (!response.has_value()) {
+            kfc::app::observability::metrics().allocation_failures_total.fetch_add(
+                1, std::memory_order_relaxed);
             continue;
         }
 
@@ -47,6 +50,7 @@ GameCreationResponse RemoteGameAllocator::allocate_game(const GameCreationReques
         return result;
     }
 
+    kfc::app::observability::metrics().allocation_failures_total.fetch_add(1, std::memory_order_relaxed);
     throw std::runtime_error("Game allocation failed for all candidate servers");
 }
 

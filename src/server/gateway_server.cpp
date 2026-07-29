@@ -5,7 +5,7 @@
 #include "model/game_config.h"
 #include "server/authentication_service.h"
 #include "server/gateway/local_game_gateway.h"
-#include "server/match/match_lifecycle_handler.h"
+#include "server/player_session.h"
 
 #include <chrono>
 #include <iostream>
@@ -35,27 +35,6 @@ GatewayServer::GatewayServer(const app::AppConfig& config, ClientConnectionPlane
     last_tick_ = std::chrono::steady_clock::now();
 }
 
-GatewayServer::GatewayServer(const app::AppConfig& config, ClientConnectionPlane& client_plane,
-                             LocalGameGateway& game_gateway,
-                             matchmaking::IMatchmakingJoinClient& matchmaking_client,
-                             MatchLifecycleHandler& match_lifecycle_handler,
-                             AuthenticationService& authentication_service,
-                             IRuntimeStore& runtime_store)
-    : client_plane_(client_plane),
-      runtime_store_(runtime_store),
-      local_game_gateway_(game_gateway),
-      lobby_handler_(authentication_service, matchmaking_client, client_plane_.session_registry,
-                     client_plane_.session_manager, config.server.region),
-      match_lifecycle_handler_(&match_lifecycle_handler),
-      gateway_server_id_(config.server.gateway_server_id),
-      region_(config.server.region),
-      game_endpoint_(app::resolve_game_endpoint(config.server)),
-      redis_enabled_(config.redis.enabled),
-      heartbeat_interval_(config.redis.heartbeat_interval) {
-    match_lifecycle_handler_->bind_game_gateway(local_game_gateway_);
-    last_tick_ = std::chrono::steady_clock::now();
-}
-
 WebSocketServer& GatewayServer::websocket_server() noexcept {
     return client_plane_.websocket_server;
 }
@@ -80,6 +59,16 @@ app::ServerMetrics GatewayServer::metrics() const {
     return result;
 }
 
+std::size_t GatewayServer::authenticated_player_count() const {
+    std::size_t count = 0;
+    for (const PlayerSession& session : client_plane_.session_manager.sessions()) {
+        if (session.has_user()) {
+            ++count;
+        }
+    }
+    return count;
+}
+
 void GatewayServer::maybe_publish_heartbeat() {
     const auto now = std::chrono::steady_clock::now();
     if (last_heartbeat_at_.time_since_epoch().count() != 0 &&
@@ -99,8 +88,8 @@ void GatewayServer::tick_once() {
         notification_poll_();
     }
 
-    if (match_lifecycle_handler_ != nullptr) {
-        match_lifecycle_handler_->process_timeouts();
+    if (process_match_timeouts_) {
+        process_match_timeouts_();
     }
 
     const auto now = std::chrono::steady_clock::now();

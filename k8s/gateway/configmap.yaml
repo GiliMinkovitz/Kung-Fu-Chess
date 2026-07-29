@@ -1,0 +1,27 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: gateway-config
+  namespace: kung-fu-chess
+  labels:
+    app.kubernetes.io/name: gateway
+    app.kubernetes.io/component: gateway
+    app.kubernetes.io/part-of: kung-fu-chess
+data:
+  KFC_BIND_ADDRESS: "0.0.0.0"
+  KFC_PORT: "8765"
+  KFC_HEALTH_PORT: "8080"
+  KFC_GATEWAY_INTERNAL_PORT: "8771"
+  KFC_GATEWAY_SERVER_ID: "gateway-k8s"
+  KFC_REGION: "k8s"
+  KFC_MAX_CLIENTS: "8"
+  KFC_MATCHMAKER_ENDPOINT: "http://matchmaker-service:8770"
+  KFC_DATABASE_TYPE: "postgres"
+  KFC_POSTGRES_HOST: "postgres-service"
+  KFC_POSTGRES_PORT: "5432"
+  KFC_POSTGRES_DB: "kfc"
+  KFC_POSTGRES_USER: "kfc"
+  KFC_REDIS_ENABLED: "true"
+  KFC_REDIS_HOST: "redis-service"
+  KFC_REDIS_PORT: "6379"
+  KFC_DIAGNOSTICS: "true"

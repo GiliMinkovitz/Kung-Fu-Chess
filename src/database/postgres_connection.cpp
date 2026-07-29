@@ -10,20 +10,28 @@ constexpr const char* kPlayersTableSql = R"(
 CREATE TABLE IF NOT EXISTS players (
     id SERIAL PRIMARY KEY,
     username TEXT NOT NULL UNIQUE,
+    password_hash TEXT,
     rating INTEGER NOT NULL DEFAULT 1000,
-    password_hash TEXT
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 )";
 
 constexpr const char* kGamesTableSql = R"(
 CREATE TABLE IF NOT EXISTS games (
     id SERIAL PRIMARY KEY,
-    white_player_id INTEGER,
-    black_player_id INTEGER,
-    winner_id INTEGER,
+    white_player_id INTEGER NOT NULL REFERENCES players(id),
+    black_player_id INTEGER NOT NULL REFERENCES players(id),
+    winner_id INTEGER REFERENCES players(id),
     status TEXT NOT NULL,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    finished_at TIMESTAMPTZ
 );
+)";
+
+constexpr const char* kGamesIndexesSql = R"(
+CREATE INDEX IF NOT EXISTS idx_games_white_player_id ON games(white_player_id);
+CREATE INDEX IF NOT EXISTS idx_games_black_player_id ON games(black_player_id);
+CREATE INDEX IF NOT EXISTS idx_games_status ON games(status);
 )";
 
 struct PgResultGuard {
@@ -87,7 +95,8 @@ bool PostgresConnection::initialize_schema() {
         return false;
     }
 
-    return exec_sql(connection_, kPlayersTableSql) && exec_sql(connection_, kGamesTableSql);
+    return exec_sql(connection_, kPlayersTableSql) && exec_sql(connection_, kGamesTableSql) &&
+           exec_sql(connection_, kGamesIndexesSql);
 }
 
 bool PostgresConnection::is_connected() const {

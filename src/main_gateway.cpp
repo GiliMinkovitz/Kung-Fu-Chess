@@ -1,6 +1,10 @@
 #include "app/config_loader.h"
 #include "app/database_config.h"
 #include "app/health_http_server.h"
+#include "app/observability/metric_counters.h"
+#include "app/observability/observability.h"
+#include "app/observability/prometheus_formatter.h"
+#include "app/observability/readiness_checker.h"
 #include "app/server_builder.h"
 
 #include <atomic>
@@ -30,17 +34,23 @@ void install_shutdown_signal_handlers(kfc::GatewayServer& gateway) {
 int main() {
     try {
         const kfc::app::AppConfig config = kfc::app::load_config_from_environment();
+        kfc::app::observability::configure_observability("gateway",
+                                                         config.server.gateway_server_id);
         std::cout << "Database backend: "
                   << kfc::app::database_backend_name(config.database.backend) << '\n';
         auto built = kfc::app::build_gateway(config);
         kfc::app::HealthHttpServer health_server(
             config.server.bind_address, config.server.health_port,
-            [&built]() { return built.gateway.metrics(); },
+            [&built]() {
+                return kfc::app::observability::format_prometheus_metrics(
+                    kfc::app::observability::ServiceKind::Gateway, built.gateway.metrics(),
+                    kfc::app::observability::metrics(),
+                    built.gateway.authenticated_player_count());
+            },
             [&built, &config]() {
-                if (!config.redis.enabled) {
-                    return true;
-                }
-                return built.infrastructure.runtime_store().is_available();
+                return kfc::app::observability::check_gateway_ready(
+                    built.infrastructure.database(), config.redis,
+                    built.infrastructure.runtime_store(), config.server.matchmaker_endpoint);
             });
         health_server.start();
         install_shutdown_signal_handlers(built.gateway);

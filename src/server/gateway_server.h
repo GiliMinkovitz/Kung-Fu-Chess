@@ -43,6 +43,7 @@ public:
 
     [[nodiscard]] WebSocketServer& websocket_server() noexcept;
     [[nodiscard]] app::ServerMetrics metrics() const;
+    [[nodiscard]] std::size_t authenticated_player_count() const;
 
 private:
     void maybe_publish_heartbeat();
@@ -53,7 +54,7 @@ private:
     LobbyMessageHandler lobby_handler_;
     std::function<void()> notification_poll_;
     std::function<void()> notification_stop_;
-    MatchLifecycleHandler* match_lifecycle_handler_ = nullptr;
+    std::function<void()> process_match_timeouts_;
     std::string gateway_server_id_;
     std::string region_;
     std::string game_endpoint_;

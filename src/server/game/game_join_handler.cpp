@@ -15,7 +15,7 @@ GameJoinHandler::GameJoinHandler(RoomManager& room_manager,
 
 void GameJoinHandler::process() {
     for (PlayerSession& session : session_manager_.sessions()) {
-        if (!session.connection()->is_open()) {
+        if (!session.connection()->is_open() || session.has_room()) {
             continue;
         }
 

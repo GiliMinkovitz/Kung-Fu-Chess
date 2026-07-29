@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-service
+  namespace: kung-fu-chess
+  labels:
+    app.kubernetes.io/name: postgres
+    app.kubernetes.io/component: postgres
+    app.kubernetes.io/part-of: kung-fu-chess
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: postgres
+    app.kubernetes.io/component: postgres
+  ports:
+    - name: postgres
+      port: 5432
+      targetPort: postgres
+      protocol: TCP

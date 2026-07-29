@@ -1,9 +1,12 @@
 #include "matchmaking/remote_matchmaking_service.h"
 
 #include "app/i_runtime_store.h"
+#include "app/observability/metric_counters.h"
+#include "app/observability/structured_logger.h"
 #include "server/game/protocol/game_creation_request.h"
 #include "server/game/protocol/game_creation_response.h"
 
+#include <chrono>
 #include <memory>
 #include <unordered_map>
 
@@ -84,12 +87,36 @@ PlayerMatchmakingQueue& RemoteMatchmakingService::queue_for(const std::string_vi
 
 void RemoteMatchmakingService::finalize_match(const QueuedPlayer& white,
                                               const QueuedPlayer& black) {
+    const auto started_at = std::chrono::steady_clock::now();
+
     const std::optional<int> db_game_id =
         game_repository_.create_game(static_cast<int>(white.user_id),
                                      static_cast<int>(black.user_id));
 
     const GameCreationRequest request{white.user_id, black.user_id, db_game_id};
-    const GameCreationResponse response = game_allocator_.allocate_game(request);
+    kfc::app::observability::logger().log(kfc::app::observability::LogLevel::Info,
+                                          "allocation_started");
+    GameCreationResponse response;
+    try {
+        response = game_allocator_.allocate_game(request);
+    } catch (...) {
+        kfc::app::observability::metrics().allocation_failures_total.fetch_add(
+            1, std::memory_order_relaxed);
+        kfc::app::observability::logger().log(kfc::app::observability::LogLevel::Error,
+                                              "allocation_failed");
+        throw;
+    }
+
+    kfc::app::observability::metrics().matches_created_total.fetch_add(1, std::memory_order_relaxed);
+    const auto duration_ms = std::chrono::duration_cast<std::chrono::milliseconds>(
+        std::chrono::steady_clock::now() - started_at);
+    kfc::app::observability::record_matchmaking_duration_ms(
+        static_cast<std::uint64_t>(duration_ms.count()));
+    kfc::app::observability::logger().log(
+        kfc::app::observability::LogLevel::Info, "match_created",
+        {{"room_id", std::to_string(response.room_id)},
+         {"white_player_id", std::to_string(white.player_id)},
+         {"black_player_id", std::to_string(black.player_id)}});
 
     const std::string routing_server_id =
         response.game_server_id.empty() ? gateway_server_id_ : response.game_server_id;

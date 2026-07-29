@@ -1,5 +1,5 @@
 #include "app/health_http_server.h"
-#include "app/server_metrics.h"
+#include "app/observability/prometheus_formatter.h"
 
 #include <boost/asio/connect.hpp>
 #include <boost/asio/ip/tcp.hpp>
@@ -75,34 +75,27 @@ TEST_CASE("HealthHttpServerTest - UnknownPathReturnsNotFound") {
     server.stop();
 }
 
-TEST_CASE("HealthHttpServerTest - MetricsEndpointReturnsPlainText") {
-    kfc::app::HealthHttpServer server(
-        "127.0.0.1", 0, []() {
-            kfc::app::ServerMetrics metrics;
-            metrics.active_rooms = 4;
-            metrics.connected_sessions = 8;
-            metrics.matchmaking_queue = 2;
-            metrics.server_uptime_seconds = 153;
-            metrics.last_tick_duration_ms = 16;
-            metrics.server_id = "local";
-            metrics.region = "local";
-            return metrics;
-        });
+TEST_CASE("HealthHttpServerTest - MetricsEndpointReturnsPrometheusText") {
+    kfc::app::HealthHttpServer server("127.0.0.1", 0, []() {
+        kfc::app::ServerMetrics metrics;
+        metrics.active_rooms = 4;
+        metrics.connected_sessions = 8;
+        metrics.matchmaking_queue = 2;
+        metrics.server_uptime_seconds = 153;
+        metrics.last_tick_duration_ms = 16;
+        metrics.server_id = "local";
+        metrics.region = "local";
+        return kfc::app::observability::format_prometheus_metrics(
+            kfc::app::observability::ServiceKind::Gateway, metrics,
+            kfc::app::observability::MetricCounters{}, 5);
+    });
     server.start();
 
     const HttpGetResponse response = http_get("127.0.0.1", server.port(), "/metrics");
     CHECK(response.status == http::status::ok);
-    CHECK_EQ(response.body,
-             "active_rooms 4\n"
-             "connected_sessions 8\n"
-             "matchmaking_queue 2\n"
-             "server_uptime_seconds 153\n"
-             "last_tick_duration_ms 16\n"
-             "server_id local\n"
-             "region local\n"
-             "endpoint \n"
-             "redis_enabled 0\n"
-             "redis_connected 0\n");
+    CHECK(response.body.find("# HELP connected_sessions") != std::string::npos);
+    CHECK(response.body.find("connected_sessions 8") != std::string::npos);
+    CHECK(response.body.find("authenticated_players 5") != std::string::npos);
 
     server.stop();
 }

@@ -1,6 +1,6 @@
-# Kung Fu Chess — Docker (Phase 14.4)
+# Kung Fu Chess — Docker (Phase 14.4 / 14.6)
 
-Independent **Gateway**, **Matchmaker**, and **Game Server** containers with **Redis** as the shared runtime registry.
+Independent **Gateway**, **Matchmaker**, and **Game Server** containers with **Redis** as the shared runtime registry and **PostgreSQL** as shared persistent storage.
 
 ```
 Client
@@ -15,12 +15,14 @@ Matchmaker container  (KungFuChessMatchmaker)
   +--> Redis  (queue + routing registry)
   |
   +--> Game Server  HTTP POST /allocate
+  |
+  +--> PostgreSQL  (users, games, ratings)
 ```
 
 ## Prerequisites
 
 - Docker Engine with Compose v2
-- Ports available on the host: `8765`, `8766`, `8080`, `8081`, `6379`
+- Ports available on the host: `8765`, `8766`, `8080`, `8081`, `5432`, `6379`
 
 Matchmaker and gateway internal ports (`8770`, `8771`, `8772`) are **not** published to the host.
 
@@ -66,12 +68,24 @@ docker compose down
 | `matchmaker` | `docker/Dockerfile.matchmaker` | Queue, pairing, game-server selection, allocation |
 | `game-server` | `docker/Dockerfile.game_server` | Room simulation, allocation API, game WebSocket |
 | `redis` | `redis:7-alpine` | Queue data, routing registry, game-server heartbeats |
+| `postgres` | `postgres:16` | Shared PostgreSQL database (users, games, ratings) |
 
-Gateway and Matchmaker **do not share** a SQLite file with the game server. Each has its own volume:
+All application services share one PostgreSQL instance. Schema is applied automatically on first Postgres startup via `database/migrations/001_initial_schema.sql`.
 
-- `gateway_data` → `/data/kfc.db` (auth)
-- `matchmaker_data` → `/data/kfc.db` (game record creation for matches)
-- `game_server_data` → `/data/kfc.db` (game results / ratings)
+## Database migration
+
+Schema files:
+
+- `database/schema.sql` — canonical schema reference
+- `database/migrations/001_initial_schema.sql` — initial migration
+
+Apply manually (outside Compose):
+
+```bash
+psql -h localhost -U kfc -d kfc -f database/migrations/001_initial_schema.sql
+```
+
+Compose mounts the migration into Postgres `docker-entrypoint-initdb.d` on first boot. Application code does **not** auto-run migrations at startup.
 
 ## Required environment variables
 
@@ -85,7 +99,12 @@ Gateway and Matchmaker **do not share** a SQLite file with the game server. Each
 | `KFC_GATEWAY_INTERNAL_PORT` | `8771` | Internal notification HTTP port (matchmaker → gateway) |
 | `KFC_GATEWAY_SERVER_ID` | `gateway-1` | Gateway identity |
 | `KFC_MATCHMAKER_ENDPOINT` | `http://matchmaker:8770` | Matchmaker HTTP API (Docker DNS) |
-| `KFC_DB_PATH` | `/data/kfc.db` | SQLite path (gateway auth) |
+| `KFC_DATABASE_TYPE` | `postgres` | Database backend |
+| `KFC_POSTGRES_HOST` | `postgres` | PostgreSQL host |
+| `KFC_POSTGRES_PORT` | `5432` | PostgreSQL port |
+| `KFC_POSTGRES_DB` | `kfc` | Database name |
+| `KFC_POSTGRES_USER` | `kfc` | Database user |
+| `KFC_POSTGRES_PASSWORD` | `kfc-dev-password` | Database password |
 | `KFC_REDIS_ENABLED` | `true` | Enable Redis runtime store |
 | `KFC_REDIS_HOST` | `redis` | Redis service name |
 
@@ -98,7 +117,11 @@ Gateway and Matchmaker **do not share** a SQLite file with the game server. Each
 | `KFC_MATCHMAKER_PORT` | `8770` | Matchmaking HTTP API |
 | `KFC_MATCHMAKER_HEALTH_PORT` | `8772` | Health HTTP port |
 | `KFC_GATEWAY_NOTIFICATION_ENDPOINT` | `http://gateway:8771` | Gateway notification API |
-| `KFC_DB_PATH` | `/data/kfc.db` | SQLite path (game records) |
+| `KFC_DATABASE_TYPE` | `postgres` | Database backend |
+| `KFC_POSTGRES_HOST` | `postgres` | PostgreSQL host |
+| `KFC_POSTGRES_DB` | `kfc` | Database name |
+| `KFC_POSTGRES_USER` | `kfc` | Database user |
+| `KFC_POSTGRES_PASSWORD` | `kfc-dev-password` | Database password |
 | `KFC_REDIS_ENABLED` | `true` | Queue + registry |
 | `KFC_REDIS_HOST` | `redis` | Redis service name |
 | `KFC_INTERNAL_SERVICE_TOKEN` | *(shared secret)* | Allocation API auth |
@@ -114,7 +137,11 @@ Gateway and Matchmaker **do not share** a SQLite file with the game server. Each
 | `KFC_GAME_HEALTH_PORT` | `8081` | Health HTTP port |
 | `KFC_GAME_ENDPOINT` | `ws://localhost:8766` | Client-facing WebSocket URL (host-mapped) |
 | `KFC_ALLOCATION_ENDPOINT` | `http://game-server:8767/allocate` | Internal allocation URL |
-| `KFC_DB_PATH` | `/data/kfc.db` | SQLite path (game DB) |
+| `KFC_DATABASE_TYPE` | `postgres` | Database backend |
+| `KFC_POSTGRES_HOST` | `postgres` | PostgreSQL host |
+| `KFC_POSTGRES_DB` | `kfc` | Database name |
+| `KFC_POSTGRES_USER` | `kfc` | Database user |
+| `KFC_POSTGRES_PASSWORD` | `kfc-dev-password` | Database password |
 | `KFC_REDIS_ENABLED` | `true` | Publish heartbeat to Redis |
 | `KFC_REDIS_HOST` | `redis` | Redis service name |
 | `KFC_INTERNAL_SERVICE_TOKEN` | *(shared secret)* | Allocation API auth |
@@ -123,6 +150,14 @@ Gateway and Matchmaker **do not share** a SQLite file with the game server. Each
 
 | Variable | Default | Purpose |
 |----------|---------|---------|
+| `KFC_DATABASE_TYPE` | `sqlite` (local dev/tests) | `sqlite` or `postgres` |
+| `KFC_DB_BACKEND` | *(legacy alias)* | Same as `KFC_DATABASE_TYPE` when unset |
+| `KFC_DB_PATH` | `kfc.db` | SQLite file path (when `sqlite`) |
+| `KFC_POSTGRES_HOST` / `KFC_DB_HOST` | `localhost` | PostgreSQL host |
+| `KFC_POSTGRES_PORT` / `KFC_DB_PORT` | `5432` | PostgreSQL port |
+| `KFC_POSTGRES_DB` / `KFC_DB_NAME` | `kfc` | PostgreSQL database |
+| `KFC_POSTGRES_USER` / `KFC_DB_USER` | *(empty)* | PostgreSQL user |
+| `KFC_POSTGRES_PASSWORD` / `KFC_DB_PASSWORD` | *(empty)* | PostgreSQL password |
 | `KFC_REDIS_PORT` | `6379` | Redis port |
 | `KFC_ALLOCATION_TIMEOUT_MS` | `2000` | Allocation HTTP timeout |
 | `KFC_ALLOCATION_RETRY_COUNT` | `3` | Allocation retry count |

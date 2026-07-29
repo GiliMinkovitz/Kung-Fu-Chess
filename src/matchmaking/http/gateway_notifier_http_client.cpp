@@ -1,5 +1,6 @@
 #include "matchmaking/http/gateway_notifier_http_client.h"
 
+#include "app/observability/correlation_id.h"
 #include "matchmaking/protocol/matchmaking_codec.h"
 
 #include <boost/asio/connect.hpp>
@@ -73,6 +74,10 @@ bool post_text(const std::string& endpoint, const std::string& path, const std::
         http::request<http::string_body> request{http::verb::post, parsed->target, 11};
         request.set(http::field::host, parsed->host);
         request.set(http::field::content_type, "text/plain");
+        if (!kfc::app::observability::current_correlation_id().empty()) {
+            request.set(kfc::app::observability::kCorrelationIdHeader,
+                        kfc::app::observability::current_correlation_id());
+        }
         request.body() = body;
         request.prepare_payload();
 

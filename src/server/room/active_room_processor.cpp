@@ -1,5 +1,6 @@
 #include "server/room/active_room_processor.h"
 
+#include "app/observability/metric_counters.h"
 #include "model/game_config.h"
 #include "server/game_message_parser.h"
 #include "server/network/i_message_sink.h"
@@ -51,9 +52,13 @@ void ActiveRoomProcessor::process(std::int64_t elapsed,
             const std::string snapshot = room->generate_snapshot();
             if (input_dispatcher_.is_player_connected(white->player_id)) {
                 message_sink_.send(white->player_id, snapshot);
+                kfc::app::observability::metrics().snapshots_sent_total.fetch_add(
+                    1, std::memory_order_relaxed);
             }
             if (input_dispatcher_.is_player_connected(black->player_id)) {
                 message_sink_.send(black->player_id, snapshot);
+                kfc::app::observability::metrics().snapshots_sent_total.fetch_add(
+                    1, std::memory_order_relaxed);
             }
 
             last_tick = std::chrono::steady_clock::now();
@@ -82,6 +87,8 @@ void ActiveRoomProcessor::apply_room_inputs(Room& room, const std::vector<RoomPl
 
         if (is_action_allowed(input.player_side, room.match(), input.action)) {
             room.submit_action(input.action);
+            kfc::app::observability::metrics().player_actions_total.fetch_add(
+                1, std::memory_order_relaxed);
         }
     }
 }

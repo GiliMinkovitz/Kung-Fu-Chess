@@ -1,5 +1,6 @@
 #include "server/game/game_allocation_http_client.h"
 
+#include "app/observability/correlation_id.h"
 #include "server/game/protocol/game_creation_codec.h"
 
 #include <boost/asio/connect.hpp>
@@ -86,6 +87,10 @@ std::optional<GameCreationResponse> GameAllocationHttpClient::allocate(
         http::request<http::string_body> http_request{http::verb::post, parsed->target, 11};
         http_request.set(http::field::host, parsed->host);
         http_request.set(http::field::content_type, "text/plain");
+        if (!kfc::app::observability::current_correlation_id().empty()) {
+            http_request.set(kfc::app::observability::kCorrelationIdHeader,
+                             kfc::app::observability::current_correlation_id());
+        }
         if (!service_token_.empty()) {
             http_request.set(kServiceTokenHeader, service_token_);
         }

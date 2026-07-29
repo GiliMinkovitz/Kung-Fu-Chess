@@ -113,8 +113,8 @@ void HealthHttpServer::handle_connection(tcp::socket socket) {
             response.body() = ready ? "OK" : "Not Ready";
         } else if (request.target() == "/metrics" && metrics_provider_) {
             response.result(http::status::ok);
-            response.set(http::field::content_type, "text/plain");
-            response.body() = format_server_metrics(metrics_provider_());
+            response.set(http::field::content_type, "text/plain; version=0.0.4; charset=utf-8");
+            response.body() = metrics_provider_();
         } else {
             response.result(http::status::not_found);
             response.set(http::field::content_type, "text/plain");

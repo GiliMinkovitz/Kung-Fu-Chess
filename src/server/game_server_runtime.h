@@ -42,6 +42,8 @@ public:
 
     [[nodiscard]] RoomManager& room_manager() noexcept;
     [[nodiscard]] app::ServerMetrics metrics() const;
+    [[nodiscard]] std::size_t active_player_count() const;
+    [[nodiscard]] bool is_allocation_api_active() const;
 
 #ifdef KFC_TEST_BUILD
     void finish_room(RoomId room_id, std::optional<PieceColor> winner_color, FinishReason reason);
