@@ -6,16 +6,16 @@
 
 namespace kfc {
 
+class IGameHost;
 class IGameRepository;
 class IMessageSink;
 class IRuntimeStore;
 class MatchmakingService;
 class PlayerSession;
-class RoomManager;
 
 class MatchLifecycleHandler : public IMatchCreatedHandler {
 public:
-    MatchLifecycleHandler(RoomManager& room_manager, IGameRepository& game_repository,
+    MatchLifecycleHandler(IGameHost& game_host, IGameRepository& game_repository,
                           IRuntimeStore& runtime_store, std::string server_id);
 
     void bind_matchmaking_service(MatchmakingService& matchmaking_service);
@@ -26,7 +26,7 @@ public:
     void process_timeouts();
 
 private:
-    RoomManager& room_manager_;
+    IGameHost& game_host_;
     IGameRepository& game_repository_;
     IRuntimeStore& runtime_store_;
     std::string server_id_;

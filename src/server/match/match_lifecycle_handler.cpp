@@ -7,10 +7,9 @@
 #include "server/matchmaking/matchmaking_service.h"
 #include "server/network/i_message_sink.h"
 #include "server/network/player_id.h"
+#include "server/game/i_game_host.h"
 #include "server/player_session.h"
 #include "server/room/game_player.h"
-#include "server/room/room.h"
-#include "server/room/room_manager.h"
 #include "server/user/user_id.h"
 
 #include <chrono>
@@ -28,10 +27,10 @@ GamePlayer to_game_player(const PlayerSession& session, const PieceColor side) {
 
 }  // namespace
 
-MatchLifecycleHandler::MatchLifecycleHandler(RoomManager& room_manager,
+MatchLifecycleHandler::MatchLifecycleHandler(IGameHost& game_host,
                                              IGameRepository& game_repository,
                                              IRuntimeStore& runtime_store, std::string server_id)
-    : room_manager_(room_manager),
+    : game_host_(game_host),
       game_repository_(game_repository),
       runtime_store_(runtime_store),
       server_id_(std::move(server_id)) {}
@@ -50,16 +49,15 @@ RoomId MatchLifecycleHandler::create_match(PlayerSession* white, PlayerSession* 
     white->set_side(PieceColor::White);
     black->set_side(PieceColor::Black);
 
-    const RoomId room_id = room_manager_.create_room();
+    const RoomId room_id = game_host_.create_room();
 
-    Room* room = room_manager_.find_room(room_id);
-    room->activate(to_game_player(*white, PieceColor::White),
-                   to_game_player(*black, PieceColor::Black));
+    game_host_.activate_room(room_id, to_game_player(*white, PieceColor::White),
+                             to_game_player(*black, PieceColor::Black));
 
     const std::optional<int> db_game_id =
         game_repository_.create_game(white->player().id(), black->player().id());
     if (db_game_id.has_value()) {
-        room->set_db_game_id(*db_game_id);
+        game_host_.set_db_game_id(room_id, *db_game_id);
     }
 
     white->assign_room(room_id);

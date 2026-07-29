@@ -6,7 +6,7 @@
 #include "server/match.h"
 #include "server/room/game_player.h"
 #include "server/user/user_id.h"
-#include "server/room/room.h"
+#include "server/room/room_id.h"
 
 #include <cstdint>
 #include <optional>

@@ -3,6 +3,7 @@
 #include "app/app_config.h"
 #include "app/game_server_dependencies.h"
 #include "app/server_metrics.h"
+#include "server/game/local_game_host.h"
 #include "server/game_result/game_result_handler.h"
 #include "server/lobby/lobby_message_handler.h"
 #include "server/match/match_lifecycle_handler.h"
@@ -55,6 +56,7 @@ private:
 
     WebSocketServer websocket_server_;
     RoomManager room_manager_;
+    LocalGameHost local_game_host_;
     std::string server_id_;
     std::string region_;
     MatchLifecycleHandler match_lifecycle_handler_;
