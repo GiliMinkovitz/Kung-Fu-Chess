@@ -6,9 +6,9 @@
 
 namespace kfc {
 
+class IGameGateway;
 class IGameHost;
 class IGameRepository;
-class IMessageSink;
 class IRuntimeStore;
 class MatchmakingService;
 class PlayerSession;
@@ -19,7 +19,7 @@ public:
                           IRuntimeStore& runtime_store, std::string server_id);
 
     void bind_matchmaking_service(MatchmakingService& matchmaking_service);
-    void bind_message_sink(IMessageSink& message_sink);
+    void bind_game_gateway(IGameGateway& game_gateway);
 
     RoomId create_match(PlayerSession* white, PlayerSession* black) override;
     void notify_match_created(const MatchCreated& match);
@@ -31,7 +31,7 @@ private:
     IRuntimeStore& runtime_store_;
     std::string server_id_;
     MatchmakingService* matchmaking_service_ = nullptr;
-    IMessageSink* message_sink_ = nullptr;
+    IGameGateway* game_gateway_ = nullptr;
 };
 
 }  // namespace kfc

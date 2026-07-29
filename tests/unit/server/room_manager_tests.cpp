@@ -1,4 +1,6 @@
 #include "model/game_config.h"
+#include "model/piece.h"
+#include "server/room/game_player.h"
 #include "server/room/room_manager.h"
 #include "test_helpers.h"
 
@@ -39,9 +41,9 @@ TEST_CASE("RoomManagerTest - RemovesInactiveRooms") {
     const kfc::RoomId active_id = manager.create_room();
     const kfc::RoomId inactive_id = manager.create_room();
 
-    kfc::Player white{1, "white", 1000};
-    kfc::Player black{2, "black", 1000};
-    manager.find_room(active_id)->activate(&white, &black);
+    kfc::GamePlayer white{1, kfc::PieceColor::White, 1};
+    kfc::GamePlayer black{2, kfc::PieceColor::Black, 2};
+    manager.find_room(active_id)->activate(white, black);
 
     manager.remove_inactive_rooms();
 
@@ -76,9 +78,9 @@ TEST_CASE("RoomManagerTest - TickAllAdvancesActiveRooms") {
     kfc::RoomManager manager{kfc::test::make_board({{"wK", ".", "bK"}})};
 
     const kfc::RoomId room_id = manager.create_room();
-    kfc::Player white{1, "white", 1000};
-    kfc::Player black{2, "black", 1000};
-    manager.find_room(room_id)->activate(&white, &black);
+    kfc::GamePlayer white{1, kfc::PieceColor::White, 1};
+    kfc::GamePlayer black{2, kfc::PieceColor::Black, 2};
+    manager.find_room(room_id)->activate(white, black);
 
     manager.tick_all(200);
 

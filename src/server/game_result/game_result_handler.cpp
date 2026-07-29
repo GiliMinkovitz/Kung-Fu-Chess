@@ -1,40 +1,23 @@
 #include "server/game_result/game_result_handler.h"
 
 #include "app/i_runtime_store.h"
-#include "server/client_connection.h"
-#include "server/game_result_message_writer.h"
-#include "server/network/i_message_sink.h"
+#include "server/gateway/i_game_completion_gateway.h"
 #include "server/player.h"
-#include "server/player_session.h"
 #include "server/room/game_player.h"
 #include "server/room/room.h"
-#include "server/session/client_session_manager.h"
-#include "server/session_registry.h"
 #include "server/user/user_id.h"
-
-#include <string>
 
 namespace kfc {
 
 GameResultHandler::GameResultHandler(RoomManager& room_manager, IUserRepository& user_repository,
                                      IGameRepository& game_repository,
-                                     SessionRegistry& session_registry,
                                      IRuntimeStore& runtime_store,
-                                     ClientSessionManager& session_manager,
-                                     IMessageSink& message_sink)
+                                     IGameCompletionGateway& completion_gateway)
     : room_manager_(room_manager),
       user_repository_(user_repository),
       game_repository_(game_repository),
-      session_registry_(session_registry),
       runtime_store_(runtime_store),
-      session_manager_(session_manager),
-      message_sink_(message_sink) {}
-
-bool GameResultHandler::is_player_connected(const PlayerId player_id) const {
-    const PlayerSession* session = session_manager_.find_session(player_id);
-    return session != nullptr && session->connection() != nullptr &&
-           session->connection()->is_open();
-}
+      completion_gateway_(completion_gateway) {}
 
 void GameResultHandler::finish(RoomId room_id, std::optional<PieceColor> winner_color,
                                FinishReason reason) {
@@ -45,9 +28,6 @@ void GameResultHandler::finish(RoomId room_id, std::optional<PieceColor> winner_
         return;
     }
 
-    const bool white_connected = is_player_connected(white->player_id);
-    const bool black_connected = is_player_connected(black->player_id);
-
     std::optional<RatingChange> rating_change;
     if (room->db_game_id().has_value()) {
         if (winner_color.has_value()) {
@@ -57,18 +37,9 @@ void GameResultHandler::finish(RoomId room_id, std::optional<PieceColor> winner_
         }
     }
 
-    if (winner_color.has_value() && rating_change.has_value() && white_connected &&
-        black_connected) {
-        const bool white_won = *winner_color == PieceColor::White;
-        const std::string white_message = create_game_result_message(
-            white_won, reason,
-            white_won ? rating_change->winner_new_rating : rating_change->loser_new_rating);
-        const std::string black_message = create_game_result_message(
-            !white_won, reason,
-            white_won ? rating_change->loser_new_rating : rating_change->winner_new_rating);
-
-        (void)message_sink_.send_message(white->player_id, white_message);
-        (void)message_sink_.send_message(black->player_id, black_message);
+    if (winner_color.has_value() && rating_change.has_value()) {
+        completion_gateway_.notify_game_finished(white->player_id, black->player_id, *winner_color,
+                                                 reason, *rating_change);
     }
 
     cleanup_finished_room(room_id);
@@ -103,6 +74,19 @@ std::optional<RatingChange> GameResultHandler::update_ratings_for_result(
     return change;
 }
 
+FinishedPlayerState GameResultHandler::build_finished_player_state(
+    const GamePlayer& player) const {
+    FinishedPlayerState state;
+    state.player_id = player.player_id;
+    state.user_id = player.user_id;
+    if (const auto profile = user_repository_.find_profile_by_id(player.user_id)) {
+        state.has_user = true;
+        state.username = profile->username();
+        state.rating = profile->rating();
+    }
+    return state;
+}
+
 void GameResultHandler::cleanup_finished_room(RoomId room_id) {
     Room* room = room_manager_.find_room(room_id);
     if (room == nullptr) {
@@ -111,8 +95,14 @@ void GameResultHandler::cleanup_finished_room(RoomId room_id) {
 
     const GamePlayer* white = room->white_player();
     const GamePlayer* black = room->black_player();
-    const PlayerId white_player_id = white != nullptr ? white->player_id : 0;
-    const PlayerId black_player_id = black != nullptr ? black->player_id : 0;
+    FinishedPlayerState white_state;
+    FinishedPlayerState black_state;
+    if (white != nullptr) {
+        white_state = build_finished_player_state(*white);
+    }
+    if (black != nullptr) {
+        black_state = build_finished_player_state(*black);
+    }
 
     if (white != nullptr && black != nullptr) {
         runtime_store_.unregister_room(room_id, white->user_id, black->user_id);
@@ -120,27 +110,7 @@ void GameResultHandler::cleanup_finished_room(RoomId room_id) {
 
     room->reset();
 
-    if (PlayerSession* white_session = session_manager_.find_session(white_player_id)) {
-        white_session->clear_side();
-        white_session->clear_room();
-        refresh_session_player(*white_session);
-        session_registry_.unregister_session(white_session->player().username());
-    }
-    if (PlayerSession* black_session = session_manager_.find_session(black_player_id)) {
-        black_session->clear_side();
-        black_session->clear_room();
-        refresh_session_player(*black_session);
-        session_registry_.unregister_session(black_session->player().username());
-    }
-}
-
-void GameResultHandler::refresh_session_player(PlayerSession& session) {
-    if (!session.has_user()) {
-        return;
-    }
-    if (const auto updated = user_repository_.find_profile_by_id(session.user_id())) {
-        session.assign_user(session.user_id(), updated->username(), updated->rating());
-    }
+    completion_gateway_.cleanup_finished_players(white_state, black_state);
 }
 
 }  // namespace kfc

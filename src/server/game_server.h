@@ -4,6 +4,8 @@
 #include "app/game_server_dependencies.h"
 #include "app/server_metrics.h"
 #include "server/game/local_game_host.h"
+#include "server/gateway/local_game_completion_gateway.h"
+#include "server/gateway/local_game_gateway.h"
 #include "server/game_result/game_result_handler.h"
 #include "server/lobby/lobby_message_handler.h"
 #include "server/match/match_lifecycle_handler.h"
@@ -64,6 +66,8 @@ private:
     SessionRegistry session_registry_;
     ClientSessionManager session_manager_;
     SessionMessageSink session_message_sink_;
+    LocalGameGateway local_game_gateway_;
+    LocalGameCompletionGateway local_game_completion_gateway_;
     GameInputDispatcher game_input_dispatcher_;
     ActiveRoomProcessor active_room_processor_;
     IUserRepository& user_repository_;

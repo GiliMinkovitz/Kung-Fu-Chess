@@ -5,9 +5,9 @@
 #include "database/i_game_repository.h"
 #include "model/piece.h"
 #include "server/matchmaking/matchmaking_service.h"
-#include "server/network/i_message_sink.h"
 #include "server/network/player_id.h"
 #include "server/game/i_game_host.h"
+#include "server/gateway/i_game_gateway.h"
 #include "server/player_session.h"
 #include "server/room/game_player.h"
 #include "server/user/user_id.h"
@@ -39,8 +39,8 @@ void MatchLifecycleHandler::bind_matchmaking_service(MatchmakingService& matchma
     matchmaking_service_ = &matchmaking_service;
 }
 
-void MatchLifecycleHandler::bind_message_sink(IMessageSink& message_sink) {
-    message_sink_ = &message_sink;
+void MatchLifecycleHandler::bind_game_gateway(IGameGateway& game_gateway) {
+    game_gateway_ = &game_gateway;
 }
 
 RoomId MatchLifecycleHandler::create_match(PlayerSession* white, PlayerSession* black) {
@@ -49,16 +49,13 @@ RoomId MatchLifecycleHandler::create_match(PlayerSession* white, PlayerSession* 
     white->set_side(PieceColor::White);
     black->set_side(PieceColor::Black);
 
-    const RoomId room_id = game_host_.create_room();
-
-    game_host_.activate_room(room_id, to_game_player(*white, PieceColor::White),
-                             to_game_player(*black, PieceColor::Black));
+    const GamePlayer white_player = to_game_player(*white, PieceColor::White);
+    const GamePlayer black_player = to_game_player(*black, PieceColor::Black);
 
     const std::optional<int> db_game_id =
         game_repository_.create_game(white->player().id(), black->player().id());
-    if (db_game_id.has_value()) {
-        game_host_.set_db_game_id(room_id, *db_game_id);
-    }
+
+    const RoomId room_id = game_host_.create_room(white_player, black_player, db_game_id);
 
     white->assign_room(room_id);
     black->assign_room(room_id);
@@ -70,14 +67,14 @@ RoomId MatchLifecycleHandler::create_match(PlayerSession* white, PlayerSession* 
 }
 
 void MatchLifecycleHandler::notify_match_created(const MatchCreated& match) {
-    if (message_sink_ == nullptr) {
+    if (game_gateway_ == nullptr) {
         return;
     }
 
-    message_sink_->send(static_cast<PlayerId>(match.white->id()), "match_found white");
-    message_sink_->send(static_cast<PlayerId>(match.black->id()), "match_found black");
-    message_sink_->send(static_cast<PlayerId>(match.white->id()), "game_start white");
-    message_sink_->send(static_cast<PlayerId>(match.black->id()), "game_start black");
+    const PlayerId white_id = static_cast<PlayerId>(match.white->id());
+    const PlayerId black_id = static_cast<PlayerId>(match.black->id());
+    game_gateway_->notify_match_found(white_id, black_id);
+    game_gateway_->notify_game_start(white_id, black_id);
 }
 
 void MatchLifecycleHandler::process_timeouts() {
@@ -93,8 +90,8 @@ void MatchLifecycleHandler::process_timeouts() {
                       << session->player().username() << ")\n";
         }
 #endif
-        if (message_sink_ != nullptr) {
-            message_sink_->send(static_cast<PlayerId>(session->id()), "search_timeout");
+        if (game_gateway_ != nullptr) {
+            game_gateway_->notify_search_timeout(static_cast<PlayerId>(session->id()));
         }
         session->cancel_search();
     }

@@ -87,6 +87,8 @@ set(KFC_SERVER_ARCH_SOURCES
     src/server/network/game_input_dispatcher.cpp
     src/server/lobby/lobby_message_handler.cpp
     src/server/game/local_game_host.cpp
+    src/server/gateway/local_game_gateway.cpp
+    src/server/gateway/local_game_completion_gateway.cpp
     src/server/match/match_lifecycle_handler.cpp
     src/server/game_server.cpp
     src/server/game_result_message_writer.cpp

@@ -25,6 +25,8 @@ GameServer::GameServer(const app::AppConfig& config, BoardModel default_board,
       matchmaking_service_(match_lifecycle_handler_, config.matchmaking),
       session_manager_(websocket_server_, session_registry_, matchmaking_service_),
       session_message_sink_(session_manager_),
+      local_game_gateway_(session_message_sink_),
+      local_game_completion_gateway_(session_registry_, session_manager_, session_message_sink_),
       game_input_dispatcher_(session_manager_),
       active_room_processor_(room_manager_, game_input_dispatcher_, session_message_sink_),
       user_repository_(dependencies.user_repository),
@@ -32,13 +34,12 @@ GameServer::GameServer(const app::AppConfig& config, BoardModel default_board,
       lobby_handler_(dependencies.authentication_service, matchmaking_service_, session_registry_,
                      session_manager_, match_lifecycle_handler_),
       game_result_handler_(room_manager_, user_repository_, dependencies.game_repository,
-                           session_registry_, dependencies.runtime_store, session_manager_,
-                           session_message_sink_),
+                           dependencies.runtime_store, local_game_completion_gateway_),
       redis_enabled_(config.redis.enabled),
       heartbeat_interval_(config.redis.heartbeat_interval) {
     app::configure_logging(config.logging);
     match_lifecycle_handler_.bind_matchmaking_service(matchmaking_service_);
-    match_lifecycle_handler_.bind_message_sink(session_message_sink_);
+    match_lifecycle_handler_.bind_game_gateway(local_game_gateway_);
     last_tick_ = std::chrono::steady_clock::now();
 }
 
