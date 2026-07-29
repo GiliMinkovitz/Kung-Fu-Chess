@@ -4,12 +4,13 @@
 #include "app/redis_config.h"
 
 #include <memory>
+#include <string>
 
 namespace kfc {
 
 class RedisRuntimeStore final : public IRuntimeStore {
 public:
-    explicit RedisRuntimeStore(const app::RedisConfig& config);
+    RedisRuntimeStore(const app::RedisConfig& config, std::string game_server_endpoint);
     ~RedisRuntimeStore() override;
 
     RedisRuntimeStore(const RedisRuntimeStore&) = delete;
@@ -22,10 +23,13 @@ public:
     void publish_server_heartbeat(std::string_view server_id, std::string_view region,
                                   const app::ServerMetrics& metrics) override;
     void deregister_server(std::string_view server_id) override;
+    [[nodiscard]] std::optional<GameServerLocation> find_player_location(
+        UserId user_id) const override;
 
 private:
     struct Impl;
     std::unique_ptr<Impl> impl_;
+    std::string game_server_endpoint_;
 };
 
 }  // namespace kfc

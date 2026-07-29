@@ -17,10 +17,12 @@ GameServer::GameServer(const app::AppConfig& config, BoardModel default_board,
                        app::GameServerDependencies dependencies)
     : websocket_server_(config.server),
       room_manager_(std::move(default_board)),
-      local_game_host_(room_manager_),
+      local_game_host_(room_manager_, config.server.server_id),
+      local_game_allocator_(local_game_host_),
       server_id_(config.server.server_id),
       region_(config.server.region),
-      match_lifecycle_handler_(local_game_host_, dependencies.game_repository,
+      game_endpoint_(config.server.endpoint),
+      match_lifecycle_handler_(local_game_allocator_, dependencies.game_repository,
                                dependencies.runtime_store, server_id_),
       matchmaking_service_(match_lifecycle_handler_, config.matchmaking),
       session_manager_(websocket_server_, session_registry_, matchmaking_service_),
@@ -33,11 +35,13 @@ GameServer::GameServer(const app::AppConfig& config, BoardModel default_board,
       runtime_store_(dependencies.runtime_store),
       lobby_handler_(dependencies.authentication_service, matchmaking_service_, session_registry_,
                      session_manager_, match_lifecycle_handler_),
+      game_join_handler_(room_manager_, session_manager_, user_repository_),
       game_result_handler_(room_manager_, user_repository_, dependencies.game_repository,
                            dependencies.runtime_store, local_game_completion_gateway_),
       redis_enabled_(config.redis.enabled),
       heartbeat_interval_(config.redis.heartbeat_interval) {
     app::configure_logging(config.logging);
+    local_game_host_.bind_session_manager(session_manager_);
     match_lifecycle_handler_.bind_matchmaking_service(matchmaking_service_);
     match_lifecycle_handler_.bind_game_gateway(local_game_gateway_);
     last_tick_ = std::chrono::steady_clock::now();
@@ -72,6 +76,7 @@ app::ServerMetrics GameServer::metrics() const {
     result.matchmaking_queue = matchmaking_service_.waiting_count();
     result.server_id = server_id_;
     result.region = region_;
+    result.endpoint = game_endpoint_;
     result.redis_enabled = redis_enabled_;
     result.redis_connected = redis_enabled_ && runtime_store_.is_available();
 
@@ -98,6 +103,7 @@ void GameServer::maybe_publish_heartbeat() {
 void GameServer::tick_once() {
     session_manager_.accept_new_clients();
     lobby_handler_.process();
+    game_join_handler_.process();
     match_lifecycle_handler_.process_timeouts();
 
     const auto now = std::chrono::steady_clock::now();

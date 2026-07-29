@@ -1,8 +1,19 @@
 #include "server/gateway/local_game_gateway.h"
 
+#include "model/piece.h"
 #include "server/network/i_message_sink.h"
 
+#include <string>
+
 namespace kfc {
+
+namespace {
+
+const char* side_token(const PieceColor side) {
+    return side == PieceColor::White ? "white" : "black";
+}
+
+}  // namespace
 
 LocalGameGateway::LocalGameGateway(IMessageSink& message_sink) : message_sink_(message_sink) {}
 
@@ -18,6 +29,16 @@ void LocalGameGateway::notify_game_start(PlayerId white, PlayerId black) {
 
 void LocalGameGateway::notify_search_timeout(PlayerId player) {
     message_sink_.send(player, "search_timeout");
+}
+
+void LocalGameGateway::send_game_redirect(PlayerId player, GameRedirectInfo redirect_info) {
+    std::string message = "game_redirect ";
+    message += redirect_info.endpoint;
+    message += ' ';
+    message += std::to_string(redirect_info.room_id);
+    message += ' ';
+    message += side_token(redirect_info.side);
+    message_sink_.send(player, message);
 }
 
 }  // namespace kfc

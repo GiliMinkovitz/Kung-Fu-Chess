@@ -62,6 +62,15 @@ TEST_CASE("GameMessageParserTest - ParsePlayMessage") {
     CHECK_FALSE(kfc::parse_play_message(" play\textra "));
 }
 
+TEST_CASE("GameMessageParserTest - ParseJoinGameMessage") {
+    CHECK_EQ(kfc::parse_join_game_message("join_game 42"), 42u);
+    CHECK_EQ(kfc::parse_join_game_message("  join_game 7  "), 7u);
+    CHECK_FALSE(kfc::parse_join_game_message("join_game").has_value());
+    CHECK_FALSE(kfc::parse_join_game_message("join_game abc").has_value());
+    CHECK_FALSE(kfc::parse_join_game_message("join_game 1 extra").has_value());
+    CHECK_FALSE(kfc::parse_join_game_message("play").has_value());
+}
+
 TEST_CASE("GameMessageParserTest - ParseResignMessage") {
     CHECK(kfc::parse_resign_message("resign"));
     CHECK(kfc::parse_resign_message("  resign  "));

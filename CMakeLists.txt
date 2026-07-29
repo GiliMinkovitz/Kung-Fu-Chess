@@ -6,10 +6,6 @@ cmake_minimum_required(VERSION 3.16)
 
 project(KungFuChess VERSION 0.1.0 LANGUAGES CXX C)
 
-message(STATUS "Source directory is: ${CMAKE_SOURCE_DIR}")
-file(GLOB_RECURSE ALL_FILES "${CMAKE_SOURCE_DIR}/src/*")
-message(STATUS "Found files: ${ALL_FILES}")
-
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
@@ -46,6 +42,9 @@ set(KFC_NETWORK_SOURCES
     src/network/game_result_message_reader.cpp
     src/network/network_input_handler.cpp
     src/network/network_login_session.cpp
+    src/network/game_redirect_message_reader.cpp
+    src/network/websocket_endpoint.cpp
+    src/network/network_game_redirect_flow.cpp
 )
 
 set(KFC_SERVER_WEBSOCKET_SOURCES
@@ -87,6 +86,8 @@ set(KFC_SERVER_ARCH_SOURCES
     src/server/network/game_input_dispatcher.cpp
     src/server/lobby/lobby_message_handler.cpp
     src/server/game/local_game_host.cpp
+    src/server/game/local_game_allocator.cpp
+    src/server/game/game_join_handler.cpp
     src/server/gateway/local_game_gateway.cpp
     src/server/gateway/local_game_completion_gateway.cpp
     src/server/match/match_lifecycle_handler.cpp
@@ -446,6 +447,7 @@ set(KFC_TEST_SOURCES
     tests/unit/ui/board_view_builder_tests.cpp
     tests/unit/ui/board_view_model_tests.cpp
     tests/unit/app/config_loader_tests.cpp
+    tests/unit/app/in_memory_runtime_store_tests.cpp
     tests/unit/app/database_config_tests.cpp
     tests/unit/app/health_http_server_tests.cpp
     tests/unit/app/server_health_tests.cpp
@@ -463,6 +465,8 @@ set(KFC_TEST_SOURCES
     tests/unit/database/game_repository_tests.cpp
     tests/unit/server/matchmaking_tests.cpp
     tests/unit/server/matchmaking_service_tests.cpp
+    tests/unit/server/local_game_gateway_tests.cpp
+    tests/unit/server/match_lifecycle_handler_tests.cpp
     tests/unit/server/room_tests.cpp
     tests/unit/server/room_manager_tests.cpp
     tests/unit/server/match_tests.cpp
@@ -481,6 +485,8 @@ set(KFC_TEST_SOURCES
     tests/unit/server/game_server_multi_room_tests.cpp
     tests/unit/server/websocket_server_tests.cpp
     tests/unit/network/matchmaking_message_reader_tests.cpp
+    tests/unit/network/game_redirect_message_reader_tests.cpp
+    tests/unit/network/network_game_redirect_flow_tests.cpp
     tests/unit/network/login_message_reader_tests.cpp
     tests/unit/network/game_result_message_reader_tests.cpp
     tests/integration/integration_test.cpp

@@ -1,10 +1,13 @@
 #include "network/websocket_client.h"
 
+#include "network/websocket_endpoint.h"
+
 #ifdef KFC_TEST_BUILD
 #include "test/socket_test_hooks.h"
 #endif
 
-#include <cerrno>
+#include <cstdint>
+#include <stdexcept>
 #include <chrono>
 #include <iostream>
 
@@ -121,6 +124,18 @@ void WebSocketClient::disconnect() {
     ws_.reset();
     buffered_bytes_ = 0;
     connected_ = false;
+}
+
+void WebSocketClient::connect_to_game_server(const std::string& endpoint) {
+    const std::optional<WebSocketEndpoint> parsed = parse_websocket_endpoint(endpoint);
+    if (!parsed.has_value()) {
+        throw std::invalid_argument("Invalid game server endpoint: " + endpoint);
+    }
+
+    disconnect();
+    host_ = parsed->host;
+    port_ = parsed->port;
+    connect();
 }
 
 bool WebSocketClient::try_send(const std::string& message) {

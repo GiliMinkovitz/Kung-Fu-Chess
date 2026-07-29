@@ -2,6 +2,8 @@
 
 #include "network/websocket_client.h"
 
+#include "server/room/room_id.h"
+
 #include <cstddef>
 #include <string>
 
@@ -15,6 +17,7 @@ public:
 
     bool send_login(const std::string& username, const std::string& password = "");
     bool send_play();
+    bool send_join_game(RoomId room_id);
     bool send_select(std::size_t row, std::size_t col);
     bool send_move(std::size_t row, std::size_t col);
     bool send_jump(std::size_t row, std::size_t col);

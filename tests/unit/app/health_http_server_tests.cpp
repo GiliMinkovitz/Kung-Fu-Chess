@@ -100,6 +100,7 @@ TEST_CASE("HealthHttpServerTest - MetricsEndpointReturnsPlainText") {
              "last_tick_duration_ms 16\n"
              "server_id local\n"
              "region local\n"
+             "endpoint \n"
              "redis_enabled 0\n"
              "redis_connected 0\n");
 

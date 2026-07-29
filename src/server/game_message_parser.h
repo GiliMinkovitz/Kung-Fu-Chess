@@ -3,6 +3,7 @@
 #include "logic/game_action.h"
 #include "server/match.h"
 #include "server/player_session.h"
+#include "server/room/room_id.h"
 
 #include "model/piece.h"
 
@@ -19,6 +20,7 @@ struct LoginRequest {
 
 bool parse_play_message(std::string_view message);
 bool parse_resign_message(std::string_view message);
+std::optional<RoomId> parse_join_game_message(std::string_view message);
 std::optional<LoginRequest> parse_login_message(std::string_view message);
 std::optional<GameAction> parse_message(std::string_view message);
 bool is_action_allowed(PieceColor player_side, const Match& match, const GameAction& action);

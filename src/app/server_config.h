@@ -13,6 +13,7 @@ struct ServerConfig {
     std::string bind_address = "127.0.0.1";
     std::string server_id = "local";
     std::string region = "local";
+    std::string endpoint;
     std::size_t max_clients = kDefaultMaxClients;
 };
 

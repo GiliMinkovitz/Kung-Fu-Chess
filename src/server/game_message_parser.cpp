@@ -90,6 +90,39 @@ bool parse_play_message(std::string_view message) {
     return true;
 }
 
+std::optional<RoomId> parse_join_game_message(std::string_view message) {
+    while (!message.empty() && std::isspace(static_cast<unsigned char>(message.front()))) {
+        message.remove_prefix(1);
+    }
+    while (!message.empty() && std::isspace(static_cast<unsigned char>(message.back()))) {
+        message.remove_suffix(1);
+    }
+
+    if (message.empty()) {
+        return std::nullopt;
+    }
+
+    const auto command = next_token(message);
+    if (!command || *command != "join_game") {
+        return std::nullopt;
+    }
+
+    const auto room_id_token = next_token(message);
+    if (!room_id_token) {
+        return std::nullopt;
+    }
+
+    const std::optional<std::size_t> parsed_room_id = parse_non_negative_int(*room_id_token);
+    if (!parsed_room_id.has_value()) {
+        return std::nullopt;
+    }
+    if (next_token(message)) {
+        return std::nullopt;
+    }
+
+    return static_cast<RoomId>(*parsed_room_id);
+}
+
 bool parse_resign_message(std::string_view message) {
     while (!message.empty() && std::isspace(static_cast<unsigned char>(message.front()))) {
         message.remove_prefix(1);

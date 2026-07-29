@@ -22,6 +22,15 @@ void Room::activate(const GamePlayer& white, const GamePlayer& black) {
     active_ = true;
 }
 
+void Room::rebind_player(const UserId user_id, const PlayerId new_player_id) {
+    if (white_player_.has_value() && white_player_->user_id == user_id) {
+        white_player_->player_id = new_player_id;
+    }
+    if (black_player_.has_value() && black_player_->user_id == user_id) {
+        black_player_->player_id = new_player_id;
+    }
+}
+
 void Room::set_db_game_id(int id) {
     db_game_id_ = id;
 }

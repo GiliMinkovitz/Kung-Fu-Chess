@@ -1,13 +1,16 @@
 #pragma once
 
+#include "server/gateway/game_redirect_info.h"
+#include "server/game/protocol/game_creation_response.h"
 #include "server/matchmaking/match_created_handler.h"
+#include "server/user/user_id.h"
 
 #include <string>
 
 namespace kfc {
 
+class IGameAllocator;
 class IGameGateway;
-class IGameHost;
 class IGameRepository;
 class IRuntimeStore;
 class MatchmakingService;
@@ -15,7 +18,7 @@ class PlayerSession;
 
 class MatchLifecycleHandler : public IMatchCreatedHandler {
 public:
-    MatchLifecycleHandler(IGameHost& game_host, IGameRepository& game_repository,
+    MatchLifecycleHandler(IGameAllocator& game_allocator, IGameRepository& game_repository,
                           IRuntimeStore& runtime_store, std::string server_id);
 
     void bind_matchmaking_service(MatchmakingService& matchmaking_service);
@@ -26,7 +29,18 @@ public:
     void process_timeouts();
 
 private:
-    IGameHost& game_host_;
+    struct ResolvedRouting {
+        RoomId room_id;
+        std::string server_id;
+        std::string endpoint;
+    };
+
+    [[nodiscard]] ResolvedRouting resolve_routing(const GameCreationResponse& response,
+                                                  UserId user_id) const;
+    void send_game_redirects(PlayerSession* white, PlayerSession* black,
+                             const GameCreationResponse& response);
+
+    IGameAllocator& game_allocator_;
     IGameRepository& game_repository_;
     IRuntimeStore& runtime_store_;
     std::string server_id_;

@@ -22,6 +22,7 @@ public:
 
     void connect();
     void disconnect();
+    void connect_to_game_server(const std::string& endpoint);
 
     [[nodiscard]] bool is_connected() const noexcept { return connected_; }
 

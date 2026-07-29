@@ -3,17 +3,24 @@
 #include "server/game/i_game_host.h"
 #include "server/room/room_manager.h"
 
+#include <string>
+
 namespace kfc {
+
+class ClientSessionManager;
 
 class LocalGameHost : public IGameHost {
 public:
-    explicit LocalGameHost(RoomManager& room_manager);
+    LocalGameHost(RoomManager& room_manager, std::string game_server_id);
 
-    RoomId create_room(const GamePlayer& white, const GamePlayer& black,
-                       std::optional<int> db_game_id) override;
+    void bind_session_manager(ClientSessionManager& session_manager);
+
+    GameCreationResponse create_room(const GameCreationRequest& request) override;
 
 private:
     RoomManager& room_manager_;
+    std::string game_server_id_;
+    ClientSessionManager* session_manager_ = nullptr;
 };
 
 }  // namespace kfc

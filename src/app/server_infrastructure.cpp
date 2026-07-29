@@ -26,11 +26,11 @@ PostgresConnection::Settings make_postgres_settings(const DatabaseConfig& databa
     };
 }
 
-std::unique_ptr<IRuntimeStore> make_runtime_store(const RedisConfig& redis_config) {
-    if (redis_config.enabled) {
-        return std::make_unique<RedisRuntimeStore>(redis_config);
+std::unique_ptr<IRuntimeStore> make_runtime_store(const AppConfig& config) {
+    if (config.redis.enabled) {
+        return std::make_unique<RedisRuntimeStore>(config.redis, config.server.endpoint);
     }
-    return std::make_unique<InMemoryRuntimeStore>();
+    return std::make_unique<InMemoryRuntimeStore>(config.server.endpoint);
 }
 
 }  // namespace
@@ -38,7 +38,7 @@ std::unique_ptr<IRuntimeStore> make_runtime_store(const RedisConfig& redis_confi
 ServerInfrastructure::ServerInfrastructure(const AppConfig& config)
     : database_backend_(config.database.backend),
       redis_config_(config.redis),
-      runtime_store_(make_runtime_store(config.redis)) {
+      runtime_store_(make_runtime_store(config)) {
     if (config.redis.enabled && !runtime_store_->is_available()) {
         throw std::runtime_error("Failed to connect to Redis");
     }

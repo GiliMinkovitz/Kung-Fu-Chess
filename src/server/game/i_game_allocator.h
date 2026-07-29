@@ -5,11 +5,11 @@
 
 namespace kfc {
 
-class IGameHost {
+class IGameAllocator {
 public:
-    virtual ~IGameHost() = default;
+    virtual ~IGameAllocator() = default;
 
-    virtual GameCreationResponse create_room(const GameCreationRequest& request) = 0;
+    virtual GameCreationResponse allocate_game(const GameCreationRequest& request) = 0;
 };
 
 }  // namespace kfc

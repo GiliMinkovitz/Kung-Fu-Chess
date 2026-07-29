@@ -116,6 +116,10 @@ void override_server_config(kfc::app::ServerConfig& server) {
     if (const auto region_value = read_environment("KFC_REGION")) {
         server.region = *region_value;
     }
+
+    if (const auto endpoint_value = read_environment("KFC_GAME_ENDPOINT")) {
+        server.endpoint = *endpoint_value;
+    }
 }
 
 void override_database_config(kfc::app::DatabaseConfig& database) {

@@ -1,9 +1,11 @@
 #pragma once
 
+#include "app/game_server_location.h"
 #include "app/server_metrics.h"
-#include "server/room/room.h"
+#include "server/room/room_id.h"
 #include "server/user/user_id.h"
 
+#include <optional>
 #include <string_view>
 
 namespace kfc {
@@ -19,6 +21,8 @@ public:
     virtual void publish_server_heartbeat(std::string_view server_id, std::string_view region,
                                           const app::ServerMetrics& metrics) = 0;
     virtual void deregister_server(std::string_view server_id) = 0;
+    [[nodiscard]] virtual std::optional<GameServerLocation> find_player_location(
+        UserId user_id) const = 0;
 };
 
 }  // namespace kfc

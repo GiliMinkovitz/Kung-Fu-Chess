@@ -17,6 +17,10 @@ bool NetworkInputHandler::send_play() {
     return client_.try_send("play");
 }
 
+bool NetworkInputHandler::send_join_game(const RoomId room_id) {
+    return client_.try_send("join_game " + std::to_string(room_id));
+}
+
 bool NetworkInputHandler::send_select(std::size_t row, std::size_t col) {
     return client_.try_send("select " + std::to_string(row) + ' ' + std::to_string(col));
 }

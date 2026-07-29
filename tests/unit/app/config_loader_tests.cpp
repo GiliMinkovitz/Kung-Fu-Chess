@@ -77,6 +77,7 @@ void check_default_server_config(const kfc::app::ServerConfig& server) {
     CHECK_EQ(server.bind_address, "127.0.0.1");
     CHECK_EQ(server.server_id, "local");
     CHECK_EQ(server.region, "local");
+    CHECK(server.endpoint.empty());
     CHECK_EQ(server.max_clients, kfc::app::ServerConfig::kDefaultMaxClients);
 }
 
@@ -122,6 +123,7 @@ TEST_CASE("ConfigLoaderTest - DefaultConfigurationWithoutEnvironment") {
         {"KFC_HEALTH_PORT", std::nullopt},
         {"KFC_SERVER_ID", std::nullopt},
         {"KFC_REGION", std::nullopt},
+        {"KFC_GAME_ENDPOINT", std::nullopt},
         kClearDbBackend,
         kClearDbPath,
         kClearDbHost,
@@ -681,6 +683,15 @@ TEST_CASE("ConfigLoaderTest - OverridesServerIdAndRegion") {
     const kfc::app::AppConfig config = kfc::app::load_config_from_environment();
     CHECK_EQ(config.server.server_id, "game-eu-1");
     CHECK_EQ(config.server.region, "eu-west");
+}
+
+TEST_CASE("ConfigLoaderTest - OverridesGameEndpoint") {
+    const ScopedEnvironment env{
+        {"KFC_GAME_ENDPOINT", "ws://games.example:8765"},
+    };
+
+    const kfc::app::AppConfig config = kfc::app::load_config_from_environment();
+    CHECK_EQ(config.server.endpoint, "ws://games.example:8765");
 }
 
 TEST_CASE("ConfigLoaderTest - MissingVariablesKeepDefaults") {

@@ -4,7 +4,9 @@
 #include "engine/game_engine.h"
 #include "model/board_model.h"
 #include "model/game_config.h"
+#include "network/game_redirect_message_reader.h"
 #include "network/matchmaking_message_reader.h"
+#include "network/network_game_redirect_flow.h"
 #include "network/network_input_handler.h"
 #include "network/network_login_session.h"
 #include "network/snapshot_reader.h"
@@ -230,6 +232,8 @@ private:
 struct NetworkGuiState {
     kfc::MatchmakingState matchmaking{kfc::MatchmakingState::Idle};
     std::optional<kfc::PieceColor> local_side;
+    std::optional<kfc::GameRedirectInfo> redirect;
+    bool using_game_connection = false;
 };
 
 [[nodiscard]] std::optional<kfc::PieceColor> matchmaking_local_side(kfc::MatchmakingState state) {
@@ -306,6 +310,15 @@ void handle_network_message(const std::string& message,
         if (const std::optional<kfc::PieceColor> side = matchmaking_local_side(*matchmaking)) {
             gui_state.local_side = side;
         }
+        return;
+    }
+
+    if (const std::optional<kfc::GameRedirectInfo> redirect =
+            kfc::read_game_redirect_message(message)) {
+        gui_state.redirect = redirect;
+        if (!gui_state.local_side.has_value()) {
+            gui_state.local_side = redirect->side;
+        }
     }
 }
 
@@ -372,17 +385,36 @@ int run_offline_gui() {
     return true;
 }
 
+[[nodiscard]] bool maybe_switch_to_game_connection(kfc::WebSocketClient& lobby_client,
+                                                   kfc::WebSocketClient& game_client,
+                                                   kfc::NetworkInputHandler& game_input,
+                                                   NetworkGuiState& gui_state) {
+    if (!gui_state.redirect.has_value() || gui_state.using_game_connection) {
+        return false;
+    }
+
+    kfc::NetworkGameRedirectFlow redirect_flow{lobby_client, game_client, game_input};
+    if (!redirect_flow.execute(*gui_state.redirect)) {
+        return false;
+    }
+
+    gui_state.using_game_connection = true;
+    return true;
+}
+
 int run_network_gui() {
-    kfc::WebSocketClient client("127.0.0.1", kServerPort);
-    client.connect();
+    kfc::WebSocketClient lobby_client("127.0.0.1", kServerPort);
+    kfc::WebSocketClient game_client("127.0.0.1", kServerPort);
+    lobby_client.connect();
 
     auto renderer = std::make_unique<kfc::Ctd26Renderer>();
     kfc::Ctd26Renderer* renderer_ptr = renderer.get();
     kfc::UiController controller(kDefaultBoardRows, kDefaultBoardCols, std::move(renderer));
     renderer_ptr->attach_input_sink(nullptr);
 
-    kfc::NetworkInputHandler network_input(client);
-    kfc::NetworkLoginSession login_session(network_input);
+    kfc::NetworkInputHandler lobby_input(lobby_client);
+    kfc::NetworkInputHandler game_input(game_client);
+    kfc::NetworkLoginSession login_session(lobby_input);
 
     std::string username;
     bool play_requested = false;
@@ -400,7 +432,7 @@ int run_network_gui() {
             if (elapsed >= kfc::kTargetFrameMs) {
                 if (!renderer_ptr->present_login_screen(username).should_continue) {
                     controller.shutdown();
-                    client.disconnect();
+                    lobby_client.disconnect();
                     return 0;
                 }
                 last_frame = now;
@@ -418,8 +450,9 @@ int run_network_gui() {
             continue;
         }
 
-        if (!wait_for_login_handshake(client, login_session, *renderer_ptr, controller, username)) {
-            if (!client.is_connected()) {
+        if (!wait_for_login_handshake(lobby_client, login_session, *renderer_ptr, controller,
+                                      username)) {
+            if (!lobby_client.is_connected()) {
                 return 0;
             }
             login_session.reset();
@@ -435,7 +468,12 @@ int run_network_gui() {
     const kfc::BoardViewModel waiting_board_view = empty_waiting_board_view();
     last_frame = std::chrono::steady_clock::now();
     while (!latest_view.has_value()) {
-        drain_network_messages(client, latest_view, gui_state);
+        drain_network_messages(lobby_client, latest_view, gui_state);
+        if (maybe_switch_to_game_connection(lobby_client, game_client, game_input, gui_state)) {
+            drain_network_messages(game_client, latest_view, gui_state);
+        } else if (gui_state.using_game_connection) {
+            drain_network_messages(game_client, latest_view, gui_state);
+        }
 
         renderer_ptr->set_overlay_text(matchmaking_overlay_text(gui_state.matchmaking));
 
@@ -445,7 +483,8 @@ int run_network_gui() {
         if (elapsed >= kfc::kTargetFrameMs) {
             if (!controller.present(waiting_board_view).should_continue) {
                 controller.shutdown();
-                client.disconnect();
+                lobby_client.disconnect();
+                game_client.disconnect();
                 return 0;
             }
             last_frame = now;
@@ -456,13 +495,20 @@ int run_network_gui() {
 
     renderer_ptr->set_overlay_text(std::nullopt);
 
-    NetworkGuiInputSink input_sink(network_input, *latest_view, renderer_ptr->board_layout());
+    NetworkGuiInputSink input_sink(game_input, *latest_view, renderer_ptr->board_layout());
     renderer_ptr->attach_input_sink(&input_sink);
 
     last_frame = std::chrono::steady_clock::now();
 
     while (true) {
-        drain_network_messages(client, latest_view, gui_state);
+        if (gui_state.using_game_connection) {
+            drain_network_messages(game_client, latest_view, gui_state);
+        } else {
+            drain_network_messages(lobby_client, latest_view, gui_state);
+            if (maybe_switch_to_game_connection(lobby_client, game_client, game_input, gui_state)) {
+                drain_network_messages(game_client, latest_view, gui_state);
+            }
+        }
 
         input_sink.update_view(*latest_view);
         input_sink.set_layout(renderer_ptr->board_layout());
@@ -482,7 +528,8 @@ int run_network_gui() {
     }
 
     controller.shutdown();
-    client.disconnect();
+    lobby_client.disconnect();
+    game_client.disconnect();
     return 0;
 }
 

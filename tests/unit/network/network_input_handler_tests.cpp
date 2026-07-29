@@ -85,6 +85,15 @@ TEST_CASE("NetworkInputHandlerTest - SendsPlayCommand") {
     CHECK_EQ(*message, "play");
 }
 
+TEST_CASE("NetworkInputHandlerTest - SendsJoinGameCommand") {
+    ConnectedSession session;
+    REQUIRE(session.handler.send_join_game(42));
+
+    const auto message = poll_server_message(session.server);
+    REQUIRE(message.has_value());
+    CHECK_EQ(*message, "join_game 42");
+}
+
 TEST_CASE("NetworkInputHandlerTest - SendsSelectCommand") {
     ConnectedSession session;
     REQUIRE(session.handler.send_select(1, 2));
@@ -136,6 +145,7 @@ TEST_CASE("NetworkInputHandlerTest - ReturnsFalseWhenDisconnected") {
 
     CHECK_FALSE(handler.send_login("alice"));
     CHECK_FALSE(handler.send_play());
+    CHECK_FALSE(handler.send_join_game(1));
     CHECK_FALSE(handler.send_select(0, 0));
     CHECK_FALSE(handler.send_move(0, 1));
     CHECK_FALSE(handler.send_jump(0, 0));

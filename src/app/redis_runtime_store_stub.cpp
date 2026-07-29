@@ -6,7 +6,8 @@ namespace kfc {
 
 struct RedisRuntimeStore::Impl {};
 
-RedisRuntimeStore::RedisRuntimeStore(const app::RedisConfig&) : impl_(std::make_unique<Impl>()) {}
+RedisRuntimeStore::RedisRuntimeStore(const app::RedisConfig&, std::string game_server_endpoint)
+    : impl_(std::make_unique<Impl>()), game_server_endpoint_(std::move(game_server_endpoint)) {}
 
 RedisRuntimeStore::~RedisRuntimeStore() = default;
 
@@ -29,6 +30,10 @@ void RedisRuntimeStore::publish_server_heartbeat(std::string_view, std::string_v
 
 void RedisRuntimeStore::deregister_server(std::string_view) {
     // TODO(phase-11.4): Implement Redis DEL for gameserver:{id} when hiredis is available.
+}
+
+std::optional<GameServerLocation> RedisRuntimeStore::find_player_location(UserId) const {
+    return std::nullopt;
 }
 
 }  // namespace kfc

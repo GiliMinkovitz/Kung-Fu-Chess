@@ -3,7 +3,9 @@
 #include "app/app_config.h"
 #include "app/game_server_dependencies.h"
 #include "app/server_metrics.h"
+#include "server/game/local_game_allocator.h"
 #include "server/game/local_game_host.h"
+#include "server/game/game_join_handler.h"
 #include "server/gateway/local_game_completion_gateway.h"
 #include "server/gateway/local_game_gateway.h"
 #include "server/game_result/game_result_handler.h"
@@ -59,8 +61,10 @@ private:
     WebSocketServer websocket_server_;
     RoomManager room_manager_;
     LocalGameHost local_game_host_;
+    LocalGameAllocator local_game_allocator_;
     std::string server_id_;
     std::string region_;
+    std::string game_endpoint_;
     MatchLifecycleHandler match_lifecycle_handler_;
     MatchmakingService matchmaking_service_;
     SessionRegistry session_registry_;
@@ -73,6 +77,7 @@ private:
     IUserRepository& user_repository_;
     IRuntimeStore& runtime_store_;
     LobbyMessageHandler lobby_handler_;
+    GameJoinHandler game_join_handler_;
     GameResultHandler game_result_handler_;
     bool redis_enabled_ = false;
     std::chrono::seconds heartbeat_interval_{1};

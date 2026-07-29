@@ -22,6 +22,7 @@ public:
     [[nodiscard]] bool active() const noexcept;
 
     void activate(const GamePlayer& white, const GamePlayer& black);
+    void rebind_player(UserId user_id, PlayerId new_player_id);
     void set_db_game_id(int id);
     void reset();
 

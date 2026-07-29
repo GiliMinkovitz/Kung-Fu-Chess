@@ -14,6 +14,7 @@ struct ServerMetrics {
     std::int64_t last_tick_duration_ms = 0;
     std::string server_id;
     std::string region;
+    std::string endpoint;
     bool redis_enabled = false;
     bool redis_connected = false;
 };
@@ -26,6 +27,7 @@ struct ServerMetrics {
            "last_tick_duration_ms " + std::to_string(metrics.last_tick_duration_ms) + "\n" +
            "server_id " + metrics.server_id + "\n" +
            "region " + metrics.region + "\n" +
+           "endpoint " + metrics.endpoint + "\n" +
            "redis_enabled " + std::to_string(static_cast<int>(metrics.redis_enabled)) + "\n" +
            "redis_connected " + std::to_string(static_cast<int>(metrics.redis_connected)) + "\n";
 }
