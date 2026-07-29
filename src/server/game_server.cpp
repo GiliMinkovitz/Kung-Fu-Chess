@@ -29,7 +29,9 @@ GameServer::GameServer(const app::AppConfig& config, BoardModel default_board,
       lobby_handler_(dependencies.authentication_service, matchmaking_service_, session_registry_,
                      session_manager_, match_lifecycle_handler_),
       game_result_handler_(room_manager_, user_repository_, dependencies.game_repository,
-                           session_registry_, dependencies.runtime_store) {
+                           session_registry_, dependencies.runtime_store),
+      redis_enabled_(config.redis.enabled),
+      heartbeat_interval_(config.redis.heartbeat_interval) {
     app::configure_logging(config.logging);
     match_lifecycle_handler_.bind_matchmaking_service(matchmaking_service_);
     last_tick_ = std::chrono::steady_clock::now();
@@ -62,6 +64,10 @@ app::ServerMetrics GameServer::metrics() const {
     result.active_rooms = room_manager_.active_room_count();
     result.connected_sessions = session_manager_.sessions().size();
     result.matchmaking_queue = matchmaking_service_.waiting_count();
+    result.server_id = server_id_;
+    result.region = region_;
+    result.redis_enabled = redis_enabled_;
+    result.redis_connected = redis_enabled_ && runtime_store_.is_available();
 
     const auto now = std::chrono::steady_clock::now();
     if (started_at_.time_since_epoch().count() != 0) {
@@ -70,6 +76,17 @@ app::ServerMetrics GameServer::metrics() const {
     }
     result.last_tick_duration_ms = last_tick_duration_ms_;
     return result;
+}
+
+void GameServer::maybe_publish_heartbeat() {
+    const auto now = std::chrono::steady_clock::now();
+    if (last_heartbeat_at_.time_since_epoch().count() != 0 &&
+        now - last_heartbeat_at_ < heartbeat_interval_) {
+        return;
+    }
+
+    runtime_store_.publish_server_heartbeat(server_id_, region_, metrics());
+    last_heartbeat_at_ = now;
 }
 
 void GameServer::tick_once() {
@@ -91,7 +108,7 @@ void GameServer::tick_once() {
     session_manager_.prune_sessions();
     room_manager_.remove_inactive_rooms();
 
-    runtime_store_.publish_server_heartbeat(server_id_, region_, metrics());
+    maybe_publish_heartbeat();
 
     if (elapsed < kTargetFrameMs) {
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
@@ -104,7 +121,7 @@ void GameServer::run() {
 #endif
     last_tick_ = std::chrono::steady_clock::now();
     started_at_ = last_tick_;
-    runtime_store_.publish_server_heartbeat(server_id_, region_, metrics());
+    maybe_publish_heartbeat();
 
     while (!stop_requested_.load(std::memory_order_relaxed)) {
         tick_once();

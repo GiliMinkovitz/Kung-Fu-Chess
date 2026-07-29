@@ -49,6 +49,8 @@ public:
     [[nodiscard]] app::ServerMetrics metrics() const;
 
 private:
+    void maybe_publish_heartbeat();
+
     WebSocketServer websocket_server_;
     RoomManager room_manager_;
     std::string server_id_;
@@ -62,8 +64,11 @@ private:
     ClientSessionManager session_manager_;
     LobbyMessageHandler lobby_handler_;
     GameResultHandler game_result_handler_;
+    bool redis_enabled_ = false;
+    std::chrono::seconds heartbeat_interval_{1};
     std::chrono::steady_clock::time_point started_at_{};
     std::chrono::steady_clock::time_point last_tick_{};
+    std::chrono::steady_clock::time_point last_heartbeat_at_{};
     std::int64_t last_tick_duration_ms_ = 0;
     std::atomic<bool> stop_requested_{false};
 };

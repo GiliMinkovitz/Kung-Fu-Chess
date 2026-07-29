@@ -14,7 +14,7 @@ struct BuiltGameServer {
     GameServer server;
 
     BuiltGameServer(const AppConfig& config, BoardModel default_board)
-        : infrastructure(config.database),
+        : infrastructure(config),
           server(config, std::move(default_board), infrastructure.dependencies()) {}
 };
 

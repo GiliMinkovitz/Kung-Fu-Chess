@@ -6,6 +6,7 @@
   "dependencies": [
     "boost-beast",
     "boost-system",
+    "hiredis",
     "libpq",
     "sqlite3"
   ],

@@ -16,13 +16,13 @@ struct GameServerFixture {
     GameServer server;
 
     GameServerFixture(unsigned short port, BoardModel board, const std::string& db_path = ":memory:")
-        : infrastructure(make_database_config(db_path)),
+        : infrastructure(make_infrastructure_config(db_path)),
           server(make_app_config(port), std::move(board), infrastructure.dependencies()) {}
 
 private:
-    static app::DatabaseConfig make_database_config(const std::string& db_path) {
-        app::DatabaseConfig config;
-        config.path = db_path;
+    static app::AppConfig make_infrastructure_config(const std::string& db_path) {
+        app::AppConfig config;
+        config.database.path = db_path;
         return config;
     }
 

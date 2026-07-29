@@ -13,11 +13,12 @@
 namespace kfc::app {
 
 using MetricsProvider = std::function<ServerMetrics()>;
+using ReadinessProvider = std::function<bool()>;
 
 class HealthHttpServer {
 public:
     HealthHttpServer(std::string bind_address, unsigned short port,
-                     MetricsProvider metrics_provider = {});
+                     MetricsProvider metrics_provider = {}, ReadinessProvider readiness_provider = {});
     ~HealthHttpServer();
 
     HealthHttpServer(const HealthHttpServer&) = delete;
@@ -36,6 +37,7 @@ private:
     std::string bind_address_;
     unsigned short port_;
     MetricsProvider metrics_provider_;
+    ReadinessProvider readiness_provider_;
     std::atomic<bool> stop_requested_{false};
     bool running_ = false;
     std::thread thread_;

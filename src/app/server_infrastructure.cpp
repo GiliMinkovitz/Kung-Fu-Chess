@@ -1,6 +1,7 @@
 #include "app/server_infrastructure.h"
 
 #include "app/in_memory_runtime_store.h"
+#include "app/redis_runtime_store.h"
 #include "app/server_health.h"
 #include "database/postgres_connection.h"
 #include "database/postgres_game_repository.h"
@@ -25,13 +26,25 @@ PostgresConnection::Settings make_postgres_settings(const DatabaseConfig& databa
     };
 }
 
+std::unique_ptr<IRuntimeStore> make_runtime_store(const RedisConfig& redis_config) {
+    if (redis_config.enabled) {
+        return std::make_unique<RedisRuntimeStore>(redis_config);
+    }
+    return std::make_unique<InMemoryRuntimeStore>();
+}
+
 }  // namespace
 
-ServerInfrastructure::ServerInfrastructure(const DatabaseConfig& database_config)
-    : database_backend_(database_config.backend),
-      runtime_store_(std::make_unique<InMemoryRuntimeStore>()) {
-    if (database_config.backend == DatabaseBackend::PostgreSQL) {
-        auto postgres = std::make_unique<PostgresConnection>(make_postgres_settings(database_config));
+ServerInfrastructure::ServerInfrastructure(const AppConfig& config)
+    : database_backend_(config.database.backend),
+      redis_config_(config.redis),
+      runtime_store_(make_runtime_store(config.redis)) {
+    if (config.redis.enabled && !runtime_store_->is_available()) {
+        throw std::runtime_error("Failed to connect to Redis");
+    }
+
+    if (config.database.backend == DatabaseBackend::PostgreSQL) {
+        auto postgres = std::make_unique<PostgresConnection>(make_postgres_settings(config.database));
         if (!postgres->open()) {
             throw std::runtime_error("Failed to connect to PostgreSQL");
         }
@@ -47,7 +60,7 @@ ServerInfrastructure::ServerInfrastructure(const DatabaseConfig& database_config
         return;
     }
 
-    auto sqlite = std::make_unique<SqliteDatabase>(database_config.path);
+    auto sqlite = std::make_unique<SqliteDatabase>(config.database.path);
     if (!sqlite->open() || !sqlite->initialize_schema()) {
         throw std::runtime_error("Failed to initialize database");
     }
@@ -69,7 +82,8 @@ GameServerDependencies ServerInfrastructure::dependencies() noexcept {
 }
 
 HealthStatus ServerInfrastructure::get_health_status(const bool server_running) const {
-    return make_health_status(server_running, database_backend_, *database_connection_);
+    return make_health_status(server_running, database_backend_, *database_connection_, redis_config_,
+                              *runtime_store_);
 }
 
 IDatabaseConnection& ServerInfrastructure::database() noexcept {

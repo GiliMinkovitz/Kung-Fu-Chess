@@ -74,10 +74,10 @@ TEST_CASE("PostgresConnectionTest - InitializeSchemaRequiresOpenConnection") {
 }
 
 TEST_CASE("ServerInfrastructureTest - PostgreSQLBackendFailsWithoutServer") {
-    kfc::app::DatabaseConfig config;
-    config.backend = kfc::app::DatabaseBackend::PostgreSQL;
+    kfc::app::AppConfig app_config;
+    app_config.database.backend = kfc::app::DatabaseBackend::PostgreSQL;
 
-    CHECK_THROWS_AS((void)kfc::app::ServerInfrastructure{config}, std::runtime_error);
+    CHECK_THROWS_AS((void)kfc::app::ServerInfrastructure{app_config}, std::runtime_error);
 }
 
 #if KFC_HAS_LIBPQ

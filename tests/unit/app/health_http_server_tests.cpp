@@ -78,9 +78,15 @@ TEST_CASE("HealthHttpServerTest - UnknownPathReturnsNotFound") {
 TEST_CASE("HealthHttpServerTest - MetricsEndpointReturnsPlainText") {
     kfc::app::HealthHttpServer server(
         "127.0.0.1", 0, []() {
-            return kfc::app::ServerMetrics{
-                4, 8, 2, 153, 16,
-            };
+            kfc::app::ServerMetrics metrics;
+            metrics.active_rooms = 4;
+            metrics.connected_sessions = 8;
+            metrics.matchmaking_queue = 2;
+            metrics.server_uptime_seconds = 153;
+            metrics.last_tick_duration_ms = 16;
+            metrics.server_id = "local";
+            metrics.region = "local";
+            return metrics;
         });
     server.start();
 
@@ -91,7 +97,11 @@ TEST_CASE("HealthHttpServerTest - MetricsEndpointReturnsPlainText") {
              "connected_sessions 8\n"
              "matchmaking_queue 2\n"
              "server_uptime_seconds 153\n"
-             "last_tick_duration_ms 16\n");
+             "last_tick_duration_ms 16\n"
+             "server_id local\n"
+             "region local\n"
+             "redis_enabled 0\n"
+             "redis_connected 0\n");
 
     server.stop();
 }

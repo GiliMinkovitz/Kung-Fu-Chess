@@ -26,10 +26,12 @@ void close_socket(tcp::socket& socket) {
 }  // namespace
 
 HealthHttpServer::HealthHttpServer(std::string bind_address, unsigned short port,
-                                   MetricsProvider metrics_provider)
+                                   MetricsProvider metrics_provider,
+                                   ReadinessProvider readiness_provider)
     : bind_address_(std::move(bind_address)),
       port_(port),
-      metrics_provider_(std::move(metrics_provider)) {}
+      metrics_provider_(std::move(metrics_provider)),
+      readiness_provider_(std::move(readiness_provider)) {}
 
 HealthHttpServer::~HealthHttpServer() {
     stop();
@@ -100,10 +102,15 @@ void HealthHttpServer::handle_connection(tcp::socket socket) {
     response.keep_alive(false);
 
     if (request.method() == http::verb::get) {
-        if (request.target() == "/health" || request.target() == "/ready") {
+        if (request.target() == "/health") {
             response.result(http::status::ok);
             response.set(http::field::content_type, "text/plain");
             response.body() = "OK";
+        } else if (request.target() == "/ready") {
+            const bool ready = !readiness_provider_ || readiness_provider_();
+            response.result(ready ? http::status::ok : http::status::service_unavailable);
+            response.set(http::field::content_type, "text/plain");
+            response.body() = ready ? "OK" : "Not Ready";
         } else if (request.target() == "/metrics" && metrics_provider_) {
             response.result(http::status::ok);
             response.set(http::field::content_type, "text/plain");

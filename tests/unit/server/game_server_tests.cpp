@@ -205,9 +205,9 @@ TEST_CASE("GameServerTest - InitializesInMemoryDatabase") {
 }
 
 TEST_CASE("GameServerTest - RejectsInvalidDatabasePath") {
-    kfc::app::DatabaseConfig invalid_config;
-    invalid_config.path = "/tmp";
-    CHECK_THROWS_AS((kfc::app::ServerInfrastructure{invalid_config}), std::runtime_error);
+    kfc::app::AppConfig app_config;
+    app_config.database.path = "/tmp";
+    CHECK_THROWS_AS((kfc::app::ServerInfrastructure{app_config}), std::runtime_error);
 }
 
 TEST_CASE("GameServerTest - AcceptsClientAndProcessesLogin") {

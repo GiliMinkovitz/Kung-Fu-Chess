@@ -20,8 +20,8 @@ The server starts a health HTTP server automatically on startup.
 | Endpoint | Description |
 |----------|-------------|
 | `GET /health` | Liveness probe. Returns `200 OK` with body `OK`. |
-| `GET /ready` | Readiness probe. Returns `200 OK` with body `OK`. |
-| `GET /metrics` | Plain-text server metrics (active rooms, connected sessions, matchmaking queue, uptime, last tick duration). |
+| `GET /ready` | Readiness probe. Returns `200 OK` with body `OK` when Redis is disabled or reachable; returns `503 Service Unavailable` with body `Not Ready` when Redis is enabled but unavailable. |
+| `GET /metrics` | Plain-text server metrics (active rooms, connected sessions, matchmaking queue, uptime, last tick duration, server id, region, Redis status). Redis heartbeats are published once per second (default), not on every tick. |
 
 Example:
 
@@ -55,6 +55,11 @@ All variables are optional outside Docker; the server uses built-in defaults whe
 | `KFC_DB_NAME` | `kfc` | PostgreSQL database name |
 | `KFC_DB_USER` | `kfc` | PostgreSQL username |
 | `KFC_DB_PASSWORD` | *(empty)* | PostgreSQL password |
+| `KFC_REDIS_ENABLED` | `false` | Enable Redis runtime store (`true`/`false`, `1`/`0`, `yes`/`no`, `on`/`off`) |
+| `KFC_REDIS_HOST` | `127.0.0.1` | Redis host |
+| `KFC_REDIS_PORT` | `6379` | Redis port |
+| `KFC_REDIS_PASSWORD` | *(empty)* | Redis password |
+| `KFC_REDIS_DATABASE` | `0` | Redis database index |
 
 ### Build
 

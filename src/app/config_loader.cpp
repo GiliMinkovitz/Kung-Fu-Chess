@@ -3,6 +3,7 @@
 #include "app/database_config.h"
 #include "app/logging_config.h"
 #include "app/matchmaking_config.h"
+#include "app/redis_config.h"
 
 #include <chrono>
 #include <cstdlib>
@@ -179,6 +180,36 @@ void override_logging_config(kfc::app::LoggingConfig& logging) {
     }
 }
 
+void override_redis_config(kfc::app::RedisConfig& redis) {
+    if (const auto enabled_value = read_environment("KFC_REDIS_ENABLED")) {
+        if (const auto enabled = parse_bool(*enabled_value)) {
+            redis.enabled = *enabled;
+        }
+    }
+
+    if (const auto host_value = read_environment("KFC_REDIS_HOST")) {
+        redis.host = *host_value;
+    }
+
+    if (const auto port_value = read_environment("KFC_REDIS_PORT")) {
+        if (const auto port = parse_unsigned(*port_value)) {
+            if (*port >= 1 && *port <= 65535) {
+                redis.port = static_cast<int>(*port);
+            }
+        }
+    }
+
+    if (const auto password_value = read_environment("KFC_REDIS_PASSWORD")) {
+        redis.password = *password_value;
+    }
+
+    if (const auto database_value = read_environment("KFC_REDIS_DATABASE")) {
+        if (const auto database = parse_unsigned(*database_value)) {
+            redis.database = static_cast<int>(*database);
+        }
+    }
+}
+
 }  // namespace
 
 namespace kfc::app {
@@ -189,6 +220,7 @@ AppConfig load_config_from_environment() {
     override_database_config(config.database);
     override_matchmaking_config(config.matchmaking);
     override_logging_config(config.logging);
+    override_redis_config(config.redis);
     return config;
 }
 

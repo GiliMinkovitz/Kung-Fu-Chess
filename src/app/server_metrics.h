@@ -12,6 +12,10 @@ struct ServerMetrics {
     std::size_t matchmaking_queue = 0;
     std::int64_t server_uptime_seconds = 0;
     std::int64_t last_tick_duration_ms = 0;
+    std::string server_id;
+    std::string region;
+    bool redis_enabled = false;
+    bool redis_connected = false;
 };
 
 [[nodiscard]] inline std::string format_server_metrics(const ServerMetrics& metrics) {
@@ -19,7 +23,11 @@ struct ServerMetrics {
            "connected_sessions " + std::to_string(metrics.connected_sessions) + "\n" +
            "matchmaking_queue " + std::to_string(metrics.matchmaking_queue) + "\n" +
            "server_uptime_seconds " + std::to_string(metrics.server_uptime_seconds) + "\n" +
-           "last_tick_duration_ms " + std::to_string(metrics.last_tick_duration_ms) + "\n";
+           "last_tick_duration_ms " + std::to_string(metrics.last_tick_duration_ms) + "\n" +
+           "server_id " + metrics.server_id + "\n" +
+           "region " + metrics.region + "\n" +
+           "redis_enabled " + std::to_string(static_cast<int>(metrics.redis_enabled)) + "\n" +
+           "redis_connected " + std::to_string(static_cast<int>(metrics.redis_connected)) + "\n";
 }
 
 }  // namespace kfc::app

@@ -1,4 +1,6 @@
 #include "app/database_config.h"
+#include "app/in_memory_runtime_store.h"
+#include "app/redis_config.h"
 #include "app/server_health.h"
 #include "app/server_infrastructure.h"
 #include "database/i_database_connection.h"
@@ -52,29 +54,37 @@ std::optional<kfc::app::DatabaseConfig> live_postgres_database_config() {
 }  // namespace
 
 TEST_CASE("ServerHealthTest - SQLiteDefaultHealthStatus") {
-    kfc::app::DatabaseConfig config;
-    config.path = ":memory:";
-    kfc::app::ServerInfrastructure infrastructure{config};
+    kfc::app::AppConfig app_config;
+    app_config.database.path = ":memory:";
+    kfc::app::ServerInfrastructure infrastructure{app_config};
 
     const kfc::app::HealthStatus running = infrastructure.get_health_status(true);
     CHECK(running.server_running);
     CHECK(running.database_connected);
     CHECK_EQ(running.database_backend, "SQLite");
+    CHECK_FALSE(running.redis_enabled);
+    CHECK_FALSE(running.redis_connected);
 
     const kfc::app::HealthStatus stopped = infrastructure.get_health_status(false);
     CHECK_FALSE(stopped.server_running);
     CHECK(stopped.database_connected);
     CHECK_EQ(stopped.database_backend, "SQLite");
+    CHECK_FALSE(stopped.redis_enabled);
+    CHECK_FALSE(stopped.redis_connected);
 }
 
 TEST_CASE("ServerHealthTest - UnavailableDatabaseConnection") {
     DisconnectedDatabase database;
-    const kfc::app::HealthStatus status =
-        kfc::app::make_health_status(true, kfc::app::DatabaseBackend::SQLite, database);
+    kfc::InMemoryRuntimeStore runtime_store;
+    const kfc::app::RedisConfig redis_config;
+    const kfc::app::HealthStatus status = kfc::app::make_health_status(
+        true, kfc::app::DatabaseBackend::SQLite, database, redis_config, runtime_store);
 
     CHECK(status.server_running);
     CHECK_FALSE(status.database_connected);
     CHECK_EQ(status.database_backend, "SQLite");
+    CHECK_FALSE(status.redis_enabled);
+    CHECK_FALSE(status.redis_connected);
 }
 
 #if KFC_HAS_LIBPQ
@@ -85,7 +95,8 @@ TEST_CASE("ServerHealthTest - PostgreSQLConfigurationHealthStatus") {
         return;
     }
 
-    kfc::app::ServerInfrastructure infrastructure{*config};
+    kfc::app::AppConfig app_config = *config;
+    kfc::app::ServerInfrastructure infrastructure{app_config};
     const kfc::app::HealthStatus status = infrastructure.get_health_status(true);
 
     CHECK(status.server_running);

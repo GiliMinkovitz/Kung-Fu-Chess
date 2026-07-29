@@ -50,7 +50,13 @@ int main() {
         auto built = kfc::app::build_game_server(config, default_board());
         kfc::app::HealthHttpServer health_server(
             config.server.bind_address, config.server.health_port,
-            [&built]() { return built.server.metrics(); });
+            [&built]() { return built.server.metrics(); },
+            [&built, &config]() {
+                if (!config.redis.enabled) {
+                    return true;
+                }
+                return built.infrastructure.runtime_store().is_available();
+            });
         health_server.start();
         install_shutdown_signal_handlers(built.server);
         built.server.run();

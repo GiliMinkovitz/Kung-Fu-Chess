@@ -91,10 +91,12 @@ void GameResultHandler::cleanup_finished_room(RoomId room_id) {
 
     PlayerSession* white = room->white_session();
     PlayerSession* black = room->black_session();
+    const Player* white_player = room->white_player();
+    const Player* black_player = room->black_player();
 
-    if (white != nullptr && black != nullptr) {
-        runtime_store_.unregister_room(room_id, static_cast<UserId>(white->player().id()),
-                                       static_cast<UserId>(black->player().id()));
+    if (white_player != nullptr && black_player != nullptr) {
+        runtime_store_.unregister_room(room_id, static_cast<UserId>(white_player->id()),
+                                       static_cast<UserId>(black_player->id()));
     }
 
     room->reset();

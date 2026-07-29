@@ -1,6 +1,6 @@
 #pragma once
 
-#include "app/database_config.h"
+#include "app/app_config.h"
 #include "app/game_server_dependencies.h"
 #include "app/health_status.h"
 #include "app/i_runtime_store.h"
@@ -16,7 +16,7 @@ namespace kfc::app {
 
 class ServerInfrastructure {
 public:
-    explicit ServerInfrastructure(const DatabaseConfig& database_config);
+    explicit ServerInfrastructure(const AppConfig& config);
 
     [[nodiscard]] GameServerDependencies dependencies() noexcept;
 
@@ -30,6 +30,7 @@ public:
 
 private:
     DatabaseBackend database_backend_;
+    RedisConfig redis_config_;
     std::unique_ptr<IDatabaseConnection> database_connection_;
     std::unique_ptr<IUserRepository> user_repository_;
     std::unique_ptr<IGameRepository> game_repository_;
