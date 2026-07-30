@@ -13,8 +13,12 @@ cmake_install.cmake
 Makefile
 third_party/
 build-win/
+build-win-gui/
+build-win-server/
 build-linux/
 vcpkg_installed/
+vcpkg-gui/vcpkg_installed/
+vcpkg-server/vcpkg_installed/
 
 # Generated build logs
 coverage_build_tail.log

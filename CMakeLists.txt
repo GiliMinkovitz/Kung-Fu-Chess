@@ -1,8 +1,11 @@
 cmake_minimum_required(VERSION 3.16)
 
-# vcpkg manifest mode (Windows): configure with CMakePresets.json preset
-# "windows-vcpkg", or pass -DCMAKE_TOOLCHAIN_FILE=%VCPKG_ROOT%/scripts/buildsystems/vcpkg.cmake
-# before the first project() call. Linux/WSL builds omit the vcpkg toolchain and use system Boost.
+# vcpkg manifest mode (Windows): use CMakePresets.json preset "windows-vcpkg-gui" for
+# KungFuChessGui (vcpkg-gui manifest: Boost only) or "windows-vcpkg-server" for server
+# targets (vcpkg-server manifest: Boost, libpq, hiredis, sqlite3). Pass
+# -DCMAKE_TOOLCHAIN_FILE=%VCPKG_ROOT%/scripts/buildsystems/vcpkg.cmake and
+# -DVCPKG_MANIFEST_DIR=<vcpkg-gui|vcpkg-server> before project(). Linux/WSL builds
+# omit the vcpkg toolchain and use system packages.
 
 project(KungFuChess VERSION 0.1.0 LANGUAGES CXX C)
 
@@ -393,7 +396,7 @@ add_executable(KungFuChessGameServer
     ${KFC_SOURCES}
 )
 
-# Boost (Asio/Beast). On Windows, vcpkg.json supplies these via manifest mode.
+# Boost (Asio/Beast). On Windows, vcpkg-gui or vcpkg-server manifests supply these.
 # Boost 1.89+ removed the boost_system CMake package (header-only since 1.69).
 find_package(Boost 1.74 REQUIRED CONFIG OPTIONAL_COMPONENTS system)
 

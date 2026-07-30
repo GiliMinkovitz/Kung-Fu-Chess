@@ -12,25 +12,55 @@
       "binaryDir": "${sourceDir}/out/build/${presetName}"
     },
     {
-      "name": "windows-vcpkg",
-      "displayName": "Windows (MSVC + vcpkg manifest)",
-      "description": "Uses vcpkg manifest mode to install Boost from vcpkg.json.",
+      "name": "windows-vcpkg-gui",
+      "displayName": "Windows GUI (MSVC + vcpkg)",
+      "description": "Builds KungFuChessGui. Uses vcpkg-gui manifest (Boost only; no libpq/hiredis/sqlite3).",
       "inherits": "base",
       "generator": "Visual Studio 17 2022",
       "architecture": {
         "value": "x64",
         "strategy": "set"
       },
-      "binaryDir": "${sourceDir}/build-win",
+      "binaryDir": "${sourceDir}/build-win-gui",
       "cacheVariables": {
         "CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
-        "VCPKG_TARGET_TRIPLET": "x64-windows"
+        "VCPKG_TARGET_TRIPLET": "x64-windows",
+        "VCPKG_MANIFEST_DIR": "${sourceDir}/vcpkg-gui"
       },
       "condition": {
         "type": "equals",
         "lhs": "${hostSystemName}",
         "rhs": "Windows"
       }
+    },
+    {
+      "name": "windows-vcpkg-server",
+      "displayName": "Windows Server (MSVC + vcpkg)",
+      "description": "Builds server targets. Uses vcpkg-server manifest (Boost, libpq, hiredis, sqlite3).",
+      "inherits": "base",
+      "generator": "Visual Studio 17 2022",
+      "architecture": {
+        "value": "x64",
+        "strategy": "set"
+      },
+      "binaryDir": "${sourceDir}/build-win-server",
+      "cacheVariables": {
+        "CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
+        "VCPKG_TARGET_TRIPLET": "x64-windows",
+        "VCPKG_MANIFEST_DIR": "${sourceDir}/vcpkg-server"
+      },
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Windows"
+      }
+    },
+    {
+      "name": "windows-vcpkg",
+      "displayName": "Windows GUI (alias)",
+      "description": "Alias for windows-vcpkg-gui. Kept for backward compatibility.",
+      "inherits": "windows-vcpkg-gui",
+      "hidden": true
     },
     {
       "name": "linux",
@@ -59,16 +89,42 @@
   ],
   "buildPresets": [
     {
-      "name": "windows-vcpkg-release",
-      "displayName": "Windows Release",
-      "configurePreset": "windows-vcpkg",
+      "name": "windows-vcpkg-gui-release",
+      "displayName": "Windows GUI Release",
+      "configurePreset": "windows-vcpkg-gui",
       "configuration": "Release"
     },
     {
-      "name": "windows-vcpkg-debug",
-      "displayName": "Windows Debug",
-      "configurePreset": "windows-vcpkg",
+      "name": "windows-vcpkg-gui-debug",
+      "displayName": "Windows GUI Debug",
+      "configurePreset": "windows-vcpkg-gui",
       "configuration": "Debug"
+    },
+    {
+      "name": "windows-vcpkg-server-release",
+      "displayName": "Windows Server Release",
+      "configurePreset": "windows-vcpkg-server",
+      "configuration": "Release"
+    },
+    {
+      "name": "windows-vcpkg-server-debug",
+      "displayName": "Windows Server Debug",
+      "configurePreset": "windows-vcpkg-server",
+      "configuration": "Debug"
+    },
+    {
+      "name": "windows-vcpkg-release",
+      "displayName": "Windows GUI Release (alias)",
+      "configurePreset": "windows-vcpkg-gui",
+      "configuration": "Release",
+      "hidden": true
+    },
+    {
+      "name": "windows-vcpkg-debug",
+      "displayName": "Windows GUI Debug (alias)",
+      "configurePreset": "windows-vcpkg-gui",
+      "configuration": "Debug",
+      "hidden": true
     },
     {
       "name": "linux-release",
@@ -83,10 +139,23 @@
   ],
   "testPresets": [
     {
-      "name": "windows-vcpkg-release",
-      "displayName": "Windows Release tests",
-      "configurePreset": "windows-vcpkg",
+      "name": "windows-vcpkg-gui-release",
+      "displayName": "Windows GUI Release tests",
+      "configurePreset": "windows-vcpkg-gui",
       "configuration": "Release"
+    },
+    {
+      "name": "windows-vcpkg-server-release",
+      "displayName": "Windows Server Release tests",
+      "configurePreset": "windows-vcpkg-server",
+      "configuration": "Release"
+    },
+    {
+      "name": "windows-vcpkg-release",
+      "displayName": "Windows GUI Release tests (alias)",
+      "configurePreset": "windows-vcpkg-gui",
+      "configuration": "Release",
+      "hidden": true
     },
     {
       "name": "linux-release",
