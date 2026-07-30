@@ -98,14 +98,14 @@ bool is_http_endpoint_reachable(const std::string& endpoint,
 
 bool check_gateway_ready(const IDatabaseConnection& database, const RedisConfig& redis_config,
                          const IRuntimeStore& runtime_store,
-                         const std::string& matchmaker_endpoint) {
+                         const std::string& matchmaker_health_endpoint) {
     if (!is_database_ready(database)) {
         return false;
     }
     if (!is_redis_ready(redis_config, runtime_store)) {
         return false;
     }
-    return is_http_endpoint_reachable(matchmaker_endpoint, std::chrono::milliseconds(500));
+    return is_http_endpoint_reachable(matchmaker_health_endpoint, std::chrono::milliseconds(500));
 }
 
 bool check_matchmaker_ready(const IDatabaseConnection& database, const RedisConfig& redis_config,

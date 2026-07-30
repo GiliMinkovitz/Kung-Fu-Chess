@@ -1,6 +1,7 @@
 #include "app/config_loader.h"
 #include "app/database_config.h"
 #include "app/health_http_server.h"
+#include "app/runtime_endpoint.h"
 #include "app/observability/metric_counters.h"
 #include "app/observability/observability.h"
 #include "app/observability/prometheus_formatter.h"
@@ -50,7 +51,8 @@ int main() {
             [&built, &config]() {
                 return kfc::app::observability::check_gateway_ready(
                     built.infrastructure.database(), config.redis,
-                    built.infrastructure.runtime_store(), config.server.matchmaker_endpoint);
+                    built.infrastructure.runtime_store(),
+                    kfc::app::resolve_matchmaker_health_endpoint(config.server));
             });
         health_server.start();
         install_shutdown_signal_handlers(built.gateway);

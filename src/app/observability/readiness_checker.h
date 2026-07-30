@@ -22,7 +22,7 @@ namespace kfc::app::observability {
 [[nodiscard]] bool check_gateway_ready(const IDatabaseConnection& database,
                                        const RedisConfig& redis_config,
                                        const IRuntimeStore& runtime_store,
-                                       const std::string& matchmaker_endpoint);
+                                       const std::string& matchmaker_health_endpoint);
 
 [[nodiscard]] bool check_matchmaker_ready(const IDatabaseConnection& database,
                                         const RedisConfig& redis_config,
