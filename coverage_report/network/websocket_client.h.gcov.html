@@ -37,7 +37,7 @@
           </tr>
           <tr>
             <td class="headerItem">Test Date:</td>
-            <td class="headerValue">2026-07-26 00:23:33</td>
+            <td class="headerValue">2026-07-30 08:38:00</td>
             <td></td>
             <td class="headerItem">Functions:</td>
             <td class="headerCovTableEntryHi">100.0&nbsp;%</td>
@@ -66,38 +66,46 @@
 <span id="L4"><span class="lineNum">       4</span>              : #include &lt;boost/beast/core.hpp&gt;</span>
 <span id="L5"><span class="lineNum">       5</span>              : #include &lt;boost/beast/websocket.hpp&gt;</span>
 <span id="L6"><span class="lineNum">       6</span>              : </span>
-<span id="L7"><span class="lineNum">       7</span>              : #include &lt;cstdint&gt;</span>
-<span id="L8"><span class="lineNum">       8</span>              : #include &lt;optional&gt;</span>
-<span id="L9"><span class="lineNum">       9</span>              : #include &lt;string&gt;</span>
-<span id="L10"><span class="lineNum">      10</span>              : </span>
-<span id="L11"><span class="lineNum">      11</span>              : namespace kfc {</span>
-<span id="L12"><span class="lineNum">      12</span>              : </span>
-<span id="L13"><span class="lineNum">      13</span>              : // Transport-only WebSocket client. Sends and receives opaque text frames;</span>
-<span id="L14"><span class="lineNum">      14</span>              : // does not parse snapshots or know about game types.</span>
-<span id="L15"><span class="lineNum">      15</span>              : class WebSocketClient {</span>
-<span id="L16"><span class="lineNum">      16</span>              : public:</span>
-<span id="L17"><span class="lineNum">      17</span>              :     WebSocketClient(std::string host, std::uint16_t port);</span>
-<span id="L18"><span class="lineNum">      18</span>              : </span>
-<span id="L19"><span class="lineNum">      19</span>              :     WebSocketClient(const WebSocketClient&amp;) = delete;</span>
-<span id="L20"><span class="lineNum">      20</span>              :     WebSocketClient&amp; operator=(const WebSocketClient&amp;) = delete;</span>
-<span id="L21"><span class="lineNum">      21</span>              : </span>
-<span id="L22"><span class="lineNum">      22</span>              :     void connect();</span>
-<span id="L23"><span class="lineNum">      23</span>              :     void disconnect();</span>
-<span id="L24"><span class="lineNum">      24</span>              : </span>
-<span id="L25"><span class="lineNum">      25</span> <span class="tlaGNC">          21 :     [[nodiscard]] bool is_connected() const noexcept { return connected_; }</span></span>
+<span id="L7"><span class="lineNum">       7</span>              : #include &lt;cstddef&gt;</span>
+<span id="L8"><span class="lineNum">       8</span>              : #include &lt;cstdint&gt;</span>
+<span id="L9"><span class="lineNum">       9</span>              : #include &lt;optional&gt;</span>
+<span id="L10"><span class="lineNum">      10</span>              : #include &lt;string&gt;</span>
+<span id="L11"><span class="lineNum">      11</span>              : </span>
+<span id="L12"><span class="lineNum">      12</span>              : namespace kfc {</span>
+<span id="L13"><span class="lineNum">      13</span>              : </span>
+<span id="L14"><span class="lineNum">      14</span>              : // Transport-only WebSocket client. Sends and receives opaque text frames;</span>
+<span id="L15"><span class="lineNum">      15</span>              : // does not parse snapshots or know about game types.</span>
+<span id="L16"><span class="lineNum">      16</span>              : class WebSocketClient {</span>
+<span id="L17"><span class="lineNum">      17</span>              : public:</span>
+<span id="L18"><span class="lineNum">      18</span>              :     WebSocketClient(std::string host, std::uint16_t port);</span>
+<span id="L19"><span class="lineNum">      19</span>              : </span>
+<span id="L20"><span class="lineNum">      20</span>              :     WebSocketClient(const WebSocketClient&amp;) = delete;</span>
+<span id="L21"><span class="lineNum">      21</span>              :     WebSocketClient&amp; operator=(const WebSocketClient&amp;) = delete;</span>
+<span id="L22"><span class="lineNum">      22</span>              : </span>
+<span id="L23"><span class="lineNum">      23</span>              :     void connect();</span>
+<span id="L24"><span class="lineNum">      24</span>              :     void disconnect();</span>
+<span id="L25"><span class="lineNum">      25</span>              :     void connect_to_game_server(const std::string&amp; endpoint);</span>
 <span id="L26"><span class="lineNum">      26</span>              : </span>
-<span id="L27"><span class="lineNum">      27</span>              :     bool try_send(const std::string&amp; message);</span>
-<span id="L28"><span class="lineNum">      28</span>              :     std::optional&lt;std::string&gt; try_receive_snapshot();</span>
-<span id="L29"><span class="lineNum">      29</span>              : </span>
-<span id="L30"><span class="lineNum">      30</span>              : private:</span>
-<span id="L31"><span class="lineNum">      31</span>              :     std::string host_;</span>
-<span id="L32"><span class="lineNum">      32</span>              :     std::uint16_t port_;</span>
-<span id="L33"><span class="lineNum">      33</span>              :     boost::asio::io_context io_context_;</span>
-<span id="L34"><span class="lineNum">      34</span>              :     std::optional&lt;boost::beast::websocket::stream&lt;boost::asio::ip::tcp::socket&gt;&gt; ws_;</span>
-<span id="L35"><span class="lineNum">      35</span>              :     bool connected_ = false;</span>
-<span id="L36"><span class="lineNum">      36</span>              : };</span>
-<span id="L37"><span class="lineNum">      37</span>              : </span>
-<span id="L38"><span class="lineNum">      38</span>              : }  // namespace kfc</span>
+<span id="L27"><span class="lineNum">      27</span> <span class="tlaGNC">          25 :     [[nodiscard]] bool is_connected() const noexcept { return connected_; }</span></span>
+<span id="L28"><span class="lineNum">      28</span>              : </span>
+<span id="L29"><span class="lineNum">      29</span>              :     bool try_send(const std::string&amp; message);</span>
+<span id="L30"><span class="lineNum">      30</span>              :     std::optional&lt;std::string&gt; try_receive_snapshot();</span>
+<span id="L31"><span class="lineNum">      31</span>              : </span>
+<span id="L32"><span class="lineNum">      32</span>              : private:</span>
+<span id="L33"><span class="lineNum">      33</span>              :     void update_buffered_bytes(std::size_t available_before_read, std::size_t consumed_bytes);</span>
+<span id="L34"><span class="lineNum">      34</span>              : </span>
+<span id="L35"><span class="lineNum">      35</span>              :     std::string host_;</span>
+<span id="L36"><span class="lineNum">      36</span>              :     std::uint16_t port_;</span>
+<span id="L37"><span class="lineNum">      37</span>              :     boost::asio::io_context io_context_;</span>
+<span id="L38"><span class="lineNum">      38</span>              :     std::optional&lt;boost::beast::websocket::stream&lt;boost::asio::ip::tcp::socket&gt;&gt; ws_;</span>
+<span id="L39"><span class="lineNum">      39</span>              :     // Bytes Beast has read from the socket but not yet delivered as messages.</span>
+<span id="L40"><span class="lineNum">      40</span>              :     // Accounting assumes one frame per message (auto_fragment(false)), no</span>
+<span id="L41"><span class="lineNum">      41</span>              :     // permessage-deflate; revisit if transport configuration changes.</span>
+<span id="L42"><span class="lineNum">      42</span>              :     std::size_t buffered_bytes_ = 0;</span>
+<span id="L43"><span class="lineNum">      43</span>              :     bool connected_ = false;</span>
+<span id="L44"><span class="lineNum">      44</span>              : };</span>
+<span id="L45"><span class="lineNum">      45</span>              : </span>
+<span id="L46"><span class="lineNum">      46</span>              : }  // namespace kfc</span>
         </pre>
               </td>
             </tr>

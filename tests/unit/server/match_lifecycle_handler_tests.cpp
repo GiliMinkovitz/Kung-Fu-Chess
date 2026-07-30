@@ -82,13 +82,13 @@ public:
     void notify_search_timeout(kfc::PlayerId) override {}
 
     void send_game_redirect(kfc::PlayerId player,
-                            kfc::GameRedirectInfo redirect_info) override {
+                            kfc::GatewayGameRedirectInfo redirect_info) override {
         redirects_.push_back({player, std::move(redirect_info)});
     }
 
     struct RedirectCall {
         kfc::PlayerId player;
-        kfc::GameRedirectInfo info;
+        kfc::GatewayGameRedirectInfo info;
     };
 
     [[nodiscard]] const std::vector<RedirectCall>& redirects() const noexcept {

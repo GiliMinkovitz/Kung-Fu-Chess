@@ -37,7 +37,7 @@
           </tr>
           <tr>
             <td class="headerItem">Test Date:</td>
-            <td class="headerValue">2026-07-26 00:23:33</td>
+            <td class="headerValue">2026-07-30 08:38:00</td>
             <td></td>
             <td class="headerItem">Functions:</td>
             <td class="headerCovTableEntryHi">100.0&nbsp;%</td>
@@ -94,13 +94,13 @@
 <span id="L32"><span class="lineNum">      32</span>              :     GameState(BoardModel board, GameRules rules);</span>
 <span id="L33"><span class="lineNum">      33</span>              : </span>
 <span id="L34"><span class="lineNum">      34</span>              :     [[nodiscard]] const GameRules&amp; rules() const noexcept { return rules_; }</span>
-<span id="L35"><span class="lineNum">      35</span> <span class="tlaGNC">         424 :     [[nodiscard]] std::size_t rows() const noexcept { return board_.rows(); }</span></span>
-<span id="L36"><span class="lineNum">      36</span> <span class="tlaGNC">         501 :     [[nodiscard]] std::size_t cols() const noexcept { return board_.cols(); }</span></span>
+<span id="L35"><span class="lineNum">      35</span> <span class="tlaGNC">         457 :     [[nodiscard]] std::size_t rows() const noexcept { return board_.rows(); }</span></span>
+<span id="L36"><span class="lineNum">      36</span> <span class="tlaGNC">         534 :     [[nodiscard]] std::size_t cols() const noexcept { return board_.cols(); }</span></span>
 <span id="L37"><span class="lineNum">      37</span>              :     [[nodiscard]] std::string token_at(std::size_t row, std::size_t col) const;</span>
 <span id="L38"><span class="lineNum">      38</span>              : </span>
-<span id="L39"><span class="lineNum">      39</span> <span class="tlaGNC">          52 :     [[nodiscard]] std::int64_t clock_ms() const noexcept { return arbiter_.clock_ms(); }</span></span>
-<span id="L40"><span class="lineNum">      40</span> <span class="tlaGNC">         152 :     [[nodiscard]] bool has_selection() const noexcept { return selected_.has_value(); }</span></span>
-<span id="L41"><span class="lineNum">      41</span> <span class="tlaGNC">         235 :     [[nodiscard]] bool is_game_over() const noexcept { return game_over_; }</span></span>
+<span id="L39"><span class="lineNum">      39</span> <span class="tlaGNC">          97 :     [[nodiscard]] std::int64_t clock_ms() const noexcept { return arbiter_.clock_ms(); }</span></span>
+<span id="L40"><span class="lineNum">      40</span> <span class="tlaGNC">         188 :     [[nodiscard]] bool has_selection() const noexcept { return selected_.has_value(); }</span></span>
+<span id="L41"><span class="lineNum">      41</span> <span class="tlaGNC">         457 :     [[nodiscard]] bool is_game_over() const noexcept { return game_over_; }</span></span>
 <span id="L42"><span class="lineNum">      42</span>              :     [[nodiscard]] std::optional&lt;PieceColor&gt; winning_color() const;</span>
 <span id="L43"><span class="lineNum">      43</span>              :     [[nodiscard]] bool same_board_layout_as(const GameState&amp; other) const noexcept;</span>
 <span id="L44"><span class="lineNum">      44</span>              : </span>

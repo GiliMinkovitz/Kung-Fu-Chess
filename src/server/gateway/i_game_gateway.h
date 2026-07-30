@@ -12,7 +12,7 @@ public:
     virtual void notify_match_found(PlayerId white, PlayerId black) = 0;
     virtual void notify_game_start(PlayerId white, PlayerId black) = 0;
     virtual void notify_search_timeout(PlayerId player) = 0;
-    virtual void send_game_redirect(PlayerId player, GameRedirectInfo redirect_info) = 0;
+    virtual void send_game_redirect(PlayerId player, GatewayGameRedirectInfo redirect_info) = 0;
 };
 
 }  // namespace kfc

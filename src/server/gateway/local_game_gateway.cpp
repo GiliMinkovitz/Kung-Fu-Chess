@@ -31,7 +31,7 @@ void LocalGameGateway::notify_search_timeout(PlayerId player) {
     message_sink_.send(player, "search_timeout");
 }
 
-void LocalGameGateway::send_game_redirect(PlayerId player, GameRedirectInfo redirect_info) {
+void LocalGameGateway::send_game_redirect(PlayerId player, GatewayGameRedirectInfo redirect_info) {
     std::string message = "game_redirect ";
     message += redirect_info.endpoint;
     message += ' ';

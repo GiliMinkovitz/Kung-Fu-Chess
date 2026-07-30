@@ -93,10 +93,12 @@ void MatchLifecycleHandler::send_game_redirects(PlayerSession* white, PlayerSess
     const ResolvedRouting routing = resolve_routing(response, white->user_id());
     game_gateway_->send_game_redirect(
         static_cast<PlayerId>(white->id()),
-        GameRedirectInfo{routing.room_id, routing.server_id, routing.endpoint, PieceColor::White});
+        GatewayGameRedirectInfo{routing.room_id, routing.server_id, routing.endpoint,
+                                PieceColor::White});
     game_gateway_->send_game_redirect(
         static_cast<PlayerId>(black->id()),
-        GameRedirectInfo{routing.room_id, routing.server_id, routing.endpoint, PieceColor::Black});
+        GatewayGameRedirectInfo{routing.room_id, routing.server_id, routing.endpoint,
+                                PieceColor::Black});
 }
 
 void MatchLifecycleHandler::notify_match_created(const MatchCreated& match) {

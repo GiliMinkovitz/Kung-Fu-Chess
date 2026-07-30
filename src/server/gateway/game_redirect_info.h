@@ -7,7 +7,7 @@
 
 namespace kfc {
 
-struct GameRedirectInfo {
+struct GatewayGameRedirectInfo {
     RoomId room_id;
     std::string server_id;
     std::string endpoint;

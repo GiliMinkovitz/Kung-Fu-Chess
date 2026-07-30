@@ -32,12 +32,12 @@
             <td></td>
             <td class="headerItem">Lines:</td>
             <td class="headerCovTableEntryHi">100.0&nbsp;%</td>
-            <td class="headerCovTableEntry">38</td>
-            <td class="headerCovTableEntry">38</td>
+            <td class="headerCovTableEntry">37</td>
+            <td class="headerCovTableEntry">37</td>
           </tr>
           <tr>
             <td class="headerItem">Test Date:</td>
-            <td class="headerValue">2026-07-26 00:23:33</td>
+            <td class="headerValue">2026-07-30 08:38:00</td>
             <td></td>
             <td class="headerItem">Functions:</td>
             <td class="headerCovTableEntryHi">100.0&nbsp;%</td>
@@ -79,46 +79,45 @@
 <span id="L17"><span class="lineNum">      17</span> <span class="tlaGNC">           1 : UiController::UiController(std::size_t rows, std::size_t cols,</span></span>
 <span id="L18"><span class="lineNum">      18</span> <span class="tlaGNC">           1 :                            std::unique_ptr&lt;IUiRenderer&gt; renderer)</span></span>
 <span id="L19"><span class="lineNum">      19</span> <span class="tlaGNC">           2 :     : renderer_(std::move(renderer)) {</span></span>
-<span id="L20"><span class="lineNum">      20</span> <span class="tlaGNC">           1 :     renderer_-&gt;attach_input_sink(this);</span></span>
-<span id="L21"><span class="lineNum">      21</span> <span class="tlaGNC">           1 :     const UiWindowDimensions window = default_initial_window_size(rows, cols);</span></span>
-<span id="L22"><span class="lineNum">      22</span> <span class="tlaGNC">           1 :     renderer_-&gt;init(window.width, window.height, rows, cols);</span></span>
-<span id="L23"><span class="lineNum">      23</span> <span class="tlaGNC">           1 :     sync_input_layout();</span></span>
-<span id="L24"><span class="lineNum">      24</span> <span class="tlaGNC">           1 : }</span></span>
-<span id="L25"><span class="lineNum">      25</span>              : </span>
-<span id="L26"><span class="lineNum">      26</span> <span class="tlaGNC">           2 : UiFrameResult UiController::frame(std::int64_t delta_ms) {</span></span>
-<span id="L27"><span class="lineNum">      27</span> <span class="tlaGNC">           2 :     sync_input_layout();</span></span>
-<span id="L28"><span class="lineNum">      28</span> <span class="tlaGNC">           2 :     state_-&gt;add_clock(delta_ms);</span></span>
-<span id="L29"><span class="lineNum">      29</span> <span class="tlaGNC">           2 :     return renderer_-&gt;present(BoardViewBuilder::build(*state_));</span></span>
-<span id="L30"><span class="lineNum">      30</span>              : }</span>
-<span id="L31"><span class="lineNum">      31</span>              : </span>
-<span id="L32"><span class="lineNum">      32</span> <span class="tlaGNC">           1 : UiFrameResult UiController::present(const BoardViewModel&amp; view) {</span></span>
-<span id="L33"><span class="lineNum">      33</span> <span class="tlaGNC">           1 :     sync_input_layout();</span></span>
-<span id="L34"><span class="lineNum">      34</span> <span class="tlaGNC">           1 :     return renderer_-&gt;present(view);</span></span>
-<span id="L35"><span class="lineNum">      35</span>              : }</span>
-<span id="L36"><span class="lineNum">      36</span>              : </span>
-<span id="L37"><span class="lineNum">      37</span> <span class="tlaGNC">          11 : void UiController::sync_input_layout() {</span></span>
-<span id="L38"><span class="lineNum">      38</span> <span class="tlaGNC">          11 :     if (processor_ != nullptr) {</span></span>
-<span id="L39"><span class="lineNum">      39</span> <span class="tlaGNC">          10 :         processor_-&gt;set_board_layout(renderer_-&gt;board_layout());</span></span>
-<span id="L40"><span class="lineNum">      40</span>              :     }</span>
-<span id="L41"><span class="lineNum">      41</span> <span class="tlaGNC">          11 : }</span></span>
-<span id="L42"><span class="lineNum">      42</span>              : </span>
-<span id="L43"><span class="lineNum">      43</span> <span class="tlaGNC">           1 : void UiController::on_pixel_click(int x, int y) {</span></span>
-<span id="L44"><span class="lineNum">      44</span> <span class="tlaGNC">           1 :     if (processor_ != nullptr) {</span></span>
-<span id="L45"><span class="lineNum">      45</span> <span class="tlaGNC">           1 :         processor_-&gt;handle_pixel_click(x, y);</span></span>
-<span id="L46"><span class="lineNum">      46</span>              :     }</span>
-<span id="L47"><span class="lineNum">      47</span> <span class="tlaGNC">           1 : }</span></span>
-<span id="L48"><span class="lineNum">      48</span>              : </span>
-<span id="L49"><span class="lineNum">      49</span> <span class="tlaGNC">           1 : void UiController::on_pixel_jump(int x, int y) {</span></span>
-<span id="L50"><span class="lineNum">      50</span> <span class="tlaGNC">           1 :     if (processor_ != nullptr) {</span></span>
-<span id="L51"><span class="lineNum">      51</span> <span class="tlaGNC">           1 :         processor_-&gt;handle_pixel_jump(x, y);</span></span>
-<span id="L52"><span class="lineNum">      52</span>              :     }</span>
-<span id="L53"><span class="lineNum">      53</span> <span class="tlaGNC">           1 : }</span></span>
-<span id="L54"><span class="lineNum">      54</span>              : </span>
-<span id="L55"><span class="lineNum">      55</span> <span class="tlaGNC">           1 : void UiController::shutdown() {</span></span>
-<span id="L56"><span class="lineNum">      56</span> <span class="tlaGNC">           1 :     renderer_-&gt;shutdown();</span></span>
-<span id="L57"><span class="lineNum">      57</span> <span class="tlaGNC">           1 : }</span></span>
-<span id="L58"><span class="lineNum">      58</span>              : </span>
-<span id="L59"><span class="lineNum">      59</span>              : }  // namespace kfc</span>
+<span id="L20"><span class="lineNum">      20</span> <span class="tlaGNC">           1 :     const UiWindowDimensions window = default_initial_window_size(rows, cols);</span></span>
+<span id="L21"><span class="lineNum">      21</span> <span class="tlaGNC">           1 :     renderer_-&gt;init(window.width, window.height, rows, cols);</span></span>
+<span id="L22"><span class="lineNum">      22</span> <span class="tlaGNC">           1 :     sync_input_layout();</span></span>
+<span id="L23"><span class="lineNum">      23</span> <span class="tlaGNC">           1 : }</span></span>
+<span id="L24"><span class="lineNum">      24</span>              : </span>
+<span id="L25"><span class="lineNum">      25</span> <span class="tlaGNC">           2 : UiFrameResult UiController::frame(std::int64_t delta_ms) {</span></span>
+<span id="L26"><span class="lineNum">      26</span> <span class="tlaGNC">           2 :     sync_input_layout();</span></span>
+<span id="L27"><span class="lineNum">      27</span> <span class="tlaGNC">           2 :     state_-&gt;add_clock(delta_ms);</span></span>
+<span id="L28"><span class="lineNum">      28</span> <span class="tlaGNC">           2 :     return renderer_-&gt;present(BoardViewBuilder::build(*state_));</span></span>
+<span id="L29"><span class="lineNum">      29</span>              : }</span>
+<span id="L30"><span class="lineNum">      30</span>              : </span>
+<span id="L31"><span class="lineNum">      31</span> <span class="tlaGNC">           1 : UiFrameResult UiController::present(const BoardViewModel&amp; view) {</span></span>
+<span id="L32"><span class="lineNum">      32</span> <span class="tlaGNC">           1 :     sync_input_layout();</span></span>
+<span id="L33"><span class="lineNum">      33</span> <span class="tlaGNC">           1 :     return renderer_-&gt;present(view);</span></span>
+<span id="L34"><span class="lineNum">      34</span>              : }</span>
+<span id="L35"><span class="lineNum">      35</span>              : </span>
+<span id="L36"><span class="lineNum">      36</span> <span class="tlaGNC">          11 : void UiController::sync_input_layout() {</span></span>
+<span id="L37"><span class="lineNum">      37</span> <span class="tlaGNC">          11 :     if (processor_ != nullptr) {</span></span>
+<span id="L38"><span class="lineNum">      38</span> <span class="tlaGNC">          10 :         processor_-&gt;set_board_layout(renderer_-&gt;board_layout());</span></span>
+<span id="L39"><span class="lineNum">      39</span>              :     }</span>
+<span id="L40"><span class="lineNum">      40</span> <span class="tlaGNC">          11 : }</span></span>
+<span id="L41"><span class="lineNum">      41</span>              : </span>
+<span id="L42"><span class="lineNum">      42</span> <span class="tlaGNC">           1 : void UiController::on_pixel_click(int x, int y) {</span></span>
+<span id="L43"><span class="lineNum">      43</span> <span class="tlaGNC">           1 :     if (processor_ != nullptr) {</span></span>
+<span id="L44"><span class="lineNum">      44</span> <span class="tlaGNC">           1 :         processor_-&gt;handle_pixel_click(x, y);</span></span>
+<span id="L45"><span class="lineNum">      45</span>              :     }</span>
+<span id="L46"><span class="lineNum">      46</span> <span class="tlaGNC">           1 : }</span></span>
+<span id="L47"><span class="lineNum">      47</span>              : </span>
+<span id="L48"><span class="lineNum">      48</span> <span class="tlaGNC">           1 : void UiController::on_pixel_jump(int x, int y) {</span></span>
+<span id="L49"><span class="lineNum">      49</span> <span class="tlaGNC">           1 :     if (processor_ != nullptr) {</span></span>
+<span id="L50"><span class="lineNum">      50</span> <span class="tlaGNC">           1 :         processor_-&gt;handle_pixel_jump(x, y);</span></span>
+<span id="L51"><span class="lineNum">      51</span>              :     }</span>
+<span id="L52"><span class="lineNum">      52</span> <span class="tlaGNC">           1 : }</span></span>
+<span id="L53"><span class="lineNum">      53</span>              : </span>
+<span id="L54"><span class="lineNum">      54</span> <span class="tlaGNC">           1 : void UiController::shutdown() {</span></span>
+<span id="L55"><span class="lineNum">      55</span> <span class="tlaGNC">           1 :     renderer_-&gt;shutdown();</span></span>
+<span id="L56"><span class="lineNum">      56</span> <span class="tlaGNC">           1 : }</span></span>
+<span id="L57"><span class="lineNum">      57</span>              : </span>
+<span id="L58"><span class="lineNum">      58</span>              : }  // namespace kfc</span>
         </pre>
               </td>
             </tr>

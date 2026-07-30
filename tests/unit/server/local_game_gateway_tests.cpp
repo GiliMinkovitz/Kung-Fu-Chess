@@ -43,7 +43,7 @@ TEST_CASE("LocalGameGatewayTest - FormatsGameRedirectForWhite") {
     kfc::LocalGameGateway gateway{sink};
 
     gateway.send_game_redirect(
-        1, kfc::GameRedirectInfo{42, "server-a", "ws://localhost:8765", kfc::PieceColor::White});
+        1, kfc::GatewayGameRedirectInfo{42, "server-a", "ws://localhost:8765", kfc::PieceColor::White});
 
     REQUIRE_EQ(sink.sent_messages().size(), 1u);
     CHECK_EQ(sink.sent_messages()[0].player, 1u);
@@ -55,7 +55,7 @@ TEST_CASE("LocalGameGatewayTest - FormatsGameRedirectForBlack") {
     kfc::LocalGameGateway gateway{sink};
 
     gateway.send_game_redirect(
-        2, kfc::GameRedirectInfo{7, "server-b", "ws://games.example:9000", kfc::PieceColor::Black});
+        2, kfc::GatewayGameRedirectInfo{7, "server-b", "ws://games.example:9000", kfc::PieceColor::Black});
 
     REQUIRE_EQ(sink.sent_messages().size(), 1u);
     CHECK_EQ(sink.sent_messages()[0].player, 2u);

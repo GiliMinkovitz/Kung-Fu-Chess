@@ -37,7 +37,7 @@
           </tr>
           <tr>
             <td class="headerItem">Test Date:</td>
-            <td class="headerValue">2026-07-26 00:23:33</td>
+            <td class="headerValue">2026-07-30 08:38:00</td>
             <td></td>
             <td class="headerItem">Functions:</td>
             <td class="headerCovTableEntryHi">100.0&nbsp;%</td>
@@ -66,31 +66,38 @@
 <span id="L4"><span class="lineNum">       4</span>              : #include &lt;boost/beast/core.hpp&gt;</span>
 <span id="L5"><span class="lineNum">       5</span>              : #include &lt;boost/beast/websocket.hpp&gt;</span>
 <span id="L6"><span class="lineNum">       6</span>              : </span>
-<span id="L7"><span class="lineNum">       7</span>              : #include &lt;optional&gt;</span>
-<span id="L8"><span class="lineNum">       8</span>              : #include &lt;string&gt;</span>
-<span id="L9"><span class="lineNum">       9</span>              : </span>
-<span id="L10"><span class="lineNum">      10</span>              : namespace kfc {</span>
-<span id="L11"><span class="lineNum">      11</span>              : </span>
-<span id="L12"><span class="lineNum">      12</span>              : class ClientConnection {</span>
-<span id="L13"><span class="lineNum">      13</span>              : public:</span>
-<span id="L14"><span class="lineNum">      14</span>              :     explicit ClientConnection(boost::asio::ip::tcp::socket socket);</span>
-<span id="L15"><span class="lineNum">      15</span>              : </span>
-<span id="L16"><span class="lineNum">      16</span> <span class="tlaGNC">         731 :     [[nodiscard]] bool is_open() const noexcept { return open_; }</span></span>
-<span id="L17"><span class="lineNum">      17</span>              : </span>
-<span id="L18"><span class="lineNum">      18</span>              :     std::optional&lt;std::string&gt; try_read();</span>
-<span id="L19"><span class="lineNum">      19</span>              :     bool try_send(const std::string&amp; message);</span>
-<span id="L20"><span class="lineNum">      20</span>              :     void close();</span>
-<span id="L21"><span class="lineNum">      21</span>              :     void probe_disconnect();</span>
-<span id="L22"><span class="lineNum">      22</span>              : </span>
-<span id="L23"><span class="lineNum">      23</span>              : private:</span>
-<span id="L24"><span class="lineNum">      24</span>              :     bool detect_peer_disconnect();</span>
-<span id="L25"><span class="lineNum">      25</span>              : </span>
-<span id="L26"><span class="lineNum">      26</span>              :     boost::beast::websocket::stream&lt;boost::asio::ip::tcp::socket&gt; ws_;</span>
-<span id="L27"><span class="lineNum">      27</span>              :     bool open_ = true;</span>
-<span id="L28"><span class="lineNum">      28</span>              :     bool initial_snapshot_sent_ = false;</span>
-<span id="L29"><span class="lineNum">      29</span>              : };</span>
-<span id="L30"><span class="lineNum">      30</span>              : </span>
-<span id="L31"><span class="lineNum">      31</span>              : }  // namespace kfc</span>
+<span id="L7"><span class="lineNum">       7</span>              : #include &lt;cstddef&gt;</span>
+<span id="L8"><span class="lineNum">       8</span>              : #include &lt;optional&gt;</span>
+<span id="L9"><span class="lineNum">       9</span>              : #include &lt;string&gt;</span>
+<span id="L10"><span class="lineNum">      10</span>              : </span>
+<span id="L11"><span class="lineNum">      11</span>              : namespace kfc {</span>
+<span id="L12"><span class="lineNum">      12</span>              : </span>
+<span id="L13"><span class="lineNum">      13</span>              : class ClientConnection {</span>
+<span id="L14"><span class="lineNum">      14</span>              : public:</span>
+<span id="L15"><span class="lineNum">      15</span>              :     explicit ClientConnection(boost::asio::ip::tcp::socket socket);</span>
+<span id="L16"><span class="lineNum">      16</span>              : </span>
+<span id="L17"><span class="lineNum">      17</span> <span class="tlaGNC">        2344 :     [[nodiscard]] bool is_open() const noexcept { return open_; }</span></span>
+<span id="L18"><span class="lineNum">      18</span>              : </span>
+<span id="L19"><span class="lineNum">      19</span>              :     std::optional&lt;std::string&gt; try_read();</span>
+<span id="L20"><span class="lineNum">      20</span>              :     bool try_send(const std::string&amp; message);</span>
+<span id="L21"><span class="lineNum">      21</span>              :     bool send_message(const std::string&amp; message);</span>
+<span id="L22"><span class="lineNum">      22</span>              :     void close();</span>
+<span id="L23"><span class="lineNum">      23</span>              :     void probe_disconnect();</span>
+<span id="L24"><span class="lineNum">      24</span>              : </span>
+<span id="L25"><span class="lineNum">      25</span>              : private:</span>
+<span id="L26"><span class="lineNum">      26</span>              :     bool detect_peer_disconnect();</span>
+<span id="L27"><span class="lineNum">      27</span>              :     void update_buffered_bytes(std::size_t available_before_read, std::size_t consumed_bytes);</span>
+<span id="L28"><span class="lineNum">      28</span>              : </span>
+<span id="L29"><span class="lineNum">      29</span>              :     boost::beast::websocket::stream&lt;boost::asio::ip::tcp::socket&gt; ws_;</span>
+<span id="L30"><span class="lineNum">      30</span>              :     // Bytes Beast has read from the socket but not yet delivered as messages.</span>
+<span id="L31"><span class="lineNum">      31</span>              :     // Accounting assumes one frame per message (auto_fragment(false)), no</span>
+<span id="L32"><span class="lineNum">      32</span>              :     // permessage-deflate; revisit if transport configuration changes.</span>
+<span id="L33"><span class="lineNum">      33</span>              :     std::size_t buffered_bytes_ = 0;</span>
+<span id="L34"><span class="lineNum">      34</span>              :     bool open_ = true;</span>
+<span id="L35"><span class="lineNum">      35</span>              :     bool initial_snapshot_sent_ = false;</span>
+<span id="L36"><span class="lineNum">      36</span>              : };</span>
+<span id="L37"><span class="lineNum">      37</span>              : </span>
+<span id="L38"><span class="lineNum">      38</span>              : }  // namespace kfc</span>
         </pre>
               </td>
             </tr>

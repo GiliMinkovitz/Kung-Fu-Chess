@@ -1,0 +1,133 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html lang="en">
+
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <title>LCOV - coverage.info - server/game/remote_game_allocator.cpp</title>
+  <link rel="stylesheet" type="text/css" href="../../gcov.css">
+</head>
+
+<body>
+
+          <table width="100%" border=0 cellspacing=0 cellpadding=0>
+            <tr><td class="title">LCOV - code coverage report</td></tr>
+            <tr><td class="ruler"><img src="../../glass.png" width=3 height=3 alt=""></td></tr>
+
+            <tr>
+              <td width="100%">
+                <table cellpadding=1 border=0 width="100%">
+          <tr>
+            <td width="10%" class="headerItem">Current view:</td>
+            <td width="10%" class="headerValue"><a href="../../index.html" title="Click to go to top-level">top level</a> - <a href="index.html" title="Click to go to directory server/game">server/game</a> - remote_game_allocator.cpp<span style="font-size: 80%;"> (source / <a href="remote_game_allocator.cpp.func-c.html" title="Click to go to function table">functions</a>)</span></td>
+            <td width="5%"></td>
+            <td width="5%"></td>
+            <td width="5%" class="headerCovTableHead">Coverage</td>
+            <td width="5%" class="headerCovTableHead" title="Covered + Uncovered code">Total</td>
+            <td width="5%" class="headerCovTableHead" title="Exercised code only">Hit</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Test:</td>
+            <td class="headerValue">coverage.info</td>
+            <td></td>
+            <td class="headerItem">Lines:</td>
+            <td class="headerCovTableEntryMed">86.7&nbsp;%</td>
+            <td class="headerCovTableEntry">30</td>
+            <td class="headerCovTableEntry">26</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Test Date:</td>
+            <td class="headerValue">2026-07-30 08:38:00</td>
+            <td></td>
+            <td class="headerItem">Functions:</td>
+            <td class="headerCovTableEntryHi">100.0&nbsp;%</td>
+            <td class="headerCovTableEntry">2</td>
+            <td class="headerCovTableEntry">2</td>
+          </tr>
+                  <tr><td><img src="../../glass.png" width=3 height=3 alt=""></td></tr>
+                </table>
+              </td>
+            </tr>
+
+            <tr><td class="ruler"><img src="../../glass.png" width=3 height=3 alt=""></td></tr>
+          </table>
+
+          <table cellpadding=0 cellspacing=0 border=0>
+            <tr>
+              <td><br></td>
+            </tr>
+            <tr>
+              <td>
+<pre class="sourceHeading">            Line data    Source code</pre>
+<pre class="source">
+<span id="L1"><span class="lineNum">       1</span>              : #include &quot;server/game/remote_game_allocator.h&quot;</span>
+<span id="L2"><span class="lineNum">       2</span>              : </span>
+<span id="L3"><span class="lineNum">       3</span>              : #include &quot;app/observability/metric_counters.h&quot;</span>
+<span id="L4"><span class="lineNum">       4</span>              : #include &quot;server/game/game_allocation_http_client.h&quot;</span>
+<span id="L5"><span class="lineNum">       5</span>              : #include &quot;server/game/i_game_server_registry.h&quot;</span>
+<span id="L6"><span class="lineNum">       6</span>              : </span>
+<span id="L7"><span class="lineNum">       7</span>              : #include &lt;stdexcept&gt;</span>
+<span id="L8"><span class="lineNum">       8</span>              : </span>
+<span id="L9"><span class="lineNum">       9</span>              : namespace kfc {</span>
+<span id="L10"><span class="lineNum">      10</span>              : </span>
+<span id="L11"><span class="lineNum">      11</span> <span class="tlaGNC">           4 : RemoteGameAllocator::RemoteGameAllocator(IGameServerRegistry&amp; game_server_registry,</span></span>
+<span id="L12"><span class="lineNum">      12</span>              :                                          std::string service_token,</span>
+<span id="L13"><span class="lineNum">      13</span>              :                                          const std::chrono::milliseconds timeout,</span>
+<span id="L14"><span class="lineNum">      14</span> <span class="tlaGNC">           4 :                                          const std::size_t max_retry_count)</span></span>
+<span id="L15"><span class="lineNum">      15</span> <span class="tlaGNC">           4 :     : game_server_registry_(game_server_registry),</span></span>
+<span id="L16"><span class="lineNum">      16</span> <span class="tlaGNC">           4 :       service_token_(std::move(service_token)),</span></span>
+<span id="L17"><span class="lineNum">      17</span> <span class="tlaGNC">           4 :       timeout_(timeout),</span></span>
+<span id="L18"><span class="lineNum">      18</span> <span class="tlaGNC">           4 :       max_retry_count_(max_retry_count) {}</span></span>
+<span id="L19"><span class="lineNum">      19</span>              : </span>
+<span id="L20"><span class="lineNum">      20</span> <span class="tlaGNC">           2 : GameCreationResponse RemoteGameAllocator::allocate_game(const GameCreationRequest&amp; request) {</span></span>
+<span id="L21"><span class="lineNum">      21</span>              :     const std::vector&lt;GameServerRecord&gt; candidates =</span>
+<span id="L22"><span class="lineNum">      22</span> <span class="tlaGNC">           2 :         game_server_registry_.list_available_servers();</span></span>
+<span id="L23"><span class="lineNum">      23</span> <span class="tlaGNC">           2 :     if (candidates.empty()) {</span></span>
+<span id="L24"><span class="lineNum">      24</span> <span class="tlaUNC">           0 :         throw std::runtime_error(&quot;No available game servers in registry&quot;);</span></span>
+<span id="L25"><span class="lineNum">      25</span>              :     }</span>
+<span id="L26"><span class="lineNum">      26</span>              : </span>
+<span id="L27"><span class="lineNum">      27</span> <span class="tlaGNC">           2 :     GameAllocationHttpClient http_client(service_token_, timeout_);</span></span>
+<span id="L28"><span class="lineNum">      28</span> <span class="tlaGNC">           2 :     std::size_t attempts = 0;</span></span>
+<span id="L29"><span class="lineNum">      29</span> <span class="tlaGNC">           5 :     for (const GameServerRecord&amp; server : candidates) {</span></span>
+<span id="L30"><span class="lineNum">      30</span> <span class="tlaGNC">           2 :         if (attempts &gt;= max_retry_count_) {</span></span>
+<span id="L31"><span class="lineNum">      31</span> <span class="tlaUNC">           0 :             break;</span></span>
+<span id="L32"><span class="lineNum">      32</span>              :         }</span>
+<span id="L33"><span class="lineNum">      33</span>              : </span>
+<span id="L34"><span class="lineNum">      34</span>              :         const std::optional&lt;GameCreationResponse&gt; response =</span>
+<span id="L35"><span class="lineNum">      35</span> <span class="tlaGNC">           2 :             http_client.allocate(server.allocation_endpoint, request);</span></span>
+<span id="L36"><span class="lineNum">      36</span> <span class="tlaGNC">           2 :         ++attempts;</span></span>
+<span id="L37"><span class="lineNum">      37</span> <span class="tlaGNC">           2 :         if (!response.has_value()) {</span></span>
+<span id="L38"><span class="lineNum">      38</span> <span class="tlaGNC">           1 :             kfc::app::observability::metrics().allocation_failures_total.fetch_add(</span></span>
+<span id="L39"><span class="lineNum">      39</span>              :                 1, std::memory_order_relaxed);</span>
+<span id="L40"><span class="lineNum">      40</span> <span class="tlaGNC">           1 :             continue;</span></span>
+<span id="L41"><span class="lineNum">      41</span>              :         }</span>
+<span id="L42"><span class="lineNum">      42</span>              : </span>
+<span id="L43"><span class="lineNum">      43</span> <span class="tlaGNC">           1 :         GameCreationResponse result = *response;</span></span>
+<span id="L44"><span class="lineNum">      44</span> <span class="tlaGNC">           1 :         if (result.game_server_id.empty()) {</span></span>
+<span id="L45"><span class="lineNum">      45</span> <span class="tlaUNC">           0 :             result.game_server_id = server.server_id;</span></span>
+<span id="L46"><span class="lineNum">      46</span>              :         }</span>
+<span id="L47"><span class="lineNum">      47</span> <span class="tlaGNC">           1 :         if (!result.endpoint.has_value() || result.endpoint-&gt;empty()) {</span></span>
+<span id="L48"><span class="lineNum">      48</span> <span class="tlaUNC">           0 :             result.endpoint = server.endpoint;</span></span>
+<span id="L49"><span class="lineNum">      49</span>              :         }</span>
+<span id="L50"><span class="lineNum">      50</span> <span class="tlaGNC">           2 :         return result;</span></span>
+<span id="L51"><span class="lineNum">      51</span> <span class="tlaGNC">           3 :     }</span></span>
+<span id="L52"><span class="lineNum">      52</span>              : </span>
+<span id="L53"><span class="lineNum">      53</span> <span class="tlaGNC">           1 :     kfc::app::observability::metrics().allocation_failures_total.fetch_add(1, std::memory_order_relaxed);</span></span>
+<span id="L54"><span class="lineNum">      54</span> <span class="tlaGNC">           1 :     throw std::runtime_error(&quot;Game allocation failed for all candidate servers&quot;);</span></span>
+<span id="L55"><span class="lineNum">      55</span> <span class="tlaGNC">           3 : }</span></span>
+<span id="L56"><span class="lineNum">      56</span>              : </span>
+<span id="L57"><span class="lineNum">      57</span>              : }  // namespace kfc</span>
+        </pre>
+              </td>
+            </tr>
+          </table>
+          <br>
+
+          <table width="100%" border=0 cellspacing=0 cellpadding=0>
+            <tr><td class="ruler"><img src="../../glass.png" width=3 height=3 alt=""></td></tr>
+            <tr><td class="versionInfo">Generated by: <a href="https://github.com//linux-test-project/lcov" target="_parent">LCOV version 2.0-1</a></td></tr>
+          </table>
+          <br>
+
+</body>
+</html>

@@ -31,18 +31,18 @@
             <td class="headerValue">coverage.info</td>
             <td></td>
             <td class="headerItem">Lines:</td>
-            <td class="headerCovTableEntryHi">100.0&nbsp;%</td>
-            <td class="headerCovTableEntry">111</td>
-            <td class="headerCovTableEntry">111</td>
+            <td class="headerCovTableEntryHi">99.3&nbsp;%</td>
+            <td class="headerCovTableEntry">143</td>
+            <td class="headerCovTableEntry">142</td>
           </tr>
           <tr>
             <td class="headerItem">Test Date:</td>
-            <td class="headerValue">2026-07-26 00:23:33</td>
+            <td class="headerValue">2026-07-30 08:38:00</td>
             <td></td>
             <td class="headerItem">Functions:</td>
             <td class="headerCovTableEntryHi">100.0&nbsp;%</td>
-            <td class="headerCovTableEntry">14</td>
-            <td class="headerCovTableEntry">14</td>
+            <td class="headerCovTableEntry">17</td>
+            <td class="headerCovTableEntry">17</td>
           </tr>
                   <tr><td><img src="../glass.png" width=3 height=3 alt=""></td></tr>
                 </table>
@@ -76,211 +76,289 @@
 <span id="L14"><span class="lineNum">      14</span>              : </span>
 <span id="L15"><span class="lineNum">      15</span>              : namespace {</span>
 <span id="L16"><span class="lineNum">      16</span>              : </span>
-<span id="L17"><span class="lineNum">      17</span> <span class="tlaGNC">         182 : std::optional&lt;std::string_view&gt; next_token(std::string_view&amp; message) {</span></span>
-<span id="L18"><span class="lineNum">      18</span> <span class="tlaGNC">         238 :     while (!message.empty() &amp;&amp; std::isspace(static_cast&lt;unsigned char&gt;(message.front()))) {</span></span>
-<span id="L19"><span class="lineNum">      19</span> <span class="tlaGNC">          56 :         message.remove_prefix(1);</span></span>
+<span id="L17"><span class="lineNum">      17</span> <span class="tlaGNC">         495 : std::optional&lt;std::string_view&gt; next_token(std::string_view&amp; message) {</span></span>
+<span id="L18"><span class="lineNum">      18</span> <span class="tlaGNC">         667 :     while (!message.empty() &amp;&amp; std::isspace(static_cast&lt;unsigned char&gt;(message.front()))) {</span></span>
+<span id="L19"><span class="lineNum">      19</span> <span class="tlaGNC">         172 :         message.remove_prefix(1);</span></span>
 <span id="L20"><span class="lineNum">      20</span>              :     }</span>
-<span id="L21"><span class="lineNum">      21</span> <span class="tlaGNC">         182 :     if (message.empty()) {</span></span>
-<span id="L22"><span class="lineNum">      22</span> <span class="tlaGNC">          57 :         return std::nullopt;</span></span>
+<span id="L21"><span class="lineNum">      21</span> <span class="tlaGNC">         495 :     if (message.empty()) {</span></span>
+<span id="L22"><span class="lineNum">      22</span> <span class="tlaGNC">         147 :         return std::nullopt;</span></span>
 <span id="L23"><span class="lineNum">      23</span>              :     }</span>
 <span id="L24"><span class="lineNum">      24</span>              : </span>
-<span id="L25"><span class="lineNum">      25</span> <span class="tlaGNC">         125 :     const std::size_t end = message.find_first_of(&quot; \t\r\n&quot;, 0);</span></span>
+<span id="L25"><span class="lineNum">      25</span> <span class="tlaGNC">         348 :     const std::size_t end = message.find_first_of(&quot; \t\r\n&quot;, 0);</span></span>
 <span id="L26"><span class="lineNum">      26</span>              :     const std::string_view token =</span>
-<span id="L27"><span class="lineNum">      27</span> <span class="tlaGNC">         125 :         end == std::string_view::npos ? message : message.substr(0, end);</span></span>
-<span id="L28"><span class="lineNum">      28</span> <span class="tlaGNC">         125 :     message.remove_prefix(token.size());</span></span>
-<span id="L29"><span class="lineNum">      29</span> <span class="tlaGNC">         125 :     return token;</span></span>
+<span id="L27"><span class="lineNum">      27</span> <span class="tlaGNC">         348 :         end == std::string_view::npos ? message : message.substr(0, end);</span></span>
+<span id="L28"><span class="lineNum">      28</span> <span class="tlaGNC">         348 :     message.remove_prefix(token.size());</span></span>
+<span id="L29"><span class="lineNum">      29</span> <span class="tlaGNC">         348 :     return token;</span></span>
 <span id="L30"><span class="lineNum">      30</span>              : }</span>
 <span id="L31"><span class="lineNum">      31</span>              : </span>
-<span id="L32"><span class="lineNum">      32</span> <span class="tlaGNC">          23 : std::optional&lt;std::size_t&gt; parse_non_negative_int(std::string_view token) {</span></span>
-<span id="L33"><span class="lineNum">      33</span> <span class="tlaGNC">          23 :     if (token.empty()) {</span></span>
+<span id="L32"><span class="lineNum">      32</span> <span class="tlaGNC">          29 : std::optional&lt;std::size_t&gt; parse_non_negative_int(std::string_view token) {</span></span>
+<span id="L33"><span class="lineNum">      33</span> <span class="tlaGNC">          29 :     if (token.empty()) {</span></span>
 <span id="L34"><span class="lineNum">      34</span> <span class="tlaGNC">           1 :         return std::nullopt;</span></span>
 <span id="L35"><span class="lineNum">      35</span>              :     }</span>
 <span id="L36"><span class="lineNum">      36</span>              : </span>
-<span id="L37"><span class="lineNum">      37</span> <span class="tlaGNC">          22 :     std::size_t value = 0;</span></span>
-<span id="L38"><span class="lineNum">      38</span> <span class="tlaGNC">          41 :     for (const char ch : token) {</span></span>
-<span id="L39"><span class="lineNum">      39</span> <span class="tlaGNC">          22 :         if (!std::isdigit(static_cast&lt;unsigned char&gt;(ch))) {</span></span>
-<span id="L40"><span class="lineNum">      40</span> <span class="tlaGNC">           3 :             return std::nullopt;</span></span>
+<span id="L37"><span class="lineNum">      37</span> <span class="tlaGNC">          28 :     std::size_t value = 0;</span></span>
+<span id="L38"><span class="lineNum">      38</span> <span class="tlaGNC">          53 :     for (const char ch : token) {</span></span>
+<span id="L39"><span class="lineNum">      39</span> <span class="tlaGNC">          29 :         if (!std::isdigit(static_cast&lt;unsigned char&gt;(ch))) {</span></span>
+<span id="L40"><span class="lineNum">      40</span> <span class="tlaGNC">           4 :             return std::nullopt;</span></span>
 <span id="L41"><span class="lineNum">      41</span>              :         }</span>
-<span id="L42"><span class="lineNum">      42</span> <span class="tlaGNC">          19 :         value = value * 10 + static_cast&lt;std::size_t&gt;(ch - '0');</span></span>
+<span id="L42"><span class="lineNum">      42</span> <span class="tlaGNC">          25 :         value = value * 10 + static_cast&lt;std::size_t&gt;(ch - '0');</span></span>
 <span id="L43"><span class="lineNum">      43</span>              :     }</span>
-<span id="L44"><span class="lineNum">      44</span> <span class="tlaGNC">          19 :     return value;</span></span>
+<span id="L44"><span class="lineNum">      44</span> <span class="tlaGNC">          24 :     return value;</span></span>
 <span id="L45"><span class="lineNum">      45</span>              : }</span>
 <span id="L46"><span class="lineNum">      46</span>              : </span>
-<span id="L47"><span class="lineNum">      47</span> <span class="tlaGNC">          12 : std::optional&lt;kfc::PieceColor&gt; piece_color_at(const kfc::GameState&amp; state, std::size_t row,</span></span>
+<span id="L47"><span class="lineNum">      47</span> <span class="tlaGNC">          14 : std::optional&lt;kfc::PieceColor&gt; piece_color_at(const kfc::GameState&amp; state, std::size_t row,</span></span>
 <span id="L48"><span class="lineNum">      48</span>              :                                              std::size_t col) {</span>
-<span id="L49"><span class="lineNum">      49</span> <span class="tlaGNC">          12 :     if (!state.is_piece(row, col)) {</span></span>
+<span id="L49"><span class="lineNum">      49</span> <span class="tlaGNC">          14 :     if (!state.is_piece(row, col)) {</span></span>
 <span id="L50"><span class="lineNum">      50</span> <span class="tlaGNC">           1 :         return std::nullopt;</span></span>
 <span id="L51"><span class="lineNum">      51</span>              :     }</span>
 <span id="L52"><span class="lineNum">      52</span>              : </span>
 <span id="L53"><span class="lineNum">      53</span>              :     std::optional&lt;kfc::PieceDescriptor&gt; descriptor =</span>
-<span id="L54"><span class="lineNum">      54</span> <span class="tlaGNC">          11 :         kfc::descriptor_from_token(state.token_at(row, col));</span></span>
+<span id="L54"><span class="lineNum">      54</span> <span class="tlaGNC">          13 :         kfc::descriptor_from_token(state.token_at(row, col));</span></span>
 <span id="L55"><span class="lineNum">      55</span>              : #ifdef KFC_TEST_BUILD</span>
-<span id="L56"><span class="lineNum">      56</span> <span class="tlaGNC">          11 :     if (kfc::test::GameMessageParserTestHooks::force_invalid_piece_descriptor) {</span></span>
+<span id="L56"><span class="lineNum">      56</span> <span class="tlaGNC">          13 :     if (kfc::test::GameMessageParserTestHooks::force_invalid_piece_descriptor) {</span></span>
 <span id="L57"><span class="lineNum">      57</span> <span class="tlaGNC">           1 :         descriptor = std::nullopt;</span></span>
 <span id="L58"><span class="lineNum">      58</span>              :     }</span>
 <span id="L59"><span class="lineNum">      59</span>              : #endif</span>
-<span id="L60"><span class="lineNum">      60</span> <span class="tlaGNC">          11 :     if (!descriptor) {</span></span>
+<span id="L60"><span class="lineNum">      60</span> <span class="tlaGNC">          13 :     if (!descriptor) {</span></span>
 <span id="L61"><span class="lineNum">      61</span> <span class="tlaGNC">           1 :         return std::nullopt;</span></span>
 <span id="L62"><span class="lineNum">      62</span>              :     }</span>
-<span id="L63"><span class="lineNum">      63</span> <span class="tlaGNC">          10 :     return descriptor-&gt;color;</span></span>
+<span id="L63"><span class="lineNum">      63</span> <span class="tlaGNC">          12 :     return descriptor-&gt;color;</span></span>
 <span id="L64"><span class="lineNum">      64</span>              : }</span>
 <span id="L65"><span class="lineNum">      65</span>              : </span>
 <span id="L66"><span class="lineNum">      66</span>              : }  // namespace</span>
 <span id="L67"><span class="lineNum">      67</span>              : </span>
 <span id="L68"><span class="lineNum">      68</span>              : namespace kfc {</span>
 <span id="L69"><span class="lineNum">      69</span>              : </span>
-<span id="L70"><span class="lineNum">      70</span> <span class="tlaGNC">          26 : bool parse_play_message(std::string_view message) {</span></span>
-<span id="L71"><span class="lineNum">      71</span> <span class="tlaGNC">          32 :     while (!message.empty() &amp;&amp; std::isspace(static_cast&lt;unsigned char&gt;(message.front()))) {</span></span>
+<span id="L70"><span class="lineNum">      70</span> <span class="tlaGNC">          66 : bool parse_play_message(std::string_view message) {</span></span>
+<span id="L71"><span class="lineNum">      71</span> <span class="tlaGNC">          72 :     while (!message.empty() &amp;&amp; std::isspace(static_cast&lt;unsigned char&gt;(message.front()))) {</span></span>
 <span id="L72"><span class="lineNum">      72</span> <span class="tlaGNC">           6 :         message.remove_prefix(1);</span></span>
 <span id="L73"><span class="lineNum">      73</span>              :     }</span>
-<span id="L74"><span class="lineNum">      74</span> <span class="tlaGNC">          29 :     while (!message.empty() &amp;&amp; std::isspace(static_cast&lt;unsigned char&gt;(message.back()))) {</span></span>
+<span id="L74"><span class="lineNum">      74</span> <span class="tlaGNC">          69 :     while (!message.empty() &amp;&amp; std::isspace(static_cast&lt;unsigned char&gt;(message.back()))) {</span></span>
 <span id="L75"><span class="lineNum">      75</span> <span class="tlaGNC">           3 :         message.remove_suffix(1);</span></span>
 <span id="L76"><span class="lineNum">      76</span>              :     }</span>
 <span id="L77"><span class="lineNum">      77</span>              : </span>
-<span id="L78"><span class="lineNum">      78</span> <span class="tlaGNC">          26 :     if (message.empty()) {</span></span>
+<span id="L78"><span class="lineNum">      78</span> <span class="tlaGNC">          66 :     if (message.empty()) {</span></span>
 <span id="L79"><span class="lineNum">      79</span> <span class="tlaGNC">           2 :         return false;</span></span>
 <span id="L80"><span class="lineNum">      80</span>              :     }</span>
 <span id="L81"><span class="lineNum">      81</span>              : </span>
-<span id="L82"><span class="lineNum">      82</span> <span class="tlaGNC">          24 :     const auto command = next_token(message);</span></span>
-<span id="L83"><span class="lineNum">      83</span> <span class="tlaGNC">          24 :     if (!command || *command != &quot;play&quot;) {</span></span>
+<span id="L82"><span class="lineNum">      82</span> <span class="tlaGNC">          64 :     const auto command = next_token(message);</span></span>
+<span id="L83"><span class="lineNum">      83</span> <span class="tlaGNC">          64 :     if (!command || *command != &quot;play&quot;) {</span></span>
 <span id="L84"><span class="lineNum">      84</span> <span class="tlaGNC">           1 :         return false;</span></span>
 <span id="L85"><span class="lineNum">      85</span>              :     }</span>
-<span id="L86"><span class="lineNum">      86</span> <span class="tlaGNC">          23 :     if (next_token(message)) {</span></span>
-<span id="L87"><span class="lineNum">      87</span> <span class="tlaGNC">           3 :         return false;</span></span>
+<span id="L86"><span class="lineNum">      86</span> <span class="tlaGNC">          63 :     if (next_token(message)) {</span></span>
+<span id="L87"><span class="lineNum">      87</span> <span class="tlaGNC">           4 :         return false;</span></span>
 <span id="L88"><span class="lineNum">      88</span>              :     }</span>
 <span id="L89"><span class="lineNum">      89</span>              : </span>
-<span id="L90"><span class="lineNum">      90</span> <span class="tlaGNC">          20 :     return true;</span></span>
+<span id="L90"><span class="lineNum">      90</span> <span class="tlaGNC">          59 :     return true;</span></span>
 <span id="L91"><span class="lineNum">      91</span>              : }</span>
 <span id="L92"><span class="lineNum">      92</span>              : </span>
-<span id="L93"><span class="lineNum">      93</span> <span class="tlaGNC">          28 : std::optional&lt;std::string&gt; parse_login_message(std::string_view message) {</span></span>
-<span id="L94"><span class="lineNum">      94</span> <span class="tlaGNC">          33 :     while (!message.empty() &amp;&amp; std::isspace(static_cast&lt;unsigned char&gt;(message.front()))) {</span></span>
-<span id="L95"><span class="lineNum">      95</span> <span class="tlaGNC">           5 :         message.remove_prefix(1);</span></span>
+<span id="L93"><span class="lineNum">      93</span> <span class="tlaGNC">           8 : std::optional&lt;RoomId&gt; parse_join_game_message(std::string_view message) {</span></span>
+<span id="L94"><span class="lineNum">      94</span> <span class="tlaGNC">          10 :     while (!message.empty() &amp;&amp; std::isspace(static_cast&lt;unsigned char&gt;(message.front()))) {</span></span>
+<span id="L95"><span class="lineNum">      95</span> <span class="tlaGNC">           2 :         message.remove_prefix(1);</span></span>
 <span id="L96"><span class="lineNum">      96</span>              :     }</span>
-<span id="L97"><span class="lineNum">      97</span> <span class="tlaGNC">          32 :     while (!message.empty() &amp;&amp; std::isspace(static_cast&lt;unsigned char&gt;(message.back()))) {</span></span>
-<span id="L98"><span class="lineNum">      98</span> <span class="tlaGNC">           4 :         message.remove_suffix(1);</span></span>
+<span id="L97"><span class="lineNum">      97</span> <span class="tlaGNC">          10 :     while (!message.empty() &amp;&amp; std::isspace(static_cast&lt;unsigned char&gt;(message.back()))) {</span></span>
+<span id="L98"><span class="lineNum">      98</span> <span class="tlaGNC">           2 :         message.remove_suffix(1);</span></span>
 <span id="L99"><span class="lineNum">      99</span>              :     }</span>
 <span id="L100"><span class="lineNum">     100</span>              : </span>
-<span id="L101"><span class="lineNum">     101</span> <span class="tlaGNC">          28 :     if (message.empty()) {</span></span>
-<span id="L102"><span class="lineNum">     102</span> <span class="tlaGNC">           2 :         return std::nullopt;</span></span>
+<span id="L101"><span class="lineNum">     101</span> <span class="tlaGNC">           8 :     if (message.empty()) {</span></span>
+<span id="L102"><span class="lineNum">     102</span> <span class="tlaUNC">           0 :         return std::nullopt;</span></span>
 <span id="L103"><span class="lineNum">     103</span>              :     }</span>
 <span id="L104"><span class="lineNum">     104</span>              : </span>
-<span id="L105"><span class="lineNum">     105</span> <span class="tlaGNC">          26 :     const auto command = next_token(message);</span></span>
-<span id="L106"><span class="lineNum">     106</span> <span class="tlaGNC">          26 :     if (!command || *command != &quot;login&quot;) {</span></span>
-<span id="L107"><span class="lineNum">     107</span> <span class="tlaGNC">           1 :         return std::nullopt;</span></span>
+<span id="L105"><span class="lineNum">     105</span> <span class="tlaGNC">           8 :     const auto command = next_token(message);</span></span>
+<span id="L106"><span class="lineNum">     106</span> <span class="tlaGNC">           8 :     if (!command || *command != &quot;join_game&quot;) {</span></span>
+<span id="L107"><span class="lineNum">     107</span> <span class="tlaGNC">           3 :         return std::nullopt;</span></span>
 <span id="L108"><span class="lineNum">     108</span>              :     }</span>
 <span id="L109"><span class="lineNum">     109</span>              : </span>
-<span id="L110"><span class="lineNum">     110</span> <span class="tlaGNC">          25 :     const auto username = next_token(message);</span></span>
-<span id="L111"><span class="lineNum">     111</span> <span class="tlaGNC">          25 :     if (!username || username-&gt;empty()) {</span></span>
-<span id="L112"><span class="lineNum">     112</span> <span class="tlaGNC">           2 :         return std::nullopt;</span></span>
+<span id="L110"><span class="lineNum">     110</span> <span class="tlaGNC">           5 :     const auto room_id_token = next_token(message);</span></span>
+<span id="L111"><span class="lineNum">     111</span> <span class="tlaGNC">           5 :     if (!room_id_token) {</span></span>
+<span id="L112"><span class="lineNum">     112</span> <span class="tlaGNC">           1 :         return std::nullopt;</span></span>
 <span id="L113"><span class="lineNum">     113</span>              :     }</span>
-<span id="L114"><span class="lineNum">     114</span> <span class="tlaGNC">          23 :     if (next_token(message)) {</span></span>
-<span id="L115"><span class="lineNum">     115</span> <span class="tlaGNC">           2 :         return std::nullopt;</span></span>
-<span id="L116"><span class="lineNum">     116</span>              :     }</span>
-<span id="L117"><span class="lineNum">     117</span>              : </span>
-<span id="L118"><span class="lineNum">     118</span> <span class="tlaGNC">          42 :     return std::string(*username);</span></span>
-<span id="L119"><span class="lineNum">     119</span>              : }</span>
-<span id="L120"><span class="lineNum">     120</span>              : </span>
-<span id="L121"><span class="lineNum">     121</span> <span class="tlaGNC">          22 : std::optional&lt;GameAction&gt; parse_message(std::string_view message) {</span></span>
-<span id="L122"><span class="lineNum">     122</span> <span class="tlaGNC">          30 :     while (!message.empty() &amp;&amp; std::isspace(static_cast&lt;unsigned char&gt;(message.front()))) {</span></span>
-<span id="L123"><span class="lineNum">     123</span> <span class="tlaGNC">           8 :         message.remove_prefix(1);</span></span>
-<span id="L124"><span class="lineNum">     124</span>              :     }</span>
-<span id="L125"><span class="lineNum">     125</span> <span class="tlaGNC">          24 :     while (!message.empty() &amp;&amp; std::isspace(static_cast&lt;unsigned char&gt;(message.back()))) {</span></span>
-<span id="L126"><span class="lineNum">     126</span> <span class="tlaGNC">           2 :         message.remove_suffix(1);</span></span>
-<span id="L127"><span class="lineNum">     127</span>              :     }</span>
-<span id="L128"><span class="lineNum">     128</span>              : </span>
-<span id="L129"><span class="lineNum">     129</span> <span class="tlaGNC">          22 :     if (message.empty()) {</span></span>
-<span id="L130"><span class="lineNum">     130</span> <span class="tlaGNC">           3 :         std::cerr &lt;&lt; &quot;Error: empty message\n&quot;;</span></span>
-<span id="L131"><span class="lineNum">     131</span> <span class="tlaGNC">           3 :         return std::nullopt;</span></span>
+<span id="L114"><span class="lineNum">     114</span>              : </span>
+<span id="L115"><span class="lineNum">     115</span> <span class="tlaGNC">           4 :     const std::optional&lt;std::size_t&gt; parsed_room_id = parse_non_negative_int(*room_id_token);</span></span>
+<span id="L116"><span class="lineNum">     116</span> <span class="tlaGNC">           4 :     if (!parsed_room_id.has_value()) {</span></span>
+<span id="L117"><span class="lineNum">     117</span> <span class="tlaGNC">           1 :         return std::nullopt;</span></span>
+<span id="L118"><span class="lineNum">     118</span>              :     }</span>
+<span id="L119"><span class="lineNum">     119</span> <span class="tlaGNC">           3 :     if (next_token(message)) {</span></span>
+<span id="L120"><span class="lineNum">     120</span> <span class="tlaGNC">           1 :         return std::nullopt;</span></span>
+<span id="L121"><span class="lineNum">     121</span>              :     }</span>
+<span id="L122"><span class="lineNum">     122</span>              : </span>
+<span id="L123"><span class="lineNum">     123</span> <span class="tlaGNC">           2 :     return static_cast&lt;RoomId&gt;(*parsed_room_id);</span></span>
+<span id="L124"><span class="lineNum">     124</span>              : }</span>
+<span id="L125"><span class="lineNum">     125</span>              : </span>
+<span id="L126"><span class="lineNum">     126</span> <span class="tlaGNC">          18 : bool parse_resign_message(std::string_view message) {</span></span>
+<span id="L127"><span class="lineNum">     127</span> <span class="tlaGNC">          26 :     while (!message.empty() &amp;&amp; std::isspace(static_cast&lt;unsigned char&gt;(message.front()))) {</span></span>
+<span id="L128"><span class="lineNum">     128</span> <span class="tlaGNC">           8 :         message.remove_prefix(1);</span></span>
+<span id="L129"><span class="lineNum">     129</span>              :     }</span>
+<span id="L130"><span class="lineNum">     130</span> <span class="tlaGNC">          20 :     while (!message.empty() &amp;&amp; std::isspace(static_cast&lt;unsigned char&gt;(message.back()))) {</span></span>
+<span id="L131"><span class="lineNum">     131</span> <span class="tlaGNC">           2 :         message.remove_suffix(1);</span></span>
 <span id="L132"><span class="lineNum">     132</span>              :     }</span>
 <span id="L133"><span class="lineNum">     133</span>              : </span>
-<span id="L134"><span class="lineNum">     134</span> <span class="tlaGNC">          19 :     const auto command = next_token(message);</span></span>
-<span id="L135"><span class="lineNum">     135</span>              : </span>
-<span id="L136"><span class="lineNum">     136</span> <span class="tlaGNC">          19 :     if (*command == &quot;clear&quot;) {</span></span>
-<span id="L137"><span class="lineNum">     137</span> <span class="tlaGNC">           4 :         if (next_token(message)) {</span></span>
-<span id="L138"><span class="lineNum">     138</span> <span class="tlaGNC">           2 :             std::cerr &lt;&lt; &quot;Error: 'clear' takes no arguments\n&quot;;</span></span>
-<span id="L139"><span class="lineNum">     139</span> <span class="tlaGNC">           2 :             return std::nullopt;</span></span>
-<span id="L140"><span class="lineNum">     140</span>              :         }</span>
-<span id="L141"><span class="lineNum">     141</span> <span class="tlaGNC">           2 :         return ClearSelection{};</span></span>
-<span id="L142"><span class="lineNum">     142</span>              :     }</span>
-<span id="L143"><span class="lineNum">     143</span>              : </span>
-<span id="L144"><span class="lineNum">     144</span> <span class="tlaGNC">          15 :     if (*command == &quot;select&quot; || *command == &quot;move&quot; || *command == &quot;jump&quot;) {</span></span>
-<span id="L145"><span class="lineNum">     145</span> <span class="tlaGNC">          13 :         const auto row = next_token(message);</span></span>
-<span id="L146"><span class="lineNum">     146</span> <span class="tlaGNC">          13 :         const auto col = next_token(message);</span></span>
-<span id="L147"><span class="lineNum">     147</span> <span class="tlaGNC">          13 :         if (!row || !col) {</span></span>
-<span id="L148"><span class="lineNum">     148</span> <span class="tlaGNC">           1 :             std::cerr &lt;&lt; &quot;Error: '&quot; &lt;&lt; *command &lt;&lt; &quot;' requires row and col\n&quot;;</span></span>
-<span id="L149"><span class="lineNum">     149</span> <span class="tlaGNC">           1 :             return std::nullopt;</span></span>
-<span id="L150"><span class="lineNum">     150</span>              :         }</span>
-<span id="L151"><span class="lineNum">     151</span> <span class="tlaGNC">          12 :         if (next_token(message)) {</span></span>
-<span id="L152"><span class="lineNum">     152</span> <span class="tlaGNC">           1 :             std::cerr &lt;&lt; &quot;Error: too many arguments for '&quot; &lt;&lt; *command &lt;&lt; &quot;'\n&quot;;</span></span>
-<span id="L153"><span class="lineNum">     153</span> <span class="tlaGNC">           1 :             return std::nullopt;</span></span>
-<span id="L154"><span class="lineNum">     154</span>              :         }</span>
-<span id="L155"><span class="lineNum">     155</span>              : </span>
-<span id="L156"><span class="lineNum">     156</span> <span class="tlaGNC">          11 :         const auto parsed_row = parse_non_negative_int(*row);</span></span>
-<span id="L157"><span class="lineNum">     157</span> <span class="tlaGNC">          11 :         const auto parsed_col = parse_non_negative_int(*col);</span></span>
-<span id="L158"><span class="lineNum">     158</span> <span class="tlaGNC">          11 :         if (!parsed_row || !parsed_col) {</span></span>
-<span id="L159"><span class="lineNum">     159</span> <span class="tlaGNC">           2 :             std::cerr &lt;&lt; &quot;Error: row and col must be non-negative integers\n&quot;;</span></span>
-<span id="L160"><span class="lineNum">     160</span> <span class="tlaGNC">           2 :             return std::nullopt;</span></span>
-<span id="L161"><span class="lineNum">     161</span>              :         }</span>
-<span id="L162"><span class="lineNum">     162</span>              : </span>
-<span id="L163"><span class="lineNum">     163</span> <span class="tlaGNC">           9 :         if (*command == &quot;select&quot;) {</span></span>
-<span id="L164"><span class="lineNum">     164</span> <span class="tlaGNC">           4 :             return Select{*parsed_row, *parsed_col};</span></span>
-<span id="L165"><span class="lineNum">     165</span>              :         }</span>
-<span id="L166"><span class="lineNum">     166</span> <span class="tlaGNC">           5 :         if (*command == &quot;move&quot;) {</span></span>
-<span id="L167"><span class="lineNum">     167</span> <span class="tlaGNC">           3 :             return MoveSelected{*parsed_row, *parsed_col};</span></span>
-<span id="L168"><span class="lineNum">     168</span>              :         }</span>
-<span id="L169"><span class="lineNum">     169</span> <span class="tlaGNC">           2 :         return JumpAt{*parsed_row, *parsed_col};</span></span>
-<span id="L170"><span class="lineNum">     170</span>              :     }</span>
-<span id="L171"><span class="lineNum">     171</span>              : </span>
-<span id="L172"><span class="lineNum">     172</span> <span class="tlaGNC">           2 :     std::cerr &lt;&lt; &quot;Error: unknown command '&quot; &lt;&lt; *command &lt;&lt; &quot;'\n&quot;;</span></span>
-<span id="L173"><span class="lineNum">     173</span> <span class="tlaGNC">           2 :     return std::nullopt;</span></span>
-<span id="L174"><span class="lineNum">     174</span>              : }</span>
-<span id="L175"><span class="lineNum">     175</span>              : </span>
-<span id="L176"><span class="lineNum">     176</span> <span class="tlaGNC">          18 : bool is_action_allowed(const PlayerSession&amp; session, const Match&amp; match, const GameAction&amp; action) {</span></span>
-<span id="L177"><span class="lineNum">     177</span> <span class="tlaGNC">          18 :     if (!session.has_side()) {</span></span>
-<span id="L178"><span class="lineNum">     178</span> <span class="tlaGNC">           1 :         return false;</span></span>
+<span id="L134"><span class="lineNum">     134</span> <span class="tlaGNC">          18 :     if (message.empty()) {</span></span>
+<span id="L135"><span class="lineNum">     135</span> <span class="tlaGNC">           3 :         return false;</span></span>
+<span id="L136"><span class="lineNum">     136</span>              :     }</span>
+<span id="L137"><span class="lineNum">     137</span>              : </span>
+<span id="L138"><span class="lineNum">     138</span> <span class="tlaGNC">          15 :     const auto command = next_token(message);</span></span>
+<span id="L139"><span class="lineNum">     139</span> <span class="tlaGNC">          15 :     if (!command || *command != &quot;resign&quot;) {</span></span>
+<span id="L140"><span class="lineNum">     140</span> <span class="tlaGNC">          10 :         return false;</span></span>
+<span id="L141"><span class="lineNum">     141</span>              :     }</span>
+<span id="L142"><span class="lineNum">     142</span> <span class="tlaGNC">           5 :     if (next_token(message)) {</span></span>
+<span id="L143"><span class="lineNum">     143</span> <span class="tlaGNC">           1 :         return false;</span></span>
+<span id="L144"><span class="lineNum">     144</span>              :     }</span>
+<span id="L145"><span class="lineNum">     145</span>              : </span>
+<span id="L146"><span class="lineNum">     146</span> <span class="tlaGNC">           4 :     return true;</span></span>
+<span id="L147"><span class="lineNum">     147</span>              : }</span>
+<span id="L148"><span class="lineNum">     148</span>              : </span>
+<span id="L149"><span class="lineNum">     149</span> <span class="tlaGNC">          72 : std::optional&lt;LoginRequest&gt; parse_login_message(std::string_view message) {</span></span>
+<span id="L150"><span class="lineNum">     150</span> <span class="tlaGNC">          77 :     while (!message.empty() &amp;&amp; std::isspace(static_cast&lt;unsigned char&gt;(message.front()))) {</span></span>
+<span id="L151"><span class="lineNum">     151</span> <span class="tlaGNC">           5 :         message.remove_prefix(1);</span></span>
+<span id="L152"><span class="lineNum">     152</span>              :     }</span>
+<span id="L153"><span class="lineNum">     153</span> <span class="tlaGNC">          76 :     while (!message.empty() &amp;&amp; std::isspace(static_cast&lt;unsigned char&gt;(message.back()))) {</span></span>
+<span id="L154"><span class="lineNum">     154</span> <span class="tlaGNC">           4 :         message.remove_suffix(1);</span></span>
+<span id="L155"><span class="lineNum">     155</span>              :     }</span>
+<span id="L156"><span class="lineNum">     156</span>              : </span>
+<span id="L157"><span class="lineNum">     157</span> <span class="tlaGNC">          72 :     if (message.empty()) {</span></span>
+<span id="L158"><span class="lineNum">     158</span> <span class="tlaGNC">           2 :         return std::nullopt;</span></span>
+<span id="L159"><span class="lineNum">     159</span>              :     }</span>
+<span id="L160"><span class="lineNum">     160</span>              : </span>
+<span id="L161"><span class="lineNum">     161</span> <span class="tlaGNC">          70 :     const auto command = next_token(message);</span></span>
+<span id="L162"><span class="lineNum">     162</span> <span class="tlaGNC">          70 :     if (!command || *command != &quot;login&quot;) {</span></span>
+<span id="L163"><span class="lineNum">     163</span> <span class="tlaGNC">           1 :         return std::nullopt;</span></span>
+<span id="L164"><span class="lineNum">     164</span>              :     }</span>
+<span id="L165"><span class="lineNum">     165</span>              : </span>
+<span id="L166"><span class="lineNum">     166</span> <span class="tlaGNC">          69 :     const auto username = next_token(message);</span></span>
+<span id="L167"><span class="lineNum">     167</span> <span class="tlaGNC">          69 :     if (!username || username-&gt;empty()) {</span></span>
+<span id="L168"><span class="lineNum">     168</span> <span class="tlaGNC">           2 :         return std::nullopt;</span></span>
+<span id="L169"><span class="lineNum">     169</span>              :     }</span>
+<span id="L170"><span class="lineNum">     170</span>              : </span>
+<span id="L171"><span class="lineNum">     171</span> <span class="tlaGNC">          67 :     LoginRequest request;</span></span>
+<span id="L172"><span class="lineNum">     172</span> <span class="tlaGNC">          67 :     request.username = std::string(*username);</span></span>
+<span id="L173"><span class="lineNum">     173</span>              : </span>
+<span id="L174"><span class="lineNum">     174</span> <span class="tlaGNC">          67 :     if (const auto password = next_token(message)) {</span></span>
+<span id="L175"><span class="lineNum">     175</span> <span class="tlaGNC">          63 :         request.password = std::string(*password);</span></span>
+<span id="L176"><span class="lineNum">     176</span> <span class="tlaGNC">          63 :         if (next_token(message)) {</span></span>
+<span id="L177"><span class="lineNum">     177</span> <span class="tlaGNC">           2 :             return std::nullopt;</span></span>
+<span id="L178"><span class="lineNum">     178</span>              :         }</span>
 <span id="L179"><span class="lineNum">     179</span>              :     }</span>
 <span id="L180"><span class="lineNum">     180</span>              : </span>
-<span id="L181"><span class="lineNum">     181</span> <span class="tlaGNC">          17 :     const PieceColor player_side = session.side();</span></span>
-<span id="L182"><span class="lineNum">     182</span> <span class="tlaGNC">          17 :     const GameState&amp; state = match.state();</span></span>
+<span id="L181"><span class="lineNum">     181</span> <span class="tlaGNC">          65 :     return request;</span></span>
+<span id="L182"><span class="lineNum">     182</span> <span class="tlaGNC">          67 : }</span></span>
 <span id="L183"><span class="lineNum">     183</span>              : </span>
-<span id="L184"><span class="lineNum">     184</span> <span class="tlaGNC">          34 :     return std::visit(</span></span>
-<span id="L185"><span class="lineNum">     185</span> <span class="tlaGNC">          51 :         [&amp;](const auto&amp; a) -&gt; bool {</span></span>
-<span id="L186"><span class="lineNum">     186</span>              :             using T = std::decay_t&lt;decltype(a)&gt;;</span>
-<span id="L187"><span class="lineNum">     187</span>              :             if constexpr (std::is_same_v&lt;T, ClearSelection&gt;) {</span>
-<span id="L188"><span class="lineNum">     188</span> <span class="tlaGNC">           2 :                 return true;</span></span>
-<span id="L189"><span class="lineNum">     189</span>              :             }</span>
-<span id="L190"><span class="lineNum">     190</span>              :             if constexpr (std::is_same_v&lt;T, AdvanceClock&gt;) {</span>
-<span id="L191"><span class="lineNum">     191</span> <span class="tlaGNC">           1 :                 return false;</span></span>
-<span id="L192"><span class="lineNum">     192</span>              :             }</span>
-<span id="L193"><span class="lineNum">     193</span>              :             if constexpr (std::is_same_v&lt;T, Select&gt; || std::is_same_v&lt;T, JumpAt&gt;) {</span>
-<span id="L194"><span class="lineNum">     194</span> <span class="tlaGNC">           8 :                 const std::optional&lt;PieceColor&gt; piece_color = piece_color_at(state, a.row, a.col);</span></span>
-<span id="L195"><span class="lineNum">     195</span> <span class="tlaGNC">           8 :                 return piece_color.has_value() &amp;&amp; *piece_color == player_side;</span></span>
-<span id="L196"><span class="lineNum">     196</span>              :             }</span>
-<span id="L197"><span class="lineNum">     197</span>              :             if constexpr (std::is_same_v&lt;T, MoveSelected&gt; || std::is_same_v&lt;T, JumpSelected&gt;) {</span>
-<span id="L198"><span class="lineNum">     198</span> <span class="tlaGNC">           6 :                 std::size_t row = 0;</span></span>
-<span id="L199"><span class="lineNum">     199</span> <span class="tlaGNC">           6 :                 std::size_t col = 0;</span></span>
-<span id="L200"><span class="lineNum">     200</span> <span class="tlaGNC">           6 :                 if (!state.selection(row, col)) {</span></span>
-<span id="L201"><span class="lineNum">     201</span> <span class="tlaGNC">           2 :                     return false;</span></span>
-<span id="L202"><span class="lineNum">     202</span>              :                 }</span>
-<span id="L203"><span class="lineNum">     203</span> <span class="tlaGNC">           4 :                 const std::optional&lt;PieceColor&gt; piece_color = piece_color_at(state, row, col);</span></span>
-<span id="L204"><span class="lineNum">     204</span> <span class="tlaGNC">           4 :                 return piece_color.has_value() &amp;&amp; *piece_color == player_side;</span></span>
-<span id="L205"><span class="lineNum">     205</span>              :             }</span>
-<span id="L206"><span class="lineNum">     206</span>              :             return false;</span>
-<span id="L207"><span class="lineNum">     207</span>              :         },</span>
-<span id="L208"><span class="lineNum">     208</span> <span class="tlaGNC">          17 :         action);</span></span>
-<span id="L209"><span class="lineNum">     209</span>              : }</span>
+<span id="L184"><span class="lineNum">     184</span> <span class="tlaGNC">          22 : std::optional&lt;GameAction&gt; parse_message(std::string_view message) {</span></span>
+<span id="L185"><span class="lineNum">     185</span> <span class="tlaGNC">          30 :     while (!message.empty() &amp;&amp; std::isspace(static_cast&lt;unsigned char&gt;(message.front()))) {</span></span>
+<span id="L186"><span class="lineNum">     186</span> <span class="tlaGNC">           8 :         message.remove_prefix(1);</span></span>
+<span id="L187"><span class="lineNum">     187</span>              :     }</span>
+<span id="L188"><span class="lineNum">     188</span> <span class="tlaGNC">          24 :     while (!message.empty() &amp;&amp; std::isspace(static_cast&lt;unsigned char&gt;(message.back()))) {</span></span>
+<span id="L189"><span class="lineNum">     189</span> <span class="tlaGNC">           2 :         message.remove_suffix(1);</span></span>
+<span id="L190"><span class="lineNum">     190</span>              :     }</span>
+<span id="L191"><span class="lineNum">     191</span>              : </span>
+<span id="L192"><span class="lineNum">     192</span> <span class="tlaGNC">          22 :     if (message.empty()) {</span></span>
+<span id="L193"><span class="lineNum">     193</span>              : #ifndef KFC_TEST_BUILD</span>
+<span id="L194"><span class="lineNum">     194</span>              :         std::cerr &lt;&lt; &quot;Error: empty message\n&quot;;</span>
+<span id="L195"><span class="lineNum">     195</span>              : #endif</span>
+<span id="L196"><span class="lineNum">     196</span> <span class="tlaGNC">           3 :         return std::nullopt;</span></span>
+<span id="L197"><span class="lineNum">     197</span>              :     }</span>
+<span id="L198"><span class="lineNum">     198</span>              : </span>
+<span id="L199"><span class="lineNum">     199</span> <span class="tlaGNC">          19 :     const auto command = next_token(message);</span></span>
+<span id="L200"><span class="lineNum">     200</span>              : </span>
+<span id="L201"><span class="lineNum">     201</span> <span class="tlaGNC">          19 :     if (*command == &quot;clear&quot;) {</span></span>
+<span id="L202"><span class="lineNum">     202</span> <span class="tlaGNC">           3 :         if (next_token(message)) {</span></span>
+<span id="L203"><span class="lineNum">     203</span>              : #ifndef KFC_TEST_BUILD</span>
+<span id="L204"><span class="lineNum">     204</span>              :             std::cerr &lt;&lt; &quot;Error: 'clear' takes no arguments\n&quot;;</span>
+<span id="L205"><span class="lineNum">     205</span>              : #endif</span>
+<span id="L206"><span class="lineNum">     206</span> <span class="tlaGNC">           2 :             return std::nullopt;</span></span>
+<span id="L207"><span class="lineNum">     207</span>              :         }</span>
+<span id="L208"><span class="lineNum">     208</span> <span class="tlaGNC">           1 :         return ClearSelection{};</span></span>
+<span id="L209"><span class="lineNum">     209</span>              :     }</span>
 <span id="L210"><span class="lineNum">     210</span>              : </span>
-<span id="L211"><span class="lineNum">     211</span>              : }  // namespace kfc</span>
-<span id="L212"><span class="lineNum">     212</span>              : </span>
-<span id="L213"><span class="lineNum">     213</span>              : #ifdef KFC_TEST_BUILD</span>
-<span id="L214"><span class="lineNum">     214</span>              : namespace kfc::test {</span>
-<span id="L215"><span class="lineNum">     215</span>              : </span>
-<span id="L216"><span class="lineNum">     216</span> <span class="tlaGNC">           1 : std::optional&lt;std::size_t&gt; parse_non_negative_int_for_tests(std::string_view token) {</span></span>
-<span id="L217"><span class="lineNum">     217</span> <span class="tlaGNC">           1 :     return parse_non_negative_int(token);</span></span>
-<span id="L218"><span class="lineNum">     218</span>              : }</span>
-<span id="L219"><span class="lineNum">     219</span>              : </span>
-<span id="L220"><span class="lineNum">     220</span>              : }  // namespace kfc::test</span>
-<span id="L221"><span class="lineNum">     221</span>              : #endif</span>
+<span id="L211"><span class="lineNum">     211</span> <span class="tlaGNC">          16 :     if (*command == &quot;select&quot; || *command == &quot;move&quot; || *command == &quot;jump&quot;) {</span></span>
+<span id="L212"><span class="lineNum">     212</span> <span class="tlaGNC">          14 :         const auto row = next_token(message);</span></span>
+<span id="L213"><span class="lineNum">     213</span> <span class="tlaGNC">          14 :         const auto col = next_token(message);</span></span>
+<span id="L214"><span class="lineNum">     214</span> <span class="tlaGNC">          14 :         if (!row || !col) {</span></span>
+<span id="L215"><span class="lineNum">     215</span>              : #ifndef KFC_TEST_BUILD</span>
+<span id="L216"><span class="lineNum">     216</span>              :             std::cerr &lt;&lt; &quot;Error: '&quot; &lt;&lt; *command &lt;&lt; &quot;' requires row and col\n&quot;;</span>
+<span id="L217"><span class="lineNum">     217</span>              : #endif</span>
+<span id="L218"><span class="lineNum">     218</span> <span class="tlaGNC">           1 :             return std::nullopt;</span></span>
+<span id="L219"><span class="lineNum">     219</span>              :         }</span>
+<span id="L220"><span class="lineNum">     220</span> <span class="tlaGNC">          13 :         if (next_token(message)) {</span></span>
+<span id="L221"><span class="lineNum">     221</span>              : #ifndef KFC_TEST_BUILD</span>
+<span id="L222"><span class="lineNum">     222</span>              :             std::cerr &lt;&lt; &quot;Error: too many arguments for '&quot; &lt;&lt; *command &lt;&lt; &quot;'\n&quot;;</span>
+<span id="L223"><span class="lineNum">     223</span>              : #endif</span>
+<span id="L224"><span class="lineNum">     224</span> <span class="tlaGNC">           1 :             return std::nullopt;</span></span>
+<span id="L225"><span class="lineNum">     225</span>              :         }</span>
+<span id="L226"><span class="lineNum">     226</span>              : </span>
+<span id="L227"><span class="lineNum">     227</span> <span class="tlaGNC">          12 :         const auto parsed_row = parse_non_negative_int(*row);</span></span>
+<span id="L228"><span class="lineNum">     228</span> <span class="tlaGNC">          12 :         const auto parsed_col = parse_non_negative_int(*col);</span></span>
+<span id="L229"><span class="lineNum">     229</span> <span class="tlaGNC">          12 :         if (!parsed_row || !parsed_col) {</span></span>
+<span id="L230"><span class="lineNum">     230</span>              : #ifndef KFC_TEST_BUILD</span>
+<span id="L231"><span class="lineNum">     231</span>              :             std::cerr &lt;&lt; &quot;Error: row and col must be non-negative integers\n&quot;;</span>
+<span id="L232"><span class="lineNum">     232</span>              : #endif</span>
+<span id="L233"><span class="lineNum">     233</span> <span class="tlaGNC">           2 :             return std::nullopt;</span></span>
+<span id="L234"><span class="lineNum">     234</span>              :         }</span>
+<span id="L235"><span class="lineNum">     235</span>              : </span>
+<span id="L236"><span class="lineNum">     236</span> <span class="tlaGNC">          10 :         if (*command == &quot;select&quot;) {</span></span>
+<span id="L237"><span class="lineNum">     237</span> <span class="tlaGNC">           6 :             return Select{*parsed_row, *parsed_col};</span></span>
+<span id="L238"><span class="lineNum">     238</span>              :         }</span>
+<span id="L239"><span class="lineNum">     239</span> <span class="tlaGNC">           4 :         if (*command == &quot;move&quot;) {</span></span>
+<span id="L240"><span class="lineNum">     240</span> <span class="tlaGNC">           2 :             return MoveSelected{*parsed_row, *parsed_col};</span></span>
+<span id="L241"><span class="lineNum">     241</span>              :         }</span>
+<span id="L242"><span class="lineNum">     242</span> <span class="tlaGNC">           2 :         return JumpAt{*parsed_row, *parsed_col};</span></span>
+<span id="L243"><span class="lineNum">     243</span>              :     }</span>
+<span id="L244"><span class="lineNum">     244</span>              : </span>
+<span id="L245"><span class="lineNum">     245</span>              : #ifndef KFC_TEST_BUILD</span>
+<span id="L246"><span class="lineNum">     246</span>              :     std::cerr &lt;&lt; &quot;Error: unknown command '&quot; &lt;&lt; *command &lt;&lt; &quot;'\n&quot;;</span>
+<span id="L247"><span class="lineNum">     247</span>              : #endif</span>
+<span id="L248"><span class="lineNum">     248</span> <span class="tlaGNC">           2 :     return std::nullopt;</span></span>
+<span id="L249"><span class="lineNum">     249</span>              : }</span>
+<span id="L250"><span class="lineNum">     250</span>              : </span>
+<span id="L251"><span class="lineNum">     251</span> <span class="tlaGNC">          17 : bool is_action_allowed(const PieceColor player_side, const Match&amp; match, const GameAction&amp; action) {</span></span>
+<span id="L252"><span class="lineNum">     252</span> <span class="tlaGNC">          17 :     const GameState&amp; state = match.state();</span></span>
+<span id="L253"><span class="lineNum">     253</span>              : </span>
+<span id="L254"><span class="lineNum">     254</span> <span class="tlaGNC">          34 :     return std::visit(</span></span>
+<span id="L255"><span class="lineNum">     255</span> <span class="tlaGNC">          51 :         [&amp;](const auto&amp; a) -&gt; bool {</span></span>
+<span id="L256"><span class="lineNum">     256</span>              :             using T = std::decay_t&lt;decltype(a)&gt;;</span>
+<span id="L257"><span class="lineNum">     257</span>              :             if constexpr (std::is_same_v&lt;T, ClearSelection&gt;) {</span>
+<span id="L258"><span class="lineNum">     258</span> <span class="tlaGNC">           1 :                 return true;</span></span>
+<span id="L259"><span class="lineNum">     259</span>              :             }</span>
+<span id="L260"><span class="lineNum">     260</span>              :             if constexpr (std::is_same_v&lt;T, AdvanceClock&gt;) {</span>
+<span id="L261"><span class="lineNum">     261</span> <span class="tlaGNC">           1 :                 return false;</span></span>
+<span id="L262"><span class="lineNum">     262</span>              :             }</span>
+<span id="L263"><span class="lineNum">     263</span>              :             if constexpr (std::is_same_v&lt;T, Select&gt; || std::is_same_v&lt;T, JumpAt&gt;) {</span>
+<span id="L264"><span class="lineNum">     264</span> <span class="tlaGNC">          10 :                 const std::optional&lt;PieceColor&gt; piece_color = piece_color_at(state, a.row, a.col);</span></span>
+<span id="L265"><span class="lineNum">     265</span> <span class="tlaGNC">          10 :                 return piece_color.has_value() &amp;&amp; *piece_color == player_side;</span></span>
+<span id="L266"><span class="lineNum">     266</span>              :             }</span>
+<span id="L267"><span class="lineNum">     267</span>              :             if constexpr (std::is_same_v&lt;T, MoveSelected&gt; || std::is_same_v&lt;T, JumpSelected&gt;) {</span>
+<span id="L268"><span class="lineNum">     268</span> <span class="tlaGNC">           5 :                 std::size_t row = 0;</span></span>
+<span id="L269"><span class="lineNum">     269</span> <span class="tlaGNC">           5 :                 std::size_t col = 0;</span></span>
+<span id="L270"><span class="lineNum">     270</span> <span class="tlaGNC">           5 :                 if (!state.selection(row, col)) {</span></span>
+<span id="L271"><span class="lineNum">     271</span> <span class="tlaGNC">           1 :                     return false;</span></span>
+<span id="L272"><span class="lineNum">     272</span>              :                 }</span>
+<span id="L273"><span class="lineNum">     273</span> <span class="tlaGNC">           4 :                 const std::optional&lt;PieceColor&gt; piece_color = piece_color_at(state, row, col);</span></span>
+<span id="L274"><span class="lineNum">     274</span> <span class="tlaGNC">           4 :                 return piece_color.has_value() &amp;&amp; *piece_color == player_side;</span></span>
+<span id="L275"><span class="lineNum">     275</span>              :             }</span>
+<span id="L276"><span class="lineNum">     276</span>              :             return false;</span>
+<span id="L277"><span class="lineNum">     277</span>              :         },</span>
+<span id="L278"><span class="lineNum">     278</span> <span class="tlaGNC">          34 :         action);</span></span>
+<span id="L279"><span class="lineNum">     279</span>              : }</span>
+<span id="L280"><span class="lineNum">     280</span>              : </span>
+<span id="L281"><span class="lineNum">     281</span> <span class="tlaGNC">          11 : bool is_action_allowed(const PlayerSession&amp; session, const Match&amp; match, const GameAction&amp; action) {</span></span>
+<span id="L282"><span class="lineNum">     282</span> <span class="tlaGNC">          11 :     if (!session.has_side()) {</span></span>
+<span id="L283"><span class="lineNum">     283</span> <span class="tlaGNC">           1 :         return false;</span></span>
+<span id="L284"><span class="lineNum">     284</span>              :     }</span>
+<span id="L285"><span class="lineNum">     285</span>              : </span>
+<span id="L286"><span class="lineNum">     286</span> <span class="tlaGNC">          10 :     return is_action_allowed(session.side(), match, action);</span></span>
+<span id="L287"><span class="lineNum">     287</span>              : }</span>
+<span id="L288"><span class="lineNum">     288</span>              : </span>
+<span id="L289"><span class="lineNum">     289</span>              : }  // namespace kfc</span>
+<span id="L290"><span class="lineNum">     290</span>              : </span>
+<span id="L291"><span class="lineNum">     291</span>              : #ifdef KFC_TEST_BUILD</span>
+<span id="L292"><span class="lineNum">     292</span>              : namespace kfc::test {</span>
+<span id="L293"><span class="lineNum">     293</span>              : </span>
+<span id="L294"><span class="lineNum">     294</span> <span class="tlaGNC">           1 : std::optional&lt;std::size_t&gt; parse_non_negative_int_for_tests(std::string_view token) {</span></span>
+<span id="L295"><span class="lineNum">     295</span> <span class="tlaGNC">           1 :     return parse_non_negative_int(token);</span></span>
+<span id="L296"><span class="lineNum">     296</span>              : }</span>
+<span id="L297"><span class="lineNum">     297</span>              : </span>
+<span id="L298"><span class="lineNum">     298</span>              : }  // namespace kfc::test</span>
+<span id="L299"><span class="lineNum">     299</span>              : #endif</span>
         </pre>
               </td>
             </tr>

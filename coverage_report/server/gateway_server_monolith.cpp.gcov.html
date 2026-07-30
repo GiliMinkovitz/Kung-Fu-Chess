@@ -1,0 +1,111 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html lang="en">
+
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <title>LCOV - coverage.info - server/gateway_server_monolith.cpp</title>
+  <link rel="stylesheet" type="text/css" href="../gcov.css">
+</head>
+
+<body>
+
+          <table width="100%" border=0 cellspacing=0 cellpadding=0>
+            <tr><td class="title">LCOV - code coverage report</td></tr>
+            <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+
+            <tr>
+              <td width="100%">
+                <table cellpadding=1 border=0 width="100%">
+          <tr>
+            <td width="10%" class="headerItem">Current view:</td>
+            <td width="10%" class="headerValue"><a href="../index.html" title="Click to go to top-level">top level</a> - <a href="index.html" title="Click to go to directory server">server</a> - gateway_server_monolith.cpp<span style="font-size: 80%;"> (source / <a href="gateway_server_monolith.cpp.func-c.html" title="Click to go to function table">functions</a>)</span></td>
+            <td width="5%"></td>
+            <td width="5%"></td>
+            <td width="5%" class="headerCovTableHead">Coverage</td>
+            <td width="5%" class="headerCovTableHead" title="Covered + Uncovered code">Total</td>
+            <td width="5%" class="headerCovTableHead" title="Exercised code only">Hit</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Test:</td>
+            <td class="headerValue">coverage.info</td>
+            <td></td>
+            <td class="headerItem">Lines:</td>
+            <td class="headerCovTableEntryHi">100.0&nbsp;%</td>
+            <td class="headerCovTableEntry">18</td>
+            <td class="headerCovTableEntry">18</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Test Date:</td>
+            <td class="headerValue">2026-07-30 08:38:00</td>
+            <td></td>
+            <td class="headerItem">Functions:</td>
+            <td class="headerCovTableEntryHi">100.0&nbsp;%</td>
+            <td class="headerCovTableEntry">2</td>
+            <td class="headerCovTableEntry">2</td>
+          </tr>
+                  <tr><td><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+                </table>
+              </td>
+            </tr>
+
+            <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+          </table>
+
+          <table cellpadding=0 cellspacing=0 border=0>
+            <tr>
+              <td><br></td>
+            </tr>
+            <tr>
+              <td>
+<pre class="sourceHeading">            Line data    Source code</pre>
+<pre class="source">
+<span id="L1"><span class="lineNum">       1</span>              : #include &quot;server/gateway_server.h&quot;</span>
+<span id="L2"><span class="lineNum">       2</span>              : </span>
+<span id="L3"><span class="lineNum">       3</span>              : #include &quot;app/runtime_endpoint.h&quot;</span>
+<span id="L4"><span class="lineNum">       4</span>              : #include &quot;server/authentication_service.h&quot;</span>
+<span id="L5"><span class="lineNum">       5</span>              : #include &quot;server/gateway/local_game_gateway.h&quot;</span>
+<span id="L6"><span class="lineNum">       6</span>              : #include &quot;server/match/match_lifecycle_handler.h&quot;</span>
+<span id="L7"><span class="lineNum">       7</span>              : </span>
+<span id="L8"><span class="lineNum">       8</span>              : #include &lt;chrono&gt;</span>
+<span id="L9"><span class="lineNum">       9</span>              : </span>
+<span id="L10"><span class="lineNum">      10</span>              : namespace kfc {</span>
+<span id="L11"><span class="lineNum">      11</span>              : </span>
+<span id="L12"><span class="lineNum">      12</span> <span class="tlaGNC">          32 : GatewayServer::GatewayServer(const app::AppConfig&amp; config, ClientConnectionPlane&amp; client_plane,</span></span>
+<span id="L13"><span class="lineNum">      13</span>              :                              LocalGameGateway&amp; game_gateway,</span>
+<span id="L14"><span class="lineNum">      14</span>              :                              matchmaking::IMatchmakingJoinClient&amp; matchmaking_client,</span>
+<span id="L15"><span class="lineNum">      15</span>              :                              MatchLifecycleHandler&amp; match_lifecycle_handler,</span>
+<span id="L16"><span class="lineNum">      16</span>              :                              AuthenticationService&amp; authentication_service,</span>
+<span id="L17"><span class="lineNum">      17</span> <span class="tlaGNC">          32 :                              IRuntimeStore&amp; runtime_store)</span></span>
+<span id="L18"><span class="lineNum">      18</span> <span class="tlaGNC">          32 :     : client_plane_(client_plane),</span></span>
+<span id="L19"><span class="lineNum">      19</span> <span class="tlaGNC">          32 :       runtime_store_(runtime_store),</span></span>
+<span id="L20"><span class="lineNum">      20</span> <span class="tlaGNC">          32 :       local_game_gateway_(game_gateway),</span></span>
+<span id="L21"><span class="lineNum">      21</span> <span class="tlaGNC">          32 :       lobby_handler_(authentication_service, matchmaking_client, client_plane_.session_registry,</span></span>
+<span id="L22"><span class="lineNum">      22</span> <span class="tlaGNC">          32 :                      client_plane_.session_manager, config.server.region),</span></span>
+<span id="L23"><span class="lineNum">      23</span> <span class="tlaGNC">          32 :       gateway_server_id_(config.server.gateway_server_id),</span></span>
+<span id="L24"><span class="lineNum">      24</span> <span class="tlaGNC">          32 :       region_(config.server.region),</span></span>
+<span id="L25"><span class="lineNum">      25</span> <span class="tlaGNC">          32 :       game_endpoint_(app::resolve_game_endpoint(config.server)),</span></span>
+<span id="L26"><span class="lineNum">      26</span> <span class="tlaGNC">          32 :       redis_enabled_(config.redis.enabled),</span></span>
+<span id="L27"><span class="lineNum">      27</span> <span class="tlaGNC">          64 :       heartbeat_interval_(config.redis.heartbeat_interval) {</span></span>
+<span id="L28"><span class="lineNum">      28</span> <span class="tlaGNC">          32 :     match_lifecycle_handler.bind_game_gateway(local_game_gateway_);</span></span>
+<span id="L29"><span class="lineNum">      29</span> <span class="tlaGNC">         388 :     process_match_timeouts_ = [&amp;match_lifecycle_handler]() {</span></span>
+<span id="L30"><span class="lineNum">      30</span> <span class="tlaGNC">         324 :         match_lifecycle_handler.process_timeouts();</span></span>
+<span id="L31"><span class="lineNum">      31</span> <span class="tlaGNC">          32 :     };</span></span>
+<span id="L32"><span class="lineNum">      32</span> <span class="tlaGNC">          32 :     last_tick_ = std::chrono::steady_clock::now();</span></span>
+<span id="L33"><span class="lineNum">      33</span> <span class="tlaGNC">          32 : }</span></span>
+<span id="L34"><span class="lineNum">      34</span>              : </span>
+<span id="L35"><span class="lineNum">      35</span>              : }  // namespace kfc</span>
+        </pre>
+              </td>
+            </tr>
+          </table>
+          <br>
+
+          <table width="100%" border=0 cellspacing=0 cellpadding=0>
+            <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+            <tr><td class="versionInfo">Generated by: <a href="https://github.com//linux-test-project/lcov" target="_parent">LCOV version 2.0-1</a></td></tr>
+          </table>
+          <br>
+
+</body>
+</html>

@@ -71,7 +71,11 @@ std::optional<GameRedirectInfo> read_game_redirect_message(std::string_view text
         return std::nullopt;
     }
 
-    return GameRedirectInfo{tokens[1], *room_id, *side};
+    GameRedirectInfo redirect_info;
+    redirect_info.endpoint = tokens[1];
+    redirect_info.room_id = *room_id;
+    redirect_info.side = *side;
+    return redirect_info;
 }
 
 }  // namespace kfc

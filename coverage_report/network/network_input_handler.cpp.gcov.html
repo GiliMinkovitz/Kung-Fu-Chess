@@ -32,17 +32,17 @@
             <td></td>
             <td class="headerItem">Lines:</td>
             <td class="headerCovTableEntryHi">100.0&nbsp;%</td>
-            <td class="headerCovTableEntry">13</td>
-            <td class="headerCovTableEntry">13</td>
+            <td class="headerCovTableEntry">19</td>
+            <td class="headerCovTableEntry">19</td>
           </tr>
           <tr>
             <td class="headerItem">Test Date:</td>
-            <td class="headerValue">2026-07-26 00:23:33</td>
+            <td class="headerValue">2026-07-30 08:38:00</td>
             <td></td>
             <td class="headerItem">Functions:</td>
             <td class="headerCovTableEntryHi">100.0&nbsp;%</td>
-            <td class="headerCovTableEntry">7</td>
-            <td class="headerCovTableEntry">7</td>
+            <td class="headerCovTableEntry">9</td>
+            <td class="headerCovTableEntry">9</td>
           </tr>
                   <tr><td><img src="../glass.png" width=3 height=3 alt=""></td></tr>
                 </table>
@@ -66,33 +66,44 @@
 <span id="L4"><span class="lineNum">       4</span>              : </span>
 <span id="L5"><span class="lineNum">       5</span>              : namespace kfc {</span>
 <span id="L6"><span class="lineNum">       6</span>              : </span>
-<span id="L7"><span class="lineNum">       7</span> <span class="tlaGNC">           7 : NetworkInputHandler::NetworkInputHandler(WebSocketClient&amp; client) : client_{client} {}</span></span>
+<span id="L7"><span class="lineNum">       7</span> <span class="tlaGNC">          15 : NetworkInputHandler::NetworkInputHandler(WebSocketClient&amp; client) : client_{client} {}</span></span>
 <span id="L8"><span class="lineNum">       8</span>              : </span>
-<span id="L9"><span class="lineNum">       9</span> <span class="tlaGNC">           2 : bool NetworkInputHandler::send_login(const std::string&amp; username) {</span></span>
-<span id="L10"><span class="lineNum">      10</span> <span class="tlaGNC">           2 :     return client_.try_send(&quot;login &quot; + username);</span></span>
-<span id="L11"><span class="lineNum">      11</span>              : }</span>
-<span id="L12"><span class="lineNum">      12</span>              : </span>
-<span id="L13"><span class="lineNum">      13</span> <span class="tlaGNC">           2 : bool NetworkInputHandler::send_play() {</span></span>
-<span id="L14"><span class="lineNum">      14</span> <span class="tlaGNC">           6 :     return client_.try_send(&quot;play&quot;);</span></span>
-<span id="L15"><span class="lineNum">      15</span>              : }</span>
-<span id="L16"><span class="lineNum">      16</span>              : </span>
-<span id="L17"><span class="lineNum">      17</span> <span class="tlaGNC">           2 : bool NetworkInputHandler::send_select(std::size_t row, std::size_t col) {</span></span>
-<span id="L18"><span class="lineNum">      18</span> <span class="tlaGNC">           2 :     return client_.try_send(&quot;select &quot; + std::to_string(row) + ' ' + std::to_string(col));</span></span>
-<span id="L19"><span class="lineNum">      19</span>              : }</span>
-<span id="L20"><span class="lineNum">      20</span>              : </span>
-<span id="L21"><span class="lineNum">      21</span> <span class="tlaGNC">           2 : bool NetworkInputHandler::send_move(std::size_t row, std::size_t col) {</span></span>
-<span id="L22"><span class="lineNum">      22</span> <span class="tlaGNC">           2 :     return client_.try_send(&quot;move &quot; + std::to_string(row) + ' ' + std::to_string(col));</span></span>
-<span id="L23"><span class="lineNum">      23</span>              : }</span>
-<span id="L24"><span class="lineNum">      24</span>              : </span>
-<span id="L25"><span class="lineNum">      25</span> <span class="tlaGNC">           2 : bool NetworkInputHandler::send_jump(std::size_t row, std::size_t col) {</span></span>
-<span id="L26"><span class="lineNum">      26</span> <span class="tlaGNC">           2 :     return client_.try_send(&quot;jump &quot; + std::to_string(row) + ' ' + std::to_string(col));</span></span>
-<span id="L27"><span class="lineNum">      27</span>              : }</span>
-<span id="L28"><span class="lineNum">      28</span>              : </span>
-<span id="L29"><span class="lineNum">      29</span> <span class="tlaGNC">           2 : bool NetworkInputHandler::send_clear() {</span></span>
-<span id="L30"><span class="lineNum">      30</span> <span class="tlaGNC">           6 :     return client_.try_send(&quot;clear&quot;);</span></span>
-<span id="L31"><span class="lineNum">      31</span>              : }</span>
-<span id="L32"><span class="lineNum">      32</span>              : </span>
-<span id="L33"><span class="lineNum">      33</span>              : }  // namespace kfc</span>
+<span id="L9"><span class="lineNum">       9</span> <span class="tlaGNC">           8 : bool NetworkInputHandler::send_login(const std::string&amp; username, const std::string&amp; password) {</span></span>
+<span id="L10"><span class="lineNum">      10</span> <span class="tlaGNC">           8 :     if (password.empty()) {</span></span>
+<span id="L11"><span class="lineNum">      11</span> <span class="tlaGNC">           2 :         return client_.try_send(&quot;login &quot; + username);</span></span>
+<span id="L12"><span class="lineNum">      12</span>              :     }</span>
+<span id="L13"><span class="lineNum">      13</span> <span class="tlaGNC">           6 :     return client_.try_send(&quot;login &quot; + username + &quot; &quot; + password);</span></span>
+<span id="L14"><span class="lineNum">      14</span>              : }</span>
+<span id="L15"><span class="lineNum">      15</span>              : </span>
+<span id="L16"><span class="lineNum">      16</span> <span class="tlaGNC">           3 : bool NetworkInputHandler::send_play() {</span></span>
+<span id="L17"><span class="lineNum">      17</span> <span class="tlaGNC">           9 :     return client_.try_send(&quot;play&quot;);</span></span>
+<span id="L18"><span class="lineNum">      18</span>              : }</span>
+<span id="L19"><span class="lineNum">      19</span>              : </span>
+<span id="L20"><span class="lineNum">      20</span> <span class="tlaGNC">           3 : bool NetworkInputHandler::send_join_game(const RoomId room_id) {</span></span>
+<span id="L21"><span class="lineNum">      21</span> <span class="tlaGNC">           3 :     return client_.try_send(&quot;join_game &quot; + std::to_string(room_id));</span></span>
+<span id="L22"><span class="lineNum">      22</span>              : }</span>
+<span id="L23"><span class="lineNum">      23</span>              : </span>
+<span id="L24"><span class="lineNum">      24</span> <span class="tlaGNC">           2 : bool NetworkInputHandler::send_select(std::size_t row, std::size_t col) {</span></span>
+<span id="L25"><span class="lineNum">      25</span> <span class="tlaGNC">           2 :     return client_.try_send(&quot;select &quot; + std::to_string(row) + ' ' + std::to_string(col));</span></span>
+<span id="L26"><span class="lineNum">      26</span>              : }</span>
+<span id="L27"><span class="lineNum">      27</span>              : </span>
+<span id="L28"><span class="lineNum">      28</span> <span class="tlaGNC">           2 : bool NetworkInputHandler::send_move(std::size_t row, std::size_t col) {</span></span>
+<span id="L29"><span class="lineNum">      29</span> <span class="tlaGNC">           2 :     return client_.try_send(&quot;move &quot; + std::to_string(row) + ' ' + std::to_string(col));</span></span>
+<span id="L30"><span class="lineNum">      30</span>              : }</span>
+<span id="L31"><span class="lineNum">      31</span>              : </span>
+<span id="L32"><span class="lineNum">      32</span> <span class="tlaGNC">           2 : bool NetworkInputHandler::send_jump(std::size_t row, std::size_t col) {</span></span>
+<span id="L33"><span class="lineNum">      33</span> <span class="tlaGNC">           2 :     return client_.try_send(&quot;jump &quot; + std::to_string(row) + ' ' + std::to_string(col));</span></span>
+<span id="L34"><span class="lineNum">      34</span>              : }</span>
+<span id="L35"><span class="lineNum">      35</span>              : </span>
+<span id="L36"><span class="lineNum">      36</span> <span class="tlaGNC">           2 : bool NetworkInputHandler::send_clear() {</span></span>
+<span id="L37"><span class="lineNum">      37</span> <span class="tlaGNC">           6 :     return client_.try_send(&quot;clear&quot;);</span></span>
+<span id="L38"><span class="lineNum">      38</span>              : }</span>
+<span id="L39"><span class="lineNum">      39</span>              : </span>
+<span id="L40"><span class="lineNum">      40</span> <span class="tlaGNC">           2 : bool NetworkInputHandler::send_resign() {</span></span>
+<span id="L41"><span class="lineNum">      41</span> <span class="tlaGNC">           6 :     return client_.try_send(&quot;resign&quot;);</span></span>
+<span id="L42"><span class="lineNum">      42</span>              : }</span>
+<span id="L43"><span class="lineNum">      43</span>              : </span>
+<span id="L44"><span class="lineNum">      44</span>              : }  // namespace kfc</span>
         </pre>
               </td>
             </tr>

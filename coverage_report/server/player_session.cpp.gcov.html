@@ -32,17 +32,17 @@
             <td></td>
             <td class="headerItem">Lines:</td>
             <td class="headerCovTableEntryHi">100.0&nbsp;%</td>
-            <td class="headerCovTableEntry">15</td>
-            <td class="headerCovTableEntry">15</td>
+            <td class="headerCovTableEntry">13</td>
+            <td class="headerCovTableEntry">13</td>
           </tr>
           <tr>
             <td class="headerItem">Test Date:</td>
-            <td class="headerValue">2026-07-26 00:23:33</td>
+            <td class="headerValue">2026-07-30 08:38:00</td>
             <td></td>
             <td class="headerItem">Functions:</td>
             <td class="headerCovTableEntryHi">100.0&nbsp;%</td>
-            <td class="headerCovTableEntry">3</td>
-            <td class="headerCovTableEntry">3</td>
+            <td class="headerCovTableEntry">4</td>
+            <td class="headerCovTableEntry">4</td>
           </tr>
                   <tr><td><img src="../glass.png" width=3 height=3 alt=""></td></tr>
                 </table>
@@ -62,36 +62,26 @@
 <pre class="source">
 <span id="L1"><span class="lineNum">       1</span>              : #include &quot;server/player_session.h&quot;</span>
 <span id="L2"><span class="lineNum">       2</span>              : </span>
-<span id="L3"><span class="lineNum">       3</span>              : #include &lt;stdexcept&gt;</span>
+<span id="L3"><span class="lineNum">       3</span>              : namespace kfc {</span>
 <span id="L4"><span class="lineNum">       4</span>              : </span>
-<span id="L5"><span class="lineNum">       5</span>              : namespace kfc {</span>
-<span id="L6"><span class="lineNum">       6</span>              : </span>
-<span id="L7"><span class="lineNum">       7</span> <span class="tlaGNC">          45 : PlayerSession::PlayerSession(std::size_t id, ClientConnection* connection)</span></span>
-<span id="L8"><span class="lineNum">       8</span> <span class="tlaGNC">          45 :     : id_(id), connection_(connection) {}</span></span>
-<span id="L9"><span class="lineNum">       9</span>              : </span>
-<span id="L10"><span class="lineNum">      10</span> <span class="tlaGNC">          45 : bool PlayerSession::login(const std::string&amp; username, PlayerRepository&amp; player_repository) {</span></span>
-<span id="L11"><span class="lineNum">      11</span> <span class="tlaGNC">          45 :     if (has_player() || username.empty()) {</span></span>
-<span id="L12"><span class="lineNum">      12</span> <span class="tlaGNC">           2 :         return false;</span></span>
-<span id="L13"><span class="lineNum">      13</span>              :     }</span>
-<span id="L14"><span class="lineNum">      14</span>              : </span>
-<span id="L15"><span class="lineNum">      15</span> <span class="tlaGNC">          43 :     player_ = load_or_create_player(username, player_repository);</span></span>
-<span id="L16"><span class="lineNum">      16</span> <span class="tlaGNC">          42 :     return true;</span></span>
-<span id="L17"><span class="lineNum">      17</span>              : }</span>
-<span id="L18"><span class="lineNum">      18</span>              : </span>
-<span id="L19"><span class="lineNum">      19</span> <span class="tlaGNC">          43 : Player PlayerSession::load_or_create_player(const std::string&amp; username,</span></span>
-<span id="L20"><span class="lineNum">      20</span>              :                                             PlayerRepository&amp; player_repository) {</span>
-<span id="L21"><span class="lineNum">      21</span> <span class="tlaGNC">          43 :     if (const auto existing = player_repository.find_by_username(username)) {</span></span>
-<span id="L22"><span class="lineNum">      22</span> <span class="tlaGNC">          17 :         return *existing;</span></span>
-<span id="L23"><span class="lineNum">      23</span> <span class="tlaGNC">          43 :     }</span></span>
-<span id="L24"><span class="lineNum">      24</span>              : </span>
-<span id="L25"><span class="lineNum">      25</span> <span class="tlaGNC">          26 :     if (const auto created = player_repository.create_player(username, 1000)) {</span></span>
-<span id="L26"><span class="lineNum">      26</span> <span class="tlaGNC">          25 :         return *created;</span></span>
-<span id="L27"><span class="lineNum">      27</span> <span class="tlaGNC">          26 :     }</span></span>
-<span id="L28"><span class="lineNum">      28</span>              : </span>
-<span id="L29"><span class="lineNum">      29</span> <span class="tlaGNC">           1 :     throw std::runtime_error(&quot;Failed to load or create player&quot;);</span></span>
-<span id="L30"><span class="lineNum">      30</span>              : }</span>
-<span id="L31"><span class="lineNum">      31</span>              : </span>
-<span id="L32"><span class="lineNum">      32</span>              : }  // namespace kfc</span>
+<span id="L5"><span class="lineNum">       5</span> <span class="tlaGNC">         107 : PlayerSession::PlayerSession(std::size_t id, ClientConnection* connection)</span></span>
+<span id="L6"><span class="lineNum">       6</span> <span class="tlaGNC">         107 :     : id_(id), connection_(connection) {}</span></span>
+<span id="L7"><span class="lineNum">       7</span>              : </span>
+<span id="L8"><span class="lineNum">       8</span> <span class="tlaGNC">         125 : void PlayerSession::assign_user(const UserId user_id, const std::string&amp; username, int rating) {</span></span>
+<span id="L9"><span class="lineNum">       9</span> <span class="tlaGNC">         125 :     user_id_ = user_id;</span></span>
+<span id="L10"><span class="lineNum">      10</span> <span class="tlaGNC">         125 :     player_profile_ = Player(static_cast&lt;int&gt;(user_id), username, rating);</span></span>
+<span id="L11"><span class="lineNum">      11</span> <span class="tlaGNC">         125 : }</span></span>
+<span id="L12"><span class="lineNum">      12</span>              : </span>
+<span id="L13"><span class="lineNum">      13</span> <span class="tlaGNC">          34 : void PlayerSession::bind_player(Player player) {</span></span>
+<span id="L14"><span class="lineNum">      14</span> <span class="tlaGNC">          34 :     assign_user(static_cast&lt;UserId&gt;(player.id()), player.username(), player.rating());</span></span>
+<span id="L15"><span class="lineNum">      15</span> <span class="tlaGNC">          34 : }</span></span>
+<span id="L16"><span class="lineNum">      16</span>              : </span>
+<span id="L17"><span class="lineNum">      17</span> <span class="tlaGNC">           1 : void PlayerSession::clear_user() {</span></span>
+<span id="L18"><span class="lineNum">      18</span> <span class="tlaGNC">           1 :     user_id_.reset();</span></span>
+<span id="L19"><span class="lineNum">      19</span> <span class="tlaGNC">           1 :     player_profile_.reset();</span></span>
+<span id="L20"><span class="lineNum">      20</span> <span class="tlaGNC">           1 : }</span></span>
+<span id="L21"><span class="lineNum">      21</span>              : </span>
+<span id="L22"><span class="lineNum">      22</span>              : }  // namespace kfc</span>
         </pre>
               </td>
             </tr>

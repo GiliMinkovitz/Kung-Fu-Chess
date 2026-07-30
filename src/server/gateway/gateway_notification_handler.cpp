@@ -33,12 +33,12 @@ void GatewayNotificationHandler::notify_match_found(
 
     game_gateway_.send_game_redirect(
         notification.white_player_id,
-        GameRedirectInfo{notification.room_id, notification.server_id, notification.endpoint,
-                         PieceColor::White});
+        GatewayGameRedirectInfo{notification.room_id, notification.server_id, notification.endpoint,
+                                PieceColor::White});
     game_gateway_.send_game_redirect(
         notification.black_player_id,
-        GameRedirectInfo{notification.room_id, notification.server_id, notification.endpoint,
-                         PieceColor::Black});
+        GatewayGameRedirectInfo{notification.room_id, notification.server_id, notification.endpoint,
+                                PieceColor::Black});
 }
 
 void GatewayNotificationHandler::notify_search_timeout(const PlayerId player_id) {

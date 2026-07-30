@@ -1,0 +1,182 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html lang="en">
+
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <title>LCOV - coverage.info - server/lobby/lobby_message_handler.cpp</title>
+  <link rel="stylesheet" type="text/css" href="../../gcov.css">
+</head>
+
+<body>
+
+          <table width="100%" border=0 cellspacing=0 cellpadding=0>
+            <tr><td class="title">LCOV - code coverage report</td></tr>
+            <tr><td class="ruler"><img src="../../glass.png" width=3 height=3 alt=""></td></tr>
+
+            <tr>
+              <td width="100%">
+                <table cellpadding=1 border=0 width="100%">
+          <tr>
+            <td width="10%" class="headerItem">Current view:</td>
+            <td width="10%" class="headerValue"><a href="../../index.html" title="Click to go to top-level">top level</a> - <a href="index.html" title="Click to go to directory server/lobby">server/lobby</a> - lobby_message_handler.cpp<span style="font-size: 80%;"> (source / <a href="lobby_message_handler.cpp.func-c.html" title="Click to go to function table">functions</a>)</span></td>
+            <td width="5%"></td>
+            <td width="5%"></td>
+            <td width="5%" class="headerCovTableHead">Coverage</td>
+            <td width="5%" class="headerCovTableHead" title="Covered + Uncovered code">Total</td>
+            <td width="5%" class="headerCovTableHead" title="Exercised code only">Hit</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Test:</td>
+            <td class="headerValue">coverage.info</td>
+            <td></td>
+            <td class="headerItem">Lines:</td>
+            <td class="headerCovTableEntryHi">90.0&nbsp;%</td>
+            <td class="headerCovTableEntry">60</td>
+            <td class="headerCovTableEntry">54</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Test Date:</td>
+            <td class="headerValue">2026-07-30 08:38:00</td>
+            <td></td>
+            <td class="headerItem">Functions:</td>
+            <td class="headerCovTableEntryHi">100.0&nbsp;%</td>
+            <td class="headerCovTableEntry">3</td>
+            <td class="headerCovTableEntry">3</td>
+          </tr>
+                  <tr><td><img src="../../glass.png" width=3 height=3 alt=""></td></tr>
+                </table>
+              </td>
+            </tr>
+
+            <tr><td class="ruler"><img src="../../glass.png" width=3 height=3 alt=""></td></tr>
+          </table>
+
+          <table cellpadding=0 cellspacing=0 border=0>
+            <tr>
+              <td><br></td>
+            </tr>
+            <tr>
+              <td>
+<pre class="sourceHeading">            Line data    Source code</pre>
+<pre class="source">
+<span id="L1"><span class="lineNum">       1</span>              : #include &quot;server/lobby/lobby_message_handler.h&quot;</span>
+<span id="L2"><span class="lineNum">       2</span>              : </span>
+<span id="L3"><span class="lineNum">       3</span>              : #include &quot;app/observability/correlation_id.h&quot;</span>
+<span id="L4"><span class="lineNum">       4</span>              : #include &quot;app/observability/metric_counters.h&quot;</span>
+<span id="L5"><span class="lineNum">       5</span>              : #include &quot;app/observability/structured_logger.h&quot;</span>
+<span id="L6"><span class="lineNum">       6</span>              : #include &quot;matchmaking/i_matchmaking_join_client.h&quot;</span>
+<span id="L7"><span class="lineNum">       7</span>              : #include &quot;matchmaking/protocol/match_request.h&quot;</span>
+<span id="L8"><span class="lineNum">       8</span>              : #include &quot;server/authentication_service.h&quot;</span>
+<span id="L9"><span class="lineNum">       9</span>              : #include &quot;server/game_message_parser.h&quot;</span>
+<span id="L10"><span class="lineNum">      10</span>              : #include &quot;server/network/player_id.h&quot;</span>
+<span id="L11"><span class="lineNum">      11</span>              : #include &quot;server/player.h&quot;</span>
+<span id="L12"><span class="lineNum">      12</span>              : #include &quot;server/player_session.h&quot;</span>
+<span id="L13"><span class="lineNum">      13</span>              : #include &quot;server/session/client_session_manager.h&quot;</span>
+<span id="L14"><span class="lineNum">      14</span>              : #include &quot;server/session_registry.h&quot;</span>
+<span id="L15"><span class="lineNum">      15</span>              : #include &quot;server/user/user_id.h&quot;</span>
+<span id="L16"><span class="lineNum">      16</span>              : </span>
+<span id="L17"><span class="lineNum">      17</span>              : namespace kfc {</span>
+<span id="L18"><span class="lineNum">      18</span>              : </span>
+<span id="L19"><span class="lineNum">      19</span> <span class="tlaGNC">          32 : LobbyMessageHandler::LobbyMessageHandler(AuthenticationService&amp; authentication_service,</span></span>
+<span id="L20"><span class="lineNum">      20</span>              :                                          matchmaking::IMatchmakingJoinClient&amp; matchmaking_client,</span>
+<span id="L21"><span class="lineNum">      21</span>              :                                          SessionRegistry&amp; session_registry,</span>
+<span id="L22"><span class="lineNum">      22</span>              :                                          ClientSessionManager&amp; session_manager,</span>
+<span id="L23"><span class="lineNum">      23</span> <span class="tlaGNC">          32 :                                          std::string region)</span></span>
+<span id="L24"><span class="lineNum">      24</span> <span class="tlaGNC">          32 :     : authentication_service_(authentication_service),</span></span>
+<span id="L25"><span class="lineNum">      25</span> <span class="tlaGNC">          32 :       matchmaking_client_(matchmaking_client),</span></span>
+<span id="L26"><span class="lineNum">      26</span> <span class="tlaGNC">          32 :       session_registry_(session_registry),</span></span>
+<span id="L27"><span class="lineNum">      27</span> <span class="tlaGNC">          32 :       session_manager_(session_manager),</span></span>
+<span id="L28"><span class="lineNum">      28</span> <span class="tlaGNC">          64 :       region_(std::move(region)) {}</span></span>
+<span id="L29"><span class="lineNum">      29</span>              : </span>
+<span id="L30"><span class="lineNum">      30</span> <span class="tlaGNC">          59 : void LobbyMessageHandler::bind_authenticated_user(PlayerSession&amp; session,</span></span>
+<span id="L31"><span class="lineNum">      31</span>              :                                                     const Player&amp; authenticated_player) {</span>
+<span id="L32"><span class="lineNum">      32</span> <span class="tlaGNC">          59 :     session.assign_user(static_cast&lt;UserId&gt;(authenticated_player.id()), authenticated_player.username(),</span></span>
+<span id="L33"><span class="lineNum">      33</span>              :                         authenticated_player.rating());</span>
+<span id="L34"><span class="lineNum">      34</span> <span class="tlaGNC">          59 : }</span></span>
+<span id="L35"><span class="lineNum">      35</span>              : </span>
+<span id="L36"><span class="lineNum">      36</span> <span class="tlaGNC">         324 : void LobbyMessageHandler::process() {</span></span>
+<span id="L37"><span class="lineNum">      37</span> <span class="tlaGNC">         791 :     for (PlayerSession&amp; session : session_manager_.sessions()) {</span></span>
+<span id="L38"><span class="lineNum">      38</span> <span class="tlaGNC">         778 :         if (session.state() == PlayerSessionState::Playing ||</span></span>
+<span id="L39"><span class="lineNum">      39</span> <span class="tlaGNC">         311 :             !session.connection()-&gt;is_open()) {</span></span>
+<span id="L40"><span class="lineNum">      40</span> <span class="tlaGNC">         156 :             continue;</span></span>
+<span id="L41"><span class="lineNum">      41</span>              :         }</span>
+<span id="L42"><span class="lineNum">      42</span>              : </span>
+<span id="L43"><span class="lineNum">      43</span> <span class="tlaGNC">         311 :         if (const auto raw_message = session.connection()-&gt;try_read()) {</span></span>
+<span id="L44"><span class="lineNum">      44</span> <span class="tlaGNC">         123 :             if (session.state() == PlayerSessionState::Searching) {</span></span>
+<span id="L45"><span class="lineNum">      45</span> <span class="tlaGNC">           2 :                 parse_play_message(*raw_message);</span></span>
+<span id="L46"><span class="lineNum">      46</span> <span class="tlaGNC">           2 :                 continue;</span></span>
+<span id="L47"><span class="lineNum">      47</span>              :             }</span>
+<span id="L48"><span class="lineNum">      48</span>              : </span>
+<span id="L49"><span class="lineNum">      49</span> <span class="tlaGNC">         121 :             if (!session.has_user()) {</span></span>
+<span id="L50"><span class="lineNum">      50</span> <span class="tlaGNC">          64 :                 if (const auto request = parse_login_message(*raw_message)) {</span></span>
+<span id="L51"><span class="lineNum">      51</span> <span class="tlaGNC">          62 :                     if (session_registry_.is_online(request-&gt;username)) {</span></span>
+<span id="L52"><span class="lineNum">      52</span> <span class="tlaGNC">           2 :                         session.connection()-&gt;try_send(&quot;login_failed already_connected&quot;);</span></span>
+<span id="L53"><span class="lineNum">      53</span> <span class="tlaGNC">           3 :                         continue;</span></span>
+<span id="L54"><span class="lineNum">      54</span>              :                     }</span>
+<span id="L55"><span class="lineNum">      55</span>              : </span>
+<span id="L56"><span class="lineNum">      56</span>              :                     const AuthenticationResult auth =</span>
+<span id="L57"><span class="lineNum">      57</span> <span class="tlaGNC">          61 :                         authentication_service_.authenticate(request-&gt;username, request-&gt;password);</span></span>
+<span id="L58"><span class="lineNum">      58</span> <span class="tlaGNC">          61 :                     if (!auth.success) {</span></span>
+<span id="L59"><span class="lineNum">      59</span> <span class="tlaGNC">           2 :                         session.connection()-&gt;try_send(&quot;login_failed &quot; + auth.failure_reason);</span></span>
+<span id="L60"><span class="lineNum">      60</span> <span class="tlaGNC">           2 :                         continue;</span></span>
+<span id="L61"><span class="lineNum">      61</span>              :                     }</span>
+<span id="L62"><span class="lineNum">      62</span>              : </span>
+<span id="L63"><span class="lineNum">      63</span> <span class="tlaGNC">          59 :                     bind_authenticated_user(session, *auth.player);</span></span>
+<span id="L64"><span class="lineNum">      64</span> <span class="tlaGNC">          59 :                     session_registry_.register_session(auth.player-&gt;username());</span></span>
+<span id="L65"><span class="lineNum">      65</span> <span class="tlaGNC">          59 :                     session.connection()-&gt;try_send(&quot;login_ok &quot; + std::to_string(auth.player-&gt;rating()));</span></span>
+<span id="L66"><span class="lineNum">      66</span> <span class="tlaGNC">         354 :                     kfc::app::observability::logger().log(</span></span>
+<span id="L67"><span class="lineNum">      67</span> <span class="tlaGNC">          59 :                         kfc::app::observability::LogLevel::Info, &quot;player_login&quot;,</span></span>
+<span id="L68"><span class="lineNum">      68</span> <span class="tlaGNC">          59 :                         {{&quot;username&quot;, auth.player-&gt;username()},</span></span>
+<span id="L69"><span class="lineNum">      69</span> <span class="tlaGNC">         118 :                          {&quot;player_id&quot;, std::to_string(auth.player-&gt;id())}});</span></span>
+<span id="L70"><span class="lineNum">      70</span> <span class="tlaGNC">         125 :                 }</span></span>
+<span id="L71"><span class="lineNum">      71</span> <span class="tlaGNC">          61 :                 continue;</span></span>
+<span id="L72"><span class="lineNum">      72</span> <span class="tlaGNC">          61 :             }</span></span>
+<span id="L73"><span class="lineNum">      73</span>              : </span>
+<span id="L74"><span class="lineNum">      74</span> <span class="tlaGNC">          57 :             if (parse_play_message(*raw_message)) {</span></span>
+<span id="L75"><span class="lineNum">      75</span> <span class="tlaGNC">          56 :                 session.request_play();</span></span>
+<span id="L76"><span class="lineNum">      76</span> <span class="tlaGNC">          56 :                 if (session.state() == PlayerSessionState::Searching) {</span></span>
+<span id="L77"><span class="lineNum">      77</span>              :                     const matchmaking::MatchRequest request{</span>
+<span id="L78"><span class="lineNum">      78</span> <span class="tlaGNC">          56 :                         static_cast&lt;PlayerId&gt;(session.id()), session.user_id(), session.rating(),</span></span>
+<span id="L79"><span class="lineNum">      79</span> <span class="tlaGNC">          56 :                         region_};</span></span>
+<span id="L80"><span class="lineNum">      80</span> <span class="tlaGNC">          56 :                     kfc::app::observability::set_correlation_id(</span></span>
+<span id="L81"><span class="lineNum">      81</span> <span class="tlaGNC">         112 :                         kfc::app::observability::generate_correlation_id());</span></span>
+<span id="L82"><span class="lineNum">      82</span> <span class="tlaGNC">          56 :                     kfc::app::observability::metrics().matchmaking_requests_total.fetch_add(</span></span>
+<span id="L83"><span class="lineNum">      83</span>              :                         1, std::memory_order_relaxed);</span>
+<span id="L84"><span class="lineNum">      84</span> <span class="tlaGNC">          56 :                     if (const std::optional&lt;matchmaking::MatchResponse&gt; response =</span></span>
+<span id="L85"><span class="lineNum">      85</span> <span class="tlaGNC">          56 :                             matchmaking_client_.join(request)) {</span></span>
+<span id="L86"><span class="lineNum">      86</span> <span class="tlaGNC">          56 :                         if (response-&gt;status == matchmaking::MatchJoinStatus::Error) {</span></span>
+<span id="L87"><span class="lineNum">      87</span> <span class="tlaUNC">           0 :                             kfc::app::observability::metrics().matchmaking_failures_total.fetch_add(</span></span>
+<span id="L88"><span class="lineNum">      88</span>              :                                 1, std::memory_order_relaxed);</span>
+<span id="L89"><span class="lineNum">      89</span> <span class="tlaUNC">           0 :                             session.cancel_search();</span></span>
+<span id="L90"><span class="lineNum">      90</span> <span class="tlaUNC">           0 :                             session.connection()-&gt;try_send(&quot;search_failed&quot;);</span></span>
+<span id="L91"><span class="lineNum">      91</span>              :                         } else {</span>
+<span id="L92"><span class="lineNum">      92</span> <span class="tlaGNC">         168 :                             session.connection()-&gt;try_send(&quot;searching&quot;);</span></span>
+<span id="L93"><span class="lineNum">      93</span>              :                         }</span>
+<span id="L94"><span class="lineNum">      94</span>              :                     } else {</span>
+<span id="L95"><span class="lineNum">      95</span> <span class="tlaUNC">           0 :                         kfc::app::observability::metrics().matchmaking_failures_total.fetch_add(</span></span>
+<span id="L96"><span class="lineNum">      96</span>              :                             1, std::memory_order_relaxed);</span>
+<span id="L97"><span class="lineNum">      97</span> <span class="tlaUNC">           0 :                         session.cancel_search();</span></span>
+<span id="L98"><span class="lineNum">      98</span> <span class="tlaUNC">           0 :                         session.connection()-&gt;try_send(&quot;search_failed&quot;);</span></span>
+<span id="L99"><span class="lineNum">      99</span> <span class="tlaGNC">          56 :                     }</span></span>
+<span id="L100"><span class="lineNum">     100</span> <span class="tlaGNC">          56 :                 }</span></span>
+<span id="L101"><span class="lineNum">     101</span>              :             }</span>
+<span id="L102"><span class="lineNum">     102</span> <span class="tlaGNC">         311 :         }</span></span>
+<span id="L103"><span class="lineNum">     103</span>              :     }</span>
+<span id="L104"><span class="lineNum">     104</span> <span class="tlaGNC">         501 : }</span></span>
+<span id="L105"><span class="lineNum">     105</span>              : </span>
+<span id="L106"><span class="lineNum">     106</span>              : }  // namespace kfc</span>
+        </pre>
+              </td>
+            </tr>
+          </table>
+          <br>
+
+          <table width="100%" border=0 cellspacing=0 cellpadding=0>
+            <tr><td class="ruler"><img src="../../glass.png" width=3 height=3 alt=""></td></tr>
+            <tr><td class="versionInfo">Generated by: <a href="https://github.com//linux-test-project/lcov" target="_parent">LCOV version 2.0-1</a></td></tr>
+          </table>
+          <br>
+
+</body>
+</html>
