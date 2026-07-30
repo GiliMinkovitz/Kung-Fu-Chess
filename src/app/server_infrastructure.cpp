@@ -11,7 +11,12 @@
 #include "server/database/postgres_user_repository.h"
 #include "server/database/sqlite_user_repository.h"
 
+#include <iostream>
 #include <stdexcept>
+
+#if KFC_HAS_LIBPQ
+#include <libpq-fe.h>
+#endif
 
 namespace kfc::app {
 
@@ -47,6 +52,11 @@ ServerInfrastructure::ServerInfrastructure(const AppConfig& config)
     if (config.database.backend == DatabaseBackend::PostgreSQL) {
         auto postgres = std::make_unique<PostgresConnection>(make_postgres_settings(config.database));
         if (!postgres->open()) {
+#if KFC_HAS_LIBPQ
+            if (PGconn* native = postgres->native_connection(); native != nullptr) {
+                std::cerr << "PostgreSQL connection error: " << PQerrorMessage(native) << '\n';
+            }
+#endif
             throw std::runtime_error("Failed to connect to PostgreSQL");
         }
 
