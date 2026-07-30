@@ -13,16 +13,16 @@ spec:
     matchLabels:
       app.kubernetes.io/name: matchmaker
       app.kubernetes.io/component: matchmaker
-    template:
-      metadata:
-        labels:
-          app.kubernetes.io/name: matchmaker
-          app.kubernetes.io/component: matchmaker
-          app.kubernetes.io/part-of: kung-fu-chess
-        annotations:
-          prometheus.io/scrape: "true"
-          prometheus.io/port: "8772"
-          prometheus.io/path: "/metrics"
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: matchmaker
+        app.kubernetes.io/component: matchmaker
+        app.kubernetes.io/part-of: kung-fu-chess
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8772"
+        prometheus.io/path: "/metrics"
     spec:
       containers:
         - name: matchmaker

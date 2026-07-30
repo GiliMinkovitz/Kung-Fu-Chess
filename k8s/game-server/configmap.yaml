@@ -15,7 +15,7 @@ data:
   KFC_GAME_INTERNAL_PORT: "8767"
   KFC_GAME_HEALTH_PORT: "8081"
   KFC_GAME_MAX_CLIENTS: "8"
-  KFC_GAME_ENDPOINT: "ws://game-server-service:8766"
+  KFC_GAME_ENDPOINT: "ws://localhost:8766"
   KFC_ALLOCATION_ENDPOINT: "http://game-server-service:8767/allocate"
   KFC_DATABASE_TYPE: "postgres"
   KFC_POSTGRES_HOST: "postgres-service"
