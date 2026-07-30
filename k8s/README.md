@@ -108,7 +108,7 @@ Inter-service URLs use Kubernetes DNS (ClusterIP services):
 | `KFC_REDIS_HOST` | `redis-service` |
 | `KFC_MATCHMAKER_ENDPOINT` | `http://matchmaker-service:8770` |
 | `KFC_GATEWAY_NOTIFICATION_ENDPOINT` | `http://gateway-service:8771` |
-| `KFC_GAME_ENDPOINT` | `ws://game-server-service:8766` |
+| `KFC_GAME_ENDPOINT` | `ws://localhost:8766` (client-facing URL in `game-server/configmap.yaml`; requires port-forward locally) |
 | `KFC_ALLOCATION_ENDPOINT` | `http://game-server-service:8767/allocate` |
 | `KFC_POSTGRES_HOST` | `postgres-service` |
 | `KFC_DATABASE_TYPE` | `postgres` |
@@ -186,6 +186,65 @@ curl http://localhost:8080/health
 curl http://localhost:8080/ready
 curl http://localhost:8081/health
 curl http://localhost:8081/ready
+```
+
+## Local E2E validation (kind / port-forward)
+
+After all pods are `Running`, prove the matchmaking stack with the smoke test in
+`tests/smoke/matchmaking_smoke.py` (same script works with Docker Compose).
+
+1. **Port-forward gateway and game server** (keep both running):
+
+   ```bash
+   kubectl port-forward -n kung-fu-chess svc/gateway-service 8765:8765
+   ```
+
+   In a second terminal:
+
+   ```bash
+   kubectl port-forward -n kung-fu-chess svc/game-server-service 8766:8766
+   ```
+
+2. **Install the smoke-test dependency** (once per environment):
+
+   ```bash
+   python3 -m venv .venv-smoke
+   .venv-smoke/bin/pip install websockets
+   ```
+
+3. **Run the smoke test** from the repository root:
+
+   ```bash
+   .venv-smoke/bin/python tests/smoke/matchmaking_smoke.py
+   ```
+
+   Optional overrides:
+
+   ```bash
+   KFC_GATEWAY_URL=ws://localhost:8765 \
+   KFC_GAME_URL=ws://localhost:8766 \
+   python3 tests/smoke/matchmaking_smoke.py
+   ```
+
+   Success prints `OK: matchmaking smoke test passed` after two players receive
+   the same `game_redirect` pointing at `ws://localhost:8766`.
+
+   `KFC_GAME_ENDPOINT` in `game-server/configmap.yaml` is intentionally
+   `ws://localhost:8766` so redirects work for clients on the host (via
+   port-forward), matching Docker Compose behavior.
+
+### kind: preload third-party images
+
+If Postgres/Redis pods hit `ImagePullBackOff` (registry TLS errors) or
+`kind load docker-image` fails with `content digest ... not found`, import from
+the host Docker daemon instead:
+
+```bash
+docker pull postgres:16 redis:7-alpine
+docker save postgres:16 | docker exec -i kungfu-control-plane ctr -n=k8s.io images import -
+docker save redis:7-alpine | docker exec -i kungfu-control-plane ctr -n=k8s.io images import -
+kubectl delete pod -n kung-fu-chess -l app.kubernetes.io/name=postgres
+kubectl delete pod -n kung-fu-chess -l app.kubernetes.io/name=redis
 ```
 
 ## Configuration
